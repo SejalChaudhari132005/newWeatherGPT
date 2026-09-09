@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, MessageSquare, Radar, Bell, User } from 'lucide-react';
+import { Home, MessageSquare, Radar, Bell, Car, User } from 'lucide-react';
 import { useUI, ActiveTab } from '../../context/UIContext';
 
 export const MobileNav: React.FC = () => {
@@ -9,6 +9,7 @@ export const MobileNav: React.FC = () => {
     { id: 'home', label: 'Home', icon: Home },
     { id: 'ask', label: 'Ask', icon: MessageSquare },
     { id: 'radar', label: 'Radar', icon: Radar },
+    { id: 'travel', label: 'Travel', icon: Car },
     { id: 'alerts', label: 'Alerts', icon: Bell },
   ];
 

@@ -8,7 +8,7 @@ export const EmergencyModeScreen: React.FC = () => {
   const { setEmergencyMode, setActiveTab } = useUI();
   const { userLocation } = useWeather();
 
-  const locationName = userLocation?.city || 'Mumbai';
+  const locationName = userLocation?.city || 'Your Location';
 
   return (
     <div className="min-h-[80vh] p-6 rounded-3xl bg-slate-950 text-white border-2 border-rose-600 shadow-2xl relative overflow-hidden flex flex-col justify-between">

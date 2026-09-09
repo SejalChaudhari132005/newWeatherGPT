@@ -15,9 +15,11 @@ export const LiveWeatherMap: React.FC<Props> = ({ locationName, onOpenFullMap })
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Map className="w-4 h-4 sm:w-5 sm:h-5 text-[#004aad] shrink-0" />
-          <h3 className="text-xs sm:text-sm font-black text-slate-900 truncate">Live Weather Radar & Satellite</h3>
+          <h3 className="text-xs sm:text-sm font-black text-slate-900 truncate">IMD Doppler Radar & Live Weather Map</h3>
         </div>
-        <DemoBadge label="MOCK RADAR" variant="sky" />
+        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wide border border-emerald-200">
+          IMD LIVE
+        </span>
       </div>
 
       {/* Layer Toggles */}
@@ -29,7 +31,7 @@ export const LiveWeatherMap: React.FC<Props> = ({ locationName, onOpenFullMap })
           }`}
         >
           <CloudRain className="w-3.5 h-3.5" />
-          <span>Rain Radar</span>
+          <span>IMD Radar</span>
         </button>
 
         <button
@@ -39,7 +41,7 @@ export const LiveWeatherMap: React.FC<Props> = ({ locationName, onOpenFullMap })
           }`}
         >
           <Wind className="w-3.5 h-3.5" />
-          <span>Wind Stream</span>
+          <span>Wind Vector</span>
         </button>
 
         <button
@@ -59,13 +61,16 @@ export const LiveWeatherMap: React.FC<Props> = ({ locationName, onOpenFullMap })
           }`}
         >
           <Thermometer className="w-3.5 h-3.5" />
-          <span>Thermal</span>
+          <span>Temperature</span>
         </button>
       </div>
 
       {/* Embedded Map Container */}
-      <div className="relative rounded-2xl overflow-hidden h-44 sm:h-52 bg-slate-900 border border-slate-200 shadow-inner flex items-center justify-center text-center p-3 sm:p-4">
-        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-sky-950 to-blue-900 opacity-90"></div>
+      <div
+        onClick={onOpenFullMap}
+        className="relative rounded-2xl overflow-hidden h-44 sm:h-52 bg-slate-950 border border-slate-200 shadow-inner flex items-center justify-center text-center p-3 sm:p-4 cursor-pointer group"
+      >
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-sky-950 to-blue-900 opacity-90 group-hover:scale-105 transition-transform duration-300"></div>
 
         <div className="relative z-10 space-y-1.5">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#38b6ff]/30 flex items-center justify-center mx-auto animate-ping absolute left-1/2 -ml-4 sm:-ml-5 -mt-1"></div>
@@ -78,7 +83,7 @@ export const LiveWeatherMap: React.FC<Props> = ({ locationName, onOpenFullMap })
           </div>
 
           <p className="text-[9px] sm:text-[10px] text-sky-200 font-bold uppercase tracking-wider">
-            Layer: {activeLayer.toUpperCase()} OVERLAY
+            Layer: {activeLayer.toUpperCase()} • Click to open IMD Radar & Trip Planner
           </p>
         </div>
       </div>
@@ -86,9 +91,9 @@ export const LiveWeatherMap: React.FC<Props> = ({ locationName, onOpenFullMap })
       {/* Open Full Map Action */}
       <button
         onClick={onOpenFullMap}
-        className="w-full py-2.5 rounded-xl sm:rounded-2xl bg-slate-100 hover:bg-sky-50 text-slate-800 hover:text-[#004aad] font-extrabold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+        className="w-full py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#004aad] to-[#38b6ff] hover:opacity-95 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
       >
-        <span>Open Interactive Full Map</span>
+        <span>Open IMD Doppler Radar & Route Planner</span>
         <ArrowRight className="w-4 h-4" />
       </button>
     </div>

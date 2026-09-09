@@ -1,8 +1,109 @@
+export interface WeatherSourceInfo {
+  provider: string;
+  type?: string;
+}
+
+export interface WeatherConfidenceInfo {
+  score: number;
+  level: string;
+  agreement?: string;
+}
+
+export interface WeatherAlertSummary {
+  id: string;
+  severity: string;
+  severity_label?: string;
+  title: string;
+}
+
+export interface WeatherLocationInfo {
+  latitude: number;
+  longitude: number;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  is_override?: boolean;
+}
+
+export interface WeatherContextPayload {
+  location?: {
+    latitude: number;
+    longitude: number;
+    city: string;
+    district?: string;
+    state?: string;
+    source?: string;
+  };
+  current_weather?: {
+    temperature: number;
+    feels_like: number;
+    humidity: number;
+    wind_speed: number;
+    wind_direction: string | number;
+    visibility: number;
+    pressure: number;
+    uv_index: number;
+    rain_probability: number;
+    condition: string;
+    icon?: string;
+  };
+  forecast?: {
+    daily?: Array<{
+      day: string;
+      date: string;
+      high: number;
+      low: number;
+      condition: string;
+      icon?: string;
+      rain_probability: number;
+    }>;
+    hourly?: Array<{
+      time: string;
+      temp: number;
+      condition: string;
+      rain_probability: number;
+    }>;
+  };
+  alerts?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    severity: string;
+    severity_label?: string;
+    source?: string;
+    valid_until?: string;
+  }>;
+  confidence?: {
+    score: number;
+    label?: string;
+  };
+  sources?: Array<{
+    name: string;
+    type: string;
+  }>;
+  retrieved_at?: string;
+}
+
+export interface ChatMetadata {
+  intent?: string;
+  time_range?: string;
+  location?: WeatherLocationInfo;
+  sources?: WeatherSourceInfo[];
+  confidence?: WeatherConfidenceInfo;
+  alerts?: WeatherAlertSummary[];
+  weather_context?: WeatherContextPayload;
+  action_buttons?: Array<{ id: string; label: string; action: string }>;
+  route_analysis?: Record<string, any>;
+  latencies?: Record<string, number>;
+  validation?: Record<string, any>;
+  timestamp?: string;
+}
+
 export interface ExplainableMetadata {
-  sources: string[]; // e.g. ['IMD', 'GFS', 'Doppler Radar']
-  confidenceScore: number; // e.g. 84
-  resolution: string; // e.g. '1 km'
-  updatedAt: string; // e.g. '5 mins ago'
+  sources: string[];
+  confidenceScore: number;
+  resolution: string;
+  updatedAt: string;
   rationale: string;
 }
 
@@ -47,6 +148,7 @@ export interface ChatMessage {
   sender: 'user' | 'assistant';
   text: string;
   timestamp: string;
+  metadata?: ChatMetadata;
   explainable?: ExplainableMetadata;
   suggestedFollowups?: string[];
   roleContext?: string;
@@ -69,6 +171,7 @@ export type ActiveNavPage =
   | 'chat'
   | 'dashboard'
   | 'map'
+  | 'travel'
   | 'alerts'
   | 'climate'
   | 'profile'

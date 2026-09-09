@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, User, Phone, MapPin, Briefcase, Globe, Check, Save } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
 import { useWeather } from '../context/WeatherContext';
+import { useLanguage, LanguageCode } from '../context/LanguageContext';
 import { ALL_ROLES } from '../types/role';
 
 interface Props {
@@ -11,10 +12,13 @@ interface Props {
 export const ProfilePage: React.FC<Props> = ({ onBack }) => {
   const { profile, updateProfile } = useAuthContext();
   const { userLocation } = useWeather();
+  const { language: currentLang, setLanguage: setGlobalLanguage, supportedLanguages } = useLanguage();
 
   const [username, setUsername] = useState(profile?.username || '');
   const [role, setRole] = useState(profile?.role || 'citizen');
-  const [language, setLanguage] = useState(profile?.preferred_language || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(
+    (profile?.preferred_language as LanguageCode) || currentLang || 'en'
+  );
   const [isSaved, setIsSaved] = useState(false);
 
   const locationDisplay = userLocation
@@ -25,10 +29,11 @@ export const ProfilePage: React.FC<Props> = ({ onBack }) => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setGlobalLanguage(selectedLanguage);
     await updateProfile({
       username: username.trim(),
       role,
-      preferred_language: language,
+      preferred_language: selectedLanguage,
     });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
@@ -127,15 +132,15 @@ export const ProfilePage: React.FC<Props> = ({ onBack }) => {
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">Preferred Language</label>
             <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value as any)}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#38b6ff]"
             >
-              <option value="en">English</option>
-              <option value="hi">Hindi (हिंदी)</option>
-              <option value="mr">Marathi (मराठी)</option>
-              <option value="ta">Tamil (தமிழ்)</option>
-              <option value="te">Telugu (తెలుగు)</option>
+              {supportedLanguages.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.name} {l.nativeName !== l.name ? `(${l.nativeName})` : ''}
+                </option>
+              ))}
             </select>
           </div>
 

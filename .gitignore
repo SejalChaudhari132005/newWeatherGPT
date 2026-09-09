@@ -9,6 +9,7 @@ frontend/dist/
 # Environment files with secrets
 .env
 frontend/.env
+backend/.env
 *.env.local
 
 # Python cache & venv
@@ -22,3 +23,6 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+scratch/
+.pytest_cache/
+

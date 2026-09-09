@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { MapPin, Sun, CloudRain, Wind, Droplets, Umbrella, ChevronDown, Bell } from 'lucide-react';
 import { useWeather } from '../../context/WeatherContext';
 import { useUI } from '../../context/UIContext';
+import { useLocationContext } from '../../context/LocationContext';
 
 export const MobileHeroWeatherCard: React.FC = () => {
-  const { currentWeather, userLocation } = useWeather();
+  const { currentWeather } = useWeather();
+  const { location } = useLocationContext();
   const { setLocationModalOpen } = useUI();
   const [selectedHour, setSelectedHour] = useState('09:00');
 
-  const locationName = userLocation
-    ? `${userLocation.city}, ${userLocation.state || userLocation.country}`
-    : 'Karangploso, Malang';
+  const locationName = location?.city
+    ? `${location.city}${location.state ? `, ${location.state}` : ''}`
+    : location?.latitude != null
+    ? 'Location detected'
+    : 'Select Location';
 
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'short',
@@ -32,6 +36,7 @@ export const MobileHeroWeatherCard: React.FC = () => {
       {/* Top Location Header Bar */}
       <div className="flex items-center justify-between pt-1">
         <button
+          type="button"
           onClick={() => setLocationModalOpen(true)}
           className="text-left flex items-center gap-1.5 cursor-pointer group"
         >
@@ -45,13 +50,13 @@ export const MobileHeroWeatherCard: React.FC = () => {
           </div>
         </button>
 
-        <button className="p-2.5 rounded-full bg-white text-slate-600 shadow-2xs border border-slate-200/80 relative">
+        <button type="button" className="p-2.5 rounded-full bg-white text-slate-600 shadow-2xs border border-slate-200/80 relative">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>
         </button>
       </div>
 
-      {/* Main Soft Blue Gradient Card (Screen 1 Design) */}
+      {/* Main Soft Blue Gradient Card */}
       <div className="relative overflow-hidden rounded-[36px] bg-gradient-to-b from-[#38b6ff] via-[#005bb5] to-[#004aad] text-white p-6 shadow-xl shadow-blue-900/30 flex flex-col justify-between min-h-[340px] text-center">
         {/* Top 3D-style Sun/Cloud Graphic */}
         <div className="my-2 flex justify-center">
@@ -104,6 +109,7 @@ export const MobileHeroWeatherCard: React.FC = () => {
           {timelineTicks.map((tick, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setSelectedHour(tick.time)}
               className={`flex flex-col items-center py-2 px-3 rounded-2xl transition-all cursor-pointer ${
                 selectedHour === tick.time

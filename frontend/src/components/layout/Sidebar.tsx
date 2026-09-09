@@ -25,7 +25,7 @@ export const Sidebar: React.FC = () => {
   const { userLocation } = useWeather();
   const { signOut } = useAuth();
 
-  const formattedCity = userLocation?.city || 'Mumbai';
+  const formattedCity = userLocation?.city || 'Select Location';
 
   const workspaceItems: { id: ActiveTab; label: string; icon: any; hasDot?: boolean }[] = [
     { id: 'home', label: 'Home', icon: Home },

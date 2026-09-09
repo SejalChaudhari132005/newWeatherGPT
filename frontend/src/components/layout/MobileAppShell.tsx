@@ -3,18 +3,51 @@ import { CloudSun, Wind, Activity, Bell, Sparkles, MessageSquare, Radar, MapPin,
 import { useUI, ActiveTab } from '../../context/UIContext';
 import { useWeather } from '../../context/WeatherContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { translatePhrase } from '../../utils/dashboardTranslator';
 
 export const MobileAppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeTab, setActiveTab } = useUI();
   const { userLocation } = useWeather();
   const { language } = useLanguage();
+  const [unreadAlertCount, setUnreadAlertCount] = React.useState<number>(0);
+
+  // Poll for active unread alerts count
+  React.useEffect(() => {
+    if (!userLocation?.latitude || !userLocation?.longitude) return;
+    const checkAlerts = async () => {
+      try {
+        const { alertService } = await import('../../services/alertService');
+        const res = await alertService.getCurrentAlerts(
+          userLocation.latitude,
+          userLocation.longitude,
+          userLocation.city || undefined,
+          userLocation.district || undefined,
+          userLocation.state || undefined
+        );
+        const unread = (res.alerts || []).filter((a) => !a.is_read).length;
+        setUnreadAlertCount(unread);
+      } catch {
+        // ignore
+      }
+    };
+    checkAlerts();
+    const timer = setInterval(checkAlerts, 60000);
+    return () => clearInterval(timer);
+  }, [userLocation?.latitude, userLocation?.longitude]);
+
+  // Clear badge if on alerts tab
+  React.useEffect(() => {
+    if (activeTab === 'alerts') {
+      setUnreadAlertCount(0);
+    }
+  }, [activeTab]);
 
   const navDockItems: { id: ActiveTab; label: string; icon: any }[] = [
-    { id: 'home', label: 'weather', icon: CloudSun },
-    { id: 'advisories', label: 'air quality', icon: Activity },
-    { id: 'ask', label: 'ask gpt', icon: MessageSquare }, // Center Logo Button
-    { id: 'alerts', label: 'alerts', icon: AlertTriangle },
-    { id: 'radar', label: 'map radar', icon: Radar },
+    { id: 'home', label: translatePhrase('weather', language), icon: CloudSun },
+    { id: 'advisories', label: translatePhrase('airQuality', language), icon: Activity },
+    { id: 'ask', label: 'Ask GPT', icon: MessageSquare }, // Center Logo Button
+    { id: 'alerts', label: translatePhrase('alerts', language), icon: AlertTriangle },
+    { id: 'radar', label: translatePhrase('mapRadar', language), icon: Radar },
   ];
 
   return (
@@ -31,7 +64,7 @@ export const MobileAppShell: React.FC<{ children: React.ReactNode }> = ({ childr
           </div>
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live Sync</span>
+            <span>{translatePhrase('liveAtmosphericSync', language)}</span>
           </div>
         </div>
 
@@ -64,11 +97,18 @@ export const MobileAppShell: React.FC<{ children: React.ReactNode }> = ({ childr
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center py-1 px-2.5 transition-all cursor-pointer ${
+                className={`flex flex-col items-center py-1 px-2.5 transition-all cursor-pointer relative ${
                   isActive ? 'text-sky-600 font-extrabold' : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-sky-600 stroke-[2.5]' : 'text-slate-400'}`} />
+                <div className="relative">
+                  <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-sky-600 stroke-[2.5]' : 'text-slate-400'}`} />
+                  {item.id === 'alerts' && unreadAlertCount > 0 && (
+                    <span className="absolute -top-1 -right-2 px-1.5 py-0.2 bg-rose-600 text-white rounded-full text-[8px] font-black animate-pulse shadow-xs">
+                      {unreadAlertCount}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] capitalize tracking-tight font-bold">{item.label}</span>
               </button>
             );

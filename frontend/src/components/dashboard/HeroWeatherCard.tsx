@@ -5,7 +5,7 @@ import { useWeather } from '../../context/WeatherContext';
 export const HeroWeatherCard: React.FC = () => {
   const { currentWeather, userLocation } = useWeather();
 
-  const cityUppercase = (userLocation?.city || 'Mumbai').toUpperCase();
+  const cityUppercase = (userLocation?.city || 'Detecting Location...').toUpperCase();
 
   return (
     <div className="space-y-4">

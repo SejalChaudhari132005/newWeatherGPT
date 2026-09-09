@@ -4,7 +4,7 @@ import { useWeather } from '../../context/WeatherContext';
 
 export const TomorrowForecastCard: React.FC = () => {
   const { userLocation } = useWeather();
-  const locationName = userLocation ? `${userLocation.city}, ${userLocation.country}` : 'Mumbai, India';
+  const locationName = userLocation ? `${userLocation.city}, ${userLocation.country}` : 'Your Location';
 
   return (
     <div className="relative overflow-hidden rounded-[28px] bg-[#D8F0A0] text-slate-900 p-6 shadow-sm border border-lime-300/80 flex flex-col justify-between min-h-[220px]">

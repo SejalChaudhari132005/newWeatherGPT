@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Settings, Volume2, Bell, Shield, Sliders, Check } from 'lucide-react';
+import { ArrowLeft, Settings, Volume2, Bell, Shield, Sliders, Check, Globe } from 'lucide-react';
+import { useLanguage, LanguageCode } from '../context/LanguageContext';
+import { useAuthContext } from '../context/AuthContext';
 
 interface Props {
   onBack: () => void;
 }
 
 export const SettingsPage: React.FC<Props> = ({ onBack }) => {
+  const { language, setLanguage, supportedLanguages } = useLanguage();
+  const { updateProfile } = useAuthContext();
+
   const [tempUnit, setTempUnit] = useState<'C' | 'F'>('C');
   const [windUnit, setWindUnit] = useState<'kmh' | 'mph' | 'ms'>('kmh');
   const [rainUnit, setRainUnit] = useState<'mm' | 'in'>('mm');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(language);
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLanguage(selectedLanguage);
+    await updateProfile({
+      preferred_language: selectedLanguage,
+    });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
   };
@@ -31,11 +41,49 @@ export const SettingsPage: React.FC<Props> = ({ onBack }) => {
         </button>
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Settings</h2>
-          <p className="text-xs text-slate-500 font-medium">Configure unit formats, voice assistant & notifications</p>
+          <p className="text-xs text-slate-500 font-medium">Configure language, unit formats, voice assistant & notifications</p>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* Language Selection Section */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-md space-y-4">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Globe className="w-4 h-4 text-[#004aad]" /> Language / भाषा
+          </h3>
+          <p className="text-xs text-slate-500">Select your preferred Indian language for WeatherGPT chat, voice, and advisories</p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+            {supportedLanguages.map((l) => {
+              const isSelected = selectedLanguage === l.code;
+              return (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setSelectedLanguage(l.code)}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    isSelected
+                      ? 'border-[#004aad] bg-sky-50/70 ring-2 ring-[#004aad]/20 shadow-xs'
+                      : 'border-slate-200 bg-slate-50/60 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-black text-slate-900">{l.name}</span>
+                    <span
+                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                        isSelected ? 'border-[#004aad] bg-[#004aad]' : 'border-slate-300 bg-white'
+                      }`}
+                    >
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-[#004aad] mt-1">{l.nativeName}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Units Section */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-md space-y-4">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -100,13 +148,13 @@ export const SettingsPage: React.FC<Props> = ({ onBack }) => {
         {/* Voice & Audio Section */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-md space-y-4">
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Volume2 className="w-4 h-4 text-[#004aad]" /> Voice Input & Speech
+            <Volume2 className="w-4 h-4 text-[#004aad]" /> Voice Input & Speech (BHASHINI)
           </h3>
 
           <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
             <div>
               <div className="text-xs font-bold text-slate-800">Voice Assistant Input</div>
-              <div className="text-[10px] text-slate-500">Enable microphone voice input for weather queries</div>
+              <div className="text-[10px] text-slate-500">Enable microphone speech input and TTS readout in Indian languages</div>
             </div>
             <input
               type="checkbox"

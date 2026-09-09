@@ -8,7 +8,7 @@ export const AlertBanner: React.FC = () => {
   const { userLocation } = useWeather();
   const { setActiveTab } = useUI();
 
-  const locationName = userLocation?.city || 'Mumbai';
+  const locationName = userLocation?.city || 'Your Location';
 
   return (
     <div className="rounded-3xl bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 p-6 border-2 border-rose-300 shadow-lg relative overflow-hidden">

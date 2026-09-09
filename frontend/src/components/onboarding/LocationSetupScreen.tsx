@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Navigation, Sparkles, AlertTriangle, Building2, X, Loader2, MapPin, Check } from 'lucide-react';
-import { useLocation } from '../../hooks/useLocation';
+import { Search, Navigation, Sparkles, AlertTriangle, X, Loader2, MapPin } from 'lucide-react';
 import { useAuthContext } from '../../context/AuthContext';
 import { locationService } from '../../services/locationService';
 import { UserLocation } from '../../types/location';
 
 export const LocationSetupScreen: React.FC = () => {
-  const { isSubmitting, errorMessage, clearError, selectLocation } = useLocation();
   const { handleSaveLocationGps, handleSaveLocationManual } = useAuthContext();
 
   const [showManualSearch, setShowManualSearch] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [liveResults, setLiveResults] = useState<UserLocation[]>([]);
   const [searching, setSearching] = useState<boolean>(false);
-  const [gpsStatusMsg, setGpsStatusMsg] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState<boolean>(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -23,7 +20,7 @@ export const LocationSetupScreen: React.FC = () => {
     if (q.length >= 2) {
       setSearching(true);
       const timer = setTimeout(async () => {
-        const results = await locationService.searchLocation(q);
+        const results = await locationService.searchLocations(q);
         if (active) {
           setLiveResults(results);
           setSearching(false);
@@ -40,105 +37,68 @@ export const LocationSetupScreen: React.FC = () => {
   }, [searchQuery]);
 
   const handleUseGps = async () => {
-    clearError();
-    setLocalError(null);
+    setErrorMsg(null);
     setGpsLoading(true);
-    setGpsStatusMsg('Requesting browser GPS permission...');
 
     try {
-      // 1. Fetch exact hardware coordinates
-      const coords = await locationService.getExactGPSPosition();
-      setGpsStatusMsg(`GPS Lat: ${coords.latitude.toFixed(4)}, Lon: ${coords.longitude.toFixed(4)}. Resolving location...`);
-
-      // 2. Resolve via backend LocationAgent
-      const resolved = await locationService.resolveLocation(coords.latitude, coords.longitude, 'gps');
-      setGpsStatusMsg(`Resolved: ${resolved.city}, ${resolved.state}`);
-
-      // 3. Save to context & AuthContext profile
-      await handleSaveLocationGps();
+      const success = await handleSaveLocationGps();
+      if (!success) {
+        setErrorMsg('Unable to access your location.');
+      }
     } catch (e: any) {
-      console.warn('[LocationSetupScreen] GPS resolution error:', e);
+      console.warn('[LocationSetupScreen] GPS error:', e);
+      setErrorMsg('Unable to access your location.');
+    } finally {
       setGpsLoading(false);
-      setGpsStatusMsg(null);
-      setLocalError(
-        e.message ||
-        'Location access was denied or unavailable. Click lock icon 🔒 in browser URL bar to allow location access or search your village/city below.'
-      );
     }
   };
 
-  const handleSelectLocation = async (loc: UserLocation) => {
+  const handleSelectManualResult = async (loc: UserLocation) => {
     setShowManualSearch(false);
-    await selectLocation(loc);
-    await handleSaveLocationManual({
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      name: loc.city,
-      district: loc.district,
-      state: loc.state,
-      country: loc.country,
-    });
+    await handleSaveLocationManual(loc);
   };
 
-  const activeError = localError || errorMessage;
-
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative font-['Arimo']">
+    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative">
       <div className="w-full max-w-md bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between min-h-[85vh] sm:min-h-[520px] transition-all">
         {/* Header */}
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-            <span>Step 3 of 3 • Location Setup</span>
+            <span>Set Your Location</span>
           </div>
 
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Where should WeatherGPT monitor weather for you?</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Where are you located?</h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            Get hyperlocal forecasts, rainfall risk, and warnings tailored for your exact location, village, town, or city.
+            Your location helps WeatherGPT provide accurate local weather and alerts.
           </p>
         </div>
 
-        {/* Main Choice Cards */}
+        {/* Primary Actions */}
         <div className="my-auto space-y-3.5 py-4">
-          {activeError && (
+          {errorMsg && (
             <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold space-y-2.5 animate-fadeIn">
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="leading-relaxed">{activeError}</div>
+                <div className="leading-relaxed">{errorMsg}</div>
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button
-                  onClick={handleUseGps}
-                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow-xs cursor-pointer"
+                  type="button"
+                  onClick={() => setShowManualSearch(true)}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs shadow-xs cursor-pointer text-center"
                 >
-                  Retry GPS
-                </button>
-                <button
-                  onClick={() => {
-                    setLocalError(null);
-                    clearError();
-                    setShowManualSearch(true);
-                  }}
-                  className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl font-bold text-xs cursor-pointer"
-                >
-                  Search Village / City
+                  Select Location Manually
                 </button>
               </div>
             </div>
           )}
 
-          {/* Status Message pill when detecting */}
-          {gpsStatusMsg && !activeError && (
-            <div className="p-3 rounded-2xl bg-sky-50 border border-sky-200 text-[#004aad] text-xs font-bold flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-[#38b6ff]" />
-              <span className="truncate">{gpsStatusMsg}</span>
-            </div>
-          )}
-
-          {/* Option A: Use Current GPS / Hardware Location */}
+          {/* Action 1: Use Current Location */}
           <button
+            type="button"
             onClick={handleUseGps}
-            disabled={isSubmitting || gpsLoading}
+            disabled={gpsLoading}
             className="w-full p-5 rounded-3xl bg-gradient-to-r from-sky-500 via-[#005bb5] to-[#004aad] text-white shadow-xl hover:shadow-2xl hover:scale-[1.01] transition-all flex items-center justify-between text-left group cursor-pointer border border-sky-400/30"
           >
             <div className="flex items-center gap-4">
@@ -146,21 +106,22 @@ export const LocationSetupScreen: React.FC = () => {
                 <Navigation className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-base font-black tracking-tight">Use Exact Current Location</div>
-                <div className="text-xs text-sky-100 font-medium">Detect exact device GPS coordinates</div>
+                <div className="text-base font-black tracking-tight">Use Current Location</div>
+                <div className="text-xs text-sky-100 font-medium">Detect device GPS coordinates</div>
               </div>
             </div>
-            {(isSubmitting || gpsLoading) ? (
+            {gpsLoading ? (
               <Loader2 className="w-5 h-5 animate-spin text-white shrink-0" />
             ) : (
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md">GPS</span>
             )}
           </button>
 
-          {/* Option B: Search Any City / Village / Panchayat / District */}
+          {/* Action 2: Select Location Manually */}
           <button
+            type="button"
             onClick={() => setShowManualSearch(true)}
-            disabled={isSubmitting || gpsLoading}
+            disabled={gpsLoading}
             className="w-full p-5 rounded-3xl bg-slate-50 border border-slate-200 hover:border-sky-300 hover:bg-sky-50/50 text-slate-800 transition-all flex items-center justify-between text-left group cursor-pointer"
           >
             <div className="flex items-center gap-4">
@@ -169,22 +130,23 @@ export const LocationSetupScreen: React.FC = () => {
               </div>
               <div>
                 <div className="text-base font-black tracking-tight text-slate-900">Select Location Manually</div>
-                <div className="text-xs text-slate-500 font-medium">Search any village, town, taluka, or city across India</div>
+                <div className="text-xs text-slate-500 font-medium">Search city, town, village, or PIN code</div>
               </div>
             </div>
           </button>
         </div>
 
-        {/* Manual Location Search Overlay / Modal */}
+        {/* Manual Location Search Overlay */}
         {showManualSearch && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-3xl p-5 border border-slate-100 shadow-2xl space-y-4 max-h-[85vh] flex flex-col font-['Arimo']">
+            <div className="w-full max-w-md bg-white rounded-3xl p-5 border border-slate-100 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Search Any Location in India</h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Enter village, taluka, town, district, or city name</p>
+                  <h3 className="text-base font-black text-slate-900">Search Location</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">City, town, village, district, or PIN code</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowManualSearch(false)}
                   className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
                 >
@@ -198,12 +160,12 @@ export const LocationSetupScreen: React.FC = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Type any village, town, or city (e.g. Khed, Shirur, Nashik)..."
-                  className="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#38b6ff] focus:bg-white shadow-inner"
+                  placeholder="Search location (e.g. Kalyan, Pune, Nashik)..."
+                  className="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500 focus:bg-white shadow-inner"
                   autoFocus
                 />
                 {searching && (
-                  <Loader2 className="w-4 h-4 absolute right-3.5 top-3.5 text-[#38b6ff] animate-spin" />
+                  <Loader2 className="w-4 h-4 absolute right-3.5 top-3.5 text-sky-500 animate-spin" />
                 )}
               </div>
 
@@ -212,25 +174,28 @@ export const LocationSetupScreen: React.FC = () => {
                   liveResults.map((loc, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleSelectLocation(loc)}
+                      type="button"
+                      onClick={() => handleSelectManualResult(loc)}
                       className="w-full p-3 rounded-2xl hover:bg-sky-50/80 border border-slate-100 hover:border-sky-200 text-left transition-all flex items-center justify-between group cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-slate-400 group-hover:text-[#004aad] shrink-0" />
+                        <MapPin className="w-4 h-4 text-slate-400 group-hover:text-sky-600 shrink-0" />
                         <div>
-                          <div className="text-xs font-bold text-slate-800 group-hover:text-[#004aad]">{loc.city}, {loc.state}</div>
-                          <div className="text-[10px] text-slate-400">{loc.district} • {loc.country}</div>
+                          <div className="text-xs font-bold text-slate-800 group-hover:text-sky-600">
+                            {loc.city || loc.displayName}, {loc.state || loc.country}
+                          </div>
+                          <div className="text-[10px] text-slate-400">{loc.district || loc.formattedAddress}</div>
                         </div>
                       </div>
                     </button>
                   ))
                 ) : searchQuery.trim().length >= 2 && !searching ? (
                   <div className="p-4 text-center text-xs text-slate-400 font-medium">
-                    No matching location found. Try typing district or state name.
+                    No matching location found.
                   </div>
                 ) : (
                   <div className="p-4 text-center text-xs text-slate-400 font-medium">
-                    Start typing to search every city, village, or town across India.
+                    Type a city, town, village, or PIN code to search.
                   </div>
                 )}
               </div>
@@ -238,9 +203,9 @@ export const LocationSetupScreen: React.FC = () => {
           </div>
         )}
 
-        {/* Footer Info */}
+        {/* Footer */}
         <div className="text-center text-xs text-slate-400">
-          Hyperlocal GPS resolution active. You can change location anytime from the dashboard.
+          Coordinates are stored securely and can be updated anytime from your profile settings.
         </div>
       </div>
     </div>

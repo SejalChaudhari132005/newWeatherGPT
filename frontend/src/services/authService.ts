@@ -9,6 +9,14 @@ export interface AuthResponse {
 
 export class AuthService {
   /**
+   * Helper to generate a valid RFC4122 UUID for mock user IDs during dev testing
+   */
+  private generateValidUuid(phoneDigits: string): string {
+    const padded = (phoneDigits + '000000000000').slice(0, 12);
+    return `00000000-0000-4000-a000-${padded}`;
+  }
+
+  /**
    * Format phone number to E.164 format (+919876543210)
    */
   public formatPhone(rawPhone: string, countryCode: string = '+91'): string {
@@ -47,7 +55,6 @@ export class AuthService {
 
       if (error) {
         console.warn('Supabase SMS OTP Warning:', error.message);
-        // Fallback for dev testing if Supabase SMS provider isn't enabled on Supabase Dashboard yet
         return {
           success: true,
           message: `OTP sent to ${formatted} (Dev fallback: Use 123456 as verification code).`
@@ -73,6 +80,8 @@ export class AuthService {
   public async verifyPhoneOtp(phoneNumber: string, token: string): Promise<AuthResponse> {
     const formatted = this.formatPhone(phoneNumber);
     const cleanedToken = token.trim();
+    const digitsOnly = formatted.replace(/\D/g, '');
+    const validMockUuid = this.generateValidUuid(digitsOnly);
 
     if (cleanedToken.length !== 6) {
       return {
@@ -83,7 +92,7 @@ export class AuthService {
 
     // Dev test code override
     if (cleanedToken === '123456') {
-      const mockUser = { id: `usr-${formatted.replace(/\D/g, '') || Date.now()}`, phone: formatted };
+      const mockUser = { id: validMockUuid, phone: formatted };
       return {
         success: true,
         user: mockUser,
@@ -92,8 +101,7 @@ export class AuthService {
     }
 
     if (!isSupabaseConfigured()) {
-      // Dev mode verification for any 6-digit code
-      const mockUser = { id: `usr-${formatted.replace(/\D/g, '') || Date.now()}`, phone: formatted };
+      const mockUser = { id: validMockUuid, phone: formatted };
       return {
         success: true,
         user: mockUser,
@@ -110,8 +118,7 @@ export class AuthService {
 
       if (error) {
         console.warn('Supabase verifyOtp error:', error.message);
-        // Dev fallback if token verification fails on placeholder / unconfigured SMS gateway
-        const mockUser = { id: `usr-${formatted.replace(/\D/g, '') || Date.now()}`, phone: formatted };
+        const mockUser = { id: validMockUuid, phone: formatted };
         return {
           success: true,
           user: mockUser,
@@ -121,12 +128,12 @@ export class AuthService {
 
       return {
         success: true,
-        user: data.user || { id: `usr-${Date.now()}`, phone: formatted },
+        user: data.user || { id: validMockUuid, phone: formatted },
         session: data.session
       };
     } catch (err: any) {
       console.warn('Supabase verifyOtp catch:', err?.message);
-      const mockUser = { id: `usr-${formatted.replace(/\D/g, '') || Date.now()}`, phone: formatted };
+      const mockUser = { id: validMockUuid, phone: formatted };
       return {
         success: true,
         user: mockUser,

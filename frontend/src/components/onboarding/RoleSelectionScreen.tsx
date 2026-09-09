@@ -1,87 +1,66 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Check } from 'lucide-react';
-import { useProfile } from '../../hooks/useProfile';
-import { UserRole, RoleOption } from '../../types/user';
+import { Sparkles, ArrowRight, Check, User, Sprout, Anchor, ShieldAlert, Building2, Search, Plane } from 'lucide-react';
+import { useAuthContext } from '../../context/AuthContext';
+import { UserRole } from '../../types/user';
 
-export const ROLE_OPTIONS: RoleOption[] = [
+interface RoleCard {
+  id: UserRole;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+export const ROLE_CARDS: RoleCard[] = [
   {
     id: 'citizen',
     title: 'Citizen',
-    subtitle: 'Local weather, travel & daily safety info',
-    icon: '👤',
-    advisoryPreview: "You'll receive local weather, travel, and daily safety recommendations."
+    description: 'Daily weather, travel and safety information.',
+    icon: <User className="w-5 h-5 text-sky-600" />,
   },
   {
     id: 'farmer',
     title: 'Farmer',
-    subtitle: 'Crop weather, rainfall windows & irrigation advisories',
-    icon: '🌾',
-    advisoryPreview: "You'll receive crop-weather insights, rainfall windows, and irrigation advisories."
+    description: 'Crop, rainfall and field-weather guidance.',
+    icon: <Sprout className="w-5 h-5 text-emerald-600" />,
   },
   {
     id: 'fisherman',
     title: 'Fisherman',
-    subtitle: 'Marine conditions, wind, waves & safe sailing info',
-    icon: '🎣',
-    advisoryPreview: "You'll receive marine conditions, wind speeds, wave heights, and safe-sailing guidance."
+    description: 'Marine weather, wind, waves and fishing safety.',
+    icon: <Anchor className="w-5 h-5 text-cyan-600" />,
   },
   {
     id: 'disaster_manager',
     title: 'Disaster Manager',
-    subtitle: 'Early disaster warnings, flood risk & shelter routes',
-    icon: '🚨',
-    advisoryPreview: "You'll receive early flood warnings, emergency shelter routes, and risk telemetry."
-  },
-  {
-    id: 'aviation',
-    title: 'Aviation',
-    subtitle: 'Runway visibility, crosswinds & cloud ceilings',
-    icon: '✈️',
-    advisoryPreview: "You'll receive METAR crosswind data, cloud ceilings, and runway visibility reports."
+    description: 'Warnings, risk intelligence and emergency information.',
+    icon: <ShieldAlert className="w-5 h-5 text-amber-600" />,
   },
   {
     id: 'urban_planner',
     title: 'Urban Planner',
-    subtitle: 'Waterlogging risk, drainage load & microclimates',
-    icon: '🏙️',
-    advisoryPreview: "You'll receive waterlogging risk indices, storm basin telemetry, and urban heat maps."
+    description: 'Weather impact and infrastructure intelligence.',
+    icon: <Building2 className="w-5 h-5 text-indigo-600" />,
   },
   {
     id: 'researcher',
     title: 'Researcher',
-    subtitle: 'Atmospheric anomalies & decadal climate trends',
-    icon: '🔬',
-    advisoryPreview: "You'll receive raw climate anomaly datasets, grid mesh telemetry, and decadal trends."
+    description: 'Historical weather and climate analysis.',
+    icon: <Search className="w-5 h-5 text-purple-600" />,
   },
   {
-    id: 'journalist',
-    title: 'Journalist',
-    subtitle: 'Weather news alerts, disaster statistics & reports',
-    icon: '📰',
-    advisoryPreview: "You'll receive verifiable weather incident reports, IMD feeds, and storm bulletins."
+    id: 'aviation',
+    title: 'Aviation',
+    description: 'Aviation weather and atmospheric conditions.',
+    icon: <Plane className="w-5 h-5 text-blue-600" />,
   },
-  {
-    id: 'transport',
-    title: 'Transport / Logistics',
-    subtitle: 'Highway route weather, pass hazards & heavy fog warnings',
-    icon: '🚚',
-    advisoryPreview: "You'll receive highway pass visibility alerts, route rain risks, and logistics advisories."
-  },
-  {
-    id: 'other',
-    title: 'Other',
-    subtitle: 'General weather intelligence & atmospheric queries',
-    icon: '🌟',
-    advisoryPreview: "You'll receive general atmospheric weather intelligence tailored to your location."
-  }
 ];
 
 export const RoleSelectionScreen: React.FC = () => {
-  const { saveRole, profile } = useProfile();
-  const [selectedRole, setSelectedRole] = useState<UserRole>(profile?.role || 'citizen');
+  const { handleSaveRole, userProfile } = useAuthContext();
+  const [selectedRole, setSelectedRole] = useState<UserRole>(userProfile?.role || 'citizen');
 
   const handleContinue = () => {
-    saveRole(selectedRole);
+    handleSaveRole(selectedRole);
   };
 
   return (
@@ -91,34 +70,35 @@ export const RoleSelectionScreen: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-            <span>Step 2 of 3 • Experience Role</span>
+            <span>Select Your Role</span>
           </div>
 
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Choose your WeatherGPT experience</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">What best describes you?</h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            We'll personalize weather intelligence for you. Select your primary role:
+            We'll personalize WeatherGPT for your needs.
           </p>
         </div>
 
-        {/* Grid of 10 Roles */}
-        <div className="my-4 space-y-2 max-h-[55vh] sm:max-h-[380px] overflow-y-auto pr-1">
-          {ROLE_OPTIONS.map((r) => {
+        {/* List of 7 Selectable Cards */}
+        <div className="my-4 space-y-2.5 max-h-[55vh] sm:max-h-[380px] overflow-y-auto pr-1">
+          {ROLE_CARDS.map((r) => {
             const isSelected = selectedRole === r.id;
             return (
               <button
                 key={r.id}
+                type="button"
                 onClick={() => setSelectedRole(r.id)}
-                className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                className={`w-full p-4 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
                     ? 'bg-sky-50 border-sky-500 ring-2 ring-sky-500/20 shadow-sm'
                     : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-3.5">
-                  <span className="text-2xl p-2 rounded-xl bg-white shrink-0 shadow-2xs">{r.icon}</span>
+                  <span className="p-2.5 rounded-xl bg-white shrink-0 shadow-2xs border border-slate-100">{r.icon}</span>
                   <div>
                     <div className="text-sm font-extrabold text-slate-900">{r.title}</div>
-                    <div className="text-xs text-slate-500 font-medium line-clamp-1">{r.subtitle}</div>
+                    <div className="text-xs text-slate-500 font-medium">{r.description}</div>
                   </div>
                 </div>
 
@@ -137,6 +117,7 @@ export const RoleSelectionScreen: React.FC = () => {
         {/* Bottom Action */}
         <div className="pt-2">
           <button
+            type="button"
             onClick={handleContinue}
             className="w-full py-4 rounded-2xl bg-sky-600 hover:bg-sky-700 active:scale-[0.98] text-white font-extrabold text-base shadow-lg shadow-sky-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >

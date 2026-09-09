@@ -4,11 +4,9 @@ import { UIProvider, useUI } from './context/UIContext';
 import { WeatherProvider, useWeather } from './context/WeatherContext';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { LocationProvider } from './context/LocationContext';
+import { UserProvider } from './contexts/UserContext';
 
 import { MobileAppShell } from './components/layout/MobileAppShell';
-import { MobileHeroWeatherCard } from './components/dashboard/MobileHeroWeatherCard';
-import { MobileEarlyWarningsCard } from './components/dashboard/MobileEarlyWarningsCard';
-import { MobileRadarMapScreen } from './components/radar/MobileRadarMapScreen';
 import { AskWeatherGPTCard } from './components/dashboard/AskWeatherGPTCard';
 import { RoleBasedAdvisoryCard } from './components/dashboard/RoleBasedAdvisoryCard';
 import { FarmerAdvisory } from './components/roles/FarmerAdvisory';
@@ -33,16 +31,58 @@ import { AlertsPage } from './pages/AlertsPage';
 import { ClimatePage } from './pages/ClimatePage';
 import { WhatIfPage } from './pages/WhatIfPage';
 import { TravelPage } from './pages/TravelPage';
+import { MapPage } from './pages/MapPage';
 import { EmergencyPage } from './pages/EmergencyPage';
 import { Loader2 } from 'lucide-react';
 
+import { ChatPage } from './pages/ChatPage';
+import { ChatSidebar } from './components/sidebar/ChatSidebar';
+import { chatService } from './services/chatService';
+import { Conversation, ActiveNavPage } from './types/chat';
+
 const MainAppContent: React.FC = () => {
   const { activeTab, setActiveTab, emergencyMode } = useUI();
-  const { sendQueryToWeatherGPT } = useWeather();
+  const { profile } = useAuthContext();
+
+  const [conversations, setConversations] = React.useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = React.useState<string | undefined>(undefined);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [chatInitialPrompt, setChatInitialPrompt] = React.useState<string | null>(null);
+
+  const userId = profile?.user_id || 'dev_user';
+
+  const loadConversations = React.useCallback(async () => {
+    try {
+      const list = await chatService.fetchConversations(userId);
+      setConversations(list);
+    } catch (e) {
+      console.warn('[App] Failed to load conversations:', e);
+    }
+  }, [userId]);
+
+  React.useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
 
   const handleOpenChatWithPrompt = (promptText: string) => {
-    sendQueryToWeatherGPT(promptText);
+    setChatInitialPrompt(promptText);
     setActiveTab('ask');
+  };
+
+  const handleNewChat = () => {
+    setActiveConversationId(undefined);
+    setChatInitialPrompt(null);
+    setActiveTab('ask');
+  };
+
+  const handleNavPage = (page: ActiveNavPage) => {
+    if (page === 'dashboard') setActiveTab('home');
+    else if (page === 'chat') setActiveTab('ask');
+    else if (page === 'map') setActiveTab('radar');
+    else if (page === 'travel') setActiveTab('travel');
+    else if (page === 'alerts') setActiveTab('alerts');
+    else if (page === 'climate') setActiveTab('climate');
+    else if (page === 'settings' || page === 'profile') setActiveTab('home');
   };
 
   const renderActivePage = () => {
@@ -55,16 +95,39 @@ const MainAppContent: React.FC = () => {
           <DashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}
             onNavigatePage={(page) => {
-              if (page === 'map') setActiveTab('radar');
+              if (page === 'map' || page === 'radar') setActiveTab('radar');
+              else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
             }}
           />
         );
       case 'ask':
+      case 'chat':
         return (
-          <div className="p-4 space-y-4 pb-12">
-            <AskWeatherGPTCard />
-          </div>
+          <ChatPage
+            onOpenSidebar={() => setIsSidebarOpen(true)}
+            activeConversationId={activeConversationId}
+            onSelectConversation={(id) => setActiveConversationId(id)}
+            onNavigate={handleNavPage}
+            conversations={conversations}
+            onRefreshConversations={loadConversations}
+            initialPrompt={chatInitialPrompt}
+            onClearInitialPrompt={() => setChatInitialPrompt(null)}
+          />
+        );
+      case 'radar':
+        return (
+          <MapPage
+            onBack={() => setActiveTab('home')}
+            onAskGpt={handleOpenChatWithPrompt}
+          />
+        );
+      case 'travel':
+        return (
+          <TravelPage
+            onBack={() => setActiveTab('home')}
+            onAskGpt={handleOpenChatWithPrompt}
+          />
         );
       case 'advisories':
         return (
@@ -76,14 +139,10 @@ const MainAppContent: React.FC = () => {
         );
       case 'alerts':
         return <AlertsPage />;
-      case 'radar':
-        return <MobileRadarMapScreen />;
       case 'climate':
         return <ClimatePage />;
       case 'whatif':
         return <WhatIfPage />;
-      case 'travel':
-        return <TravelPage />;
       case 'emergency':
         return <EmergencyPage />;
       default:
@@ -91,7 +150,8 @@ const MainAppContent: React.FC = () => {
           <DashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}
             onNavigatePage={(page) => {
-              if (page === 'map') setActiveTab('radar');
+              if (page === 'map' || page === 'radar') setActiveTab('radar');
+              else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
             }}
           />
@@ -100,13 +160,41 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <MobileAppShell>
-      <LocationSelectorModal />
-      <VoiceModal />
-      <ExplainableAIModal />
-      <PwaInstallPrompt />
-      {renderActivePage()}
-    </MobileAppShell>
+    <>
+      <ChatSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelectConversation={(id) => setActiveConversationId(id)}
+        onNewChat={handleNewChat}
+        onRenameConversation={async (conv) => {
+          const newTitle = prompt('Enter new conversation title:', conv.title);
+          if (newTitle && newTitle.trim()) {
+            await chatService.renameConversation(conv.id, newTitle.trim(), userId);
+            loadConversations();
+          }
+        }}
+        onDeleteConversation={async (conv) => {
+          if (confirm(`Delete conversation "${conv.title}"?`)) {
+            await chatService.deleteConversation(conv.id, userId);
+            if (activeConversationId === conv.id) {
+              setActiveConversationId(undefined);
+            }
+            loadConversations();
+          }
+        }}
+        activeNavPage={activeTab === 'ask' || activeTab === 'chat' ? 'chat' : 'dashboard'}
+        onNavigate={handleNavPage}
+      />
+      <MobileAppShell>
+        <LocationSelectorModal />
+        <VoiceModal />
+        <ExplainableAIModal />
+        <PwaInstallPrompt />
+        {renderActivePage()}
+      </MobileAppShell>
+    </>
   );
 };
 
@@ -118,7 +206,7 @@ const RootRouter: React.FC = () => {
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-center">
         <div className="p-6 bg-slate-900 rounded-3xl border border-slate-800 flex flex-col items-center gap-3 text-white">
           <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
-          <span className="text-xs font-bold uppercase tracking-wider">Loading WeatherGPT Session...</span>
+          <span className="text-xs font-bold uppercase tracking-wider">Restoring WeatherGPT Session...</span>
         </div>
       </div>
     );
@@ -155,11 +243,13 @@ export function App() {
     <LanguageProvider>
       <UIProvider>
         <AuthProvider>
-          <LocationProvider>
-            <WeatherProvider>
-              <RootRouter />
-            </WeatherProvider>
-          </LocationProvider>
+          <UserProvider>
+            <LocationProvider>
+              <WeatherProvider>
+                <RootRouter />
+              </WeatherProvider>
+            </LocationProvider>
+          </UserProvider>
         </AuthProvider>
       </UIProvider>
     </LanguageProvider>

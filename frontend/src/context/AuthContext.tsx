@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, AuthStatus, OnboardingStep, UserRole } from '../types/user';
+import { UserLocation } from '../types/location';
 import { authService } from '../services/authService';
 import { profileService } from '../services/profileService';
 import { locationService } from '../services/locationService';
@@ -20,19 +21,22 @@ interface AuthContextType {
   setErrorMessage: (msg: string | null) => void;
   profile: UserProfile | null;
   userProfile: UserProfile | null;
+  refreshProfile: () => Promise<void>;
   updateProfile: (updated: Partial<UserProfile>) => Promise<void>;
   signOut: () => Promise<void>;
 
-  // Actions
+  // Onboarding & Profile Actions
   handleSendOtp: (phone: string) => Promise<boolean>;
   handleVerifyOtp: (token: string) => Promise<boolean>;
   handleResendOtp: () => Promise<void>;
   handleSaveUsername: (username: string) => Promise<void>;
   handleSaveRole: (role: UserRole) => Promise<void>;
   handleSaveLocationGps: () => Promise<boolean>;
-  handleSaveLocationManual: (cityOption: any) => Promise<void>;
+  handleSaveLocationManual: (location: UserLocation | any) => Promise<void>;
+  handleUpdateLocation: (location: UserLocation) => Promise<void>;
   handleConfirmOnboarding: () => Promise<void>;
   handleSignOut: () => Promise<void>;
+  resetToOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,15 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  const updateProfile = async (updated: Partial<UserProfile>) => {
-    if (!userId) return;
-    const finalProf = await profileService.upsertProfile({
-      user_id: userId,
-      ...updated,
-    });
-    setUserProfile(finalProf);
-  };
-
   // Timer effect for OTP resend countdown
   useEffect(() => {
     let interval: any;
@@ -67,7 +62,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [resendTimer, onboardingStep]);
 
-  // Initial Auth Check on app startup
+  const refreshProfile = async () => {
+    if (!userId) return;
+    const prof = await profileService.getProfile(userId);
+    if (prof) {
+      setUserProfile(prof);
+      if (profileService.isProfileComplete(prof)) {
+        setAuthStatus('PROFILE_COMPLETE');
+        setOnboardingStep('COMPLETE');
+      } else {
+        setAuthStatus('PROFILE_INCOMPLETE');
+      }
+    }
+  };
+
+  const updateProfile = async (updated: Partial<UserProfile>) => {
+    if (!userId) return;
+    const finalProf = await profileService.upsertProfile({
+      id: userId,
+      user_id: userId,
+      ...updated,
+    });
+    setUserProfile(finalProf);
+  };
+
+  // Initial Session & Profile Check on Application Startup
   useEffect(() => {
     const initAuth = async () => {
       setAuthStatus('LOADING');
@@ -82,33 +101,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserProfile(profile);
 
           if (profileService.isProfileComplete(profile)) {
+            console.log('[AuthContext] Supabase Session restored. Profile complete:', profile?.username, profile?.role);
             setAuthStatus('PROFILE_COMPLETE');
             setOnboardingStep('COMPLETE');
           } else {
+            console.log('[AuthContext] Supabase Session restored. Incomplete profile:', profile);
             setAuthStatus('PROFILE_INCOMPLETE');
             if (!profile?.username) setOnboardingStep('USERNAME');
             else if (!profile?.role) setOnboardingStep('ROLE');
             else setOnboardingStep('LOCATION');
           }
         } else {
-          // Check local stored session for offline dev mode
-          const localProf = localStorage.getItem('weathergpt_user_profile');
-          if (localProf) {
-            const parsed: UserProfile = JSON.parse(localProf);
-            if (profileService.isProfileComplete(parsed)) {
-              setUserId(parsed.user_id);
-              setUserProfile(parsed);
-              setAuthStatus('PROFILE_COMPLETE');
-              setOnboardingStep('COMPLETE');
-              return;
-            }
-          }
-
+          // Unauthenticated user -> Start at Welcome screen
+          console.log('[AuthContext] Unauthenticated session. Directing to Welcome screen.');
+          setUserId(null);
+          setUserProfile(null);
           setAuthStatus('UNAUTHENTICATED');
           setOnboardingStep('WELCOME');
         }
       } catch (err) {
-        console.error('Init Auth error:', err);
+        console.error('[AuthContext] Init Auth error:', err);
         setAuthStatus('UNAUTHENTICATED');
         setOnboardingStep('WELCOME');
       }
@@ -145,7 +157,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const uid = res.user.id;
       setUserId(uid);
 
-      // Check existing profile
       const existing = await profileService.getProfile(uid);
       if (existing) {
         setUserProfile(existing);
@@ -160,7 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOnboardingStep('USERNAME');
       return true;
     } else {
-      setErrorMessage(res.message || 'Verification failed.');
+      setErrorMessage(res.message || 'Verification failed. Please check the code.');
       return false;
     }
   };
@@ -176,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserId(uid);
 
     const updated = await profileService.upsertProfile({
+      id: uid,
       user_id: uid,
       phone: phoneNumber,
       username: username.trim(),
@@ -188,12 +200,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleSaveRole = async (role: UserRole) => {
     if (!userId) return;
-    const updated = await profileService.upsertProfile({
-      user_id: userId,
-      role,
-    });
-
-    setUserProfile(updated);
+    const updated = await profileService.updateRole(userId, role);
+    if (updated) {
+      setUserProfile(updated);
+    }
     setOnboardingStep('ROLE_CONFIRM');
   };
 
@@ -201,48 +211,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const coords = await locationService.getCurrentPosition();
+      const coords = await locationService.getExactGPSPosition();
+      console.log('[AuthContext] GPS coordinates:', coords);
+      
       const resolved = await locationService.resolveLocation(coords.latitude, coords.longitude, 'gps');
+      console.log('[AuthContext] Resolved location:', resolved);
 
-      if (!userId) return false;
+      if (!userId) {
+        setIsSubmitting(false);
+        return false;
+      }
 
-      const updated = await profileService.upsertProfile({
-        user_id: userId,
-        latitude: resolved.latitude,
-        longitude: resolved.longitude,
-        city: resolved.city,
-        district: resolved.district,
-        state: resolved.state,
-        country: resolved.country,
-        location_source: 'gps',
-      });
-
-      setUserProfile(updated);
+      const updated = await profileService.updateLocation(userId, resolved);
+      if (updated) {
+        setUserProfile(updated);
+      }
       setIsSubmitting(false);
       setOnboardingStep('LOCATION_CONFIRM');
       return true;
     } catch (err: any) {
       setIsSubmitting(false);
-      setErrorMessage(err.message || 'Location permission denied or timed out.');
+      setErrorMessage(err.message || 'Unable to access your location.');
       return false;
     }
   };
 
-  const handleSaveLocationManual = async (cityOption: any) => {
+  const handleSaveLocationManual = async (locationOrOption: UserLocation | any) => {
     if (!userId) return;
-    const updated = await profileService.upsertProfile({
-      user_id: userId,
-      latitude: cityOption.latitude,
-      longitude: cityOption.longitude,
-      city: cityOption.name,
-      district: cityOption.district,
-      state: cityOption.state,
-      country: cityOption.country,
-      location_source: 'manual',
-    });
+    const loc: UserLocation = {
+      latitude: locationOrOption.latitude || locationOrOption.lat,
+      longitude: locationOrOption.longitude || locationOrOption.lng,
+      city: locationOrOption.city || locationOrOption.name || null,
+      district: locationOrOption.district || locationOrOption.city || null,
+      state: locationOrOption.state || null,
+      country: locationOrOption.country || 'India',
+      postalCode: locationOrOption.postal_code || locationOrOption.pincode || null,
+      formattedAddress: locationOrOption.display_name || locationOrOption.formatted_address || null,
+      source: 'manual',
+    };
 
-    setUserProfile(updated);
+    const updated = await profileService.updateLocation(userId, loc);
+    if (updated) {
+      setUserProfile(updated);
+    }
     setOnboardingStep('LOCATION_CONFIRM');
+  };
+
+  const handleUpdateLocation = async (location: UserLocation) => {
+    if (!userId) return;
+    const updated = await profileService.updateLocation(userId, location);
+    if (updated) {
+      setUserProfile(updated);
+    }
   };
 
   const handleConfirmOnboarding = async () => {
@@ -250,6 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const finalProfile = await profileService.upsertProfile({
       ...userProfile,
+      id: userId,
       user_id: userId,
     });
 
@@ -260,6 +281,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleSignOut = async () => {
     await authService.signOut();
+    localStorage.removeItem('weathergpt_user_profile');
+    setUserProfile(null);
+    setUserId(null);
+    setAuthStatus('UNAUTHENTICATED');
+    setOnboardingStep('WELCOME');
+  };
+
+  const resetToOnboarding = () => {
     localStorage.removeItem('weathergpt_user_profile');
     setUserProfile(null);
     setUserId(null);
@@ -285,6 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setErrorMessage,
         userProfile,
         profile: userProfile,
+        refreshProfile,
         updateProfile,
         signOut: handleSignOut,
 
@@ -295,8 +325,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         handleSaveRole,
         handleSaveLocationGps,
         handleSaveLocationManual,
+        handleUpdateLocation,
         handleConfirmOnboarding,
         handleSignOut,
+        resetToOnboarding,
       }}
     >
       {children}

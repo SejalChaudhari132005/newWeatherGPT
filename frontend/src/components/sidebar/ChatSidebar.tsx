@@ -5,6 +5,8 @@ import {
   X,
   Activity,
   Map,
+  Radar,
+  Car,
   AlertTriangle,
   TrendingUp,
   Settings,
@@ -248,8 +250,23 @@ export const ChatSidebar: React.FC<Props> = ({
                   : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
-              <Map className="w-4 h-4 text-emerald-500" />
-              <span>🗺 Weather Map</span>
+              <Radar className="w-4 h-4 text-emerald-500" />
+              <span>📡 IMD Live Radar & Map</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onNavigate('travel');
+                onClose();
+              }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold cursor-pointer transition-colors ${
+                activeNavPage === 'travel'
+                  ? 'bg-sky-50 text-[#004aad]'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <Car className="w-4 h-4 text-indigo-500" />
+              <span>🚗 Travel & Route Weather</span>
             </button>
 
             <button

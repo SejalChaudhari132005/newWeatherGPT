@@ -3,37 +3,11 @@ export type UserRole =
   | 'farmer'
   | 'fisherman'
   | 'disaster_manager'
-  | 'aviation'
   | 'urban_planner'
   | 'researcher'
-  | 'journalist'
-  | 'transport'
-  | 'other';
+  | 'aviation';
 
-export interface UserProfile {
-  id?: string;
-  user_id: string;
-  username: string;
-  phone: string;
-  role: UserRole;
-  preferred_language: string;
-  latitude: number;
-  longitude: number;
-  city: string;
-  district: string;
-  state: string;
-  country: string;
-  location_source: 'gps' | 'manual';
-  created_at?: string;
-  updated_at?: string;
-}
-
-export type AuthStatus =
-  | 'LOADING'
-  | 'UNAUTHENTICATED'
-  | 'AUTHENTICATED'
-  | 'PROFILE_INCOMPLETE'
-  | 'PROFILE_COMPLETE';
+export type AuthStatus = 'LOADING' | 'UNAUTHENTICATED' | 'AUTHENTICATED' | 'PROFILE_INCOMPLETE' | 'PROFILE_COMPLETE';
 
 export type OnboardingStep =
   | 'WELCOME'
@@ -45,6 +19,27 @@ export type OnboardingStep =
   | 'LOCATION'
   | 'LOCATION_CONFIRM'
   | 'COMPLETE';
+
+export interface UserProfile {
+  id: string;
+  user_id?: string;
+  username: string;
+  phone?: string;
+  role: UserRole;
+  preferred_language?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  country?: string | null;
+  postal_code?: string | null;
+  formatted_address?: string | null;
+  location_source?: 'gps' | 'manual' | string;
+  location_updated_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface RoleOption {
   id: UserRole;

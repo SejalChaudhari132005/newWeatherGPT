@@ -1,5 +1,7 @@
 import { UserLocation } from './location';
-export type { UserLocation };
+import { IMDAlert } from './alert';
+
+export type { UserLocation, IMDAlert };
 
 export type WeatherCondition =
   | 'Sunny'
@@ -21,6 +23,8 @@ export interface WeatherLocationMeta {
   state: string;
   country: string;
   source?: string;
+  imd_station?: string;
+  imd_subdivision?: string;
 }
 
 export interface WeatherCurrent {
@@ -38,6 +42,7 @@ export interface WeatherCurrent {
   icon: string;
   weather_code: number | null;
   observed_at: string | null;
+  source?: string;
 }
 
 export interface WeatherHourlyItem {
@@ -48,6 +53,7 @@ export interface WeatherHourlyItem {
   icon: string;
   rainProb: number;
   highlight?: boolean;
+  source?: string;
 }
 
 export interface WeatherDailyItem {
@@ -60,6 +66,7 @@ export interface WeatherDailyItem {
   rainProbability: number;
   rainProb?: number;
   humidity: number;
+  source?: string;
 }
 
 export interface WeatherSourceMeta {
@@ -68,12 +75,30 @@ export interface WeatherSourceMeta {
   is_cached?: boolean;
 }
 
+export interface IMDOfficialInformation {
+  source: string;
+  status: 'available' | 'unavailable' | string;
+  station_name?: string | null;
+  station_code?: string | null;
+  district?: string | null;
+  subdivision?: string | null;
+  observed_at?: string | null;
+  temperature?: number | null;
+  humidity?: number | null;
+  rainfall_past_24h?: number | null;
+  forecast_summary?: string | null;
+  attribution?: string;
+  message?: string | null;
+}
+
 export interface WeatherGPTResponse {
   location: WeatherLocationMeta;
   current: WeatherCurrent;
   hourly: WeatherHourlyItem[];
   daily: WeatherDailyItem[];
   source: WeatherSourceMeta;
+  official_information?: IMDOfficialInformation;
+  alerts?: IMDAlert[];
 }
 
 // Legacy interfaces retained for backward compatibility with secondary components

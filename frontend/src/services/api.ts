@@ -1,14 +1,65 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+import { HealthCheckResponse, ApiErrorResponse } from '../types/api';
 
-export async function checkBackendHealth(): Promise<{ status: string; service: string; message: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/health`);
-    if (!response.ok) {
-      throw new Error(`Backend response error: ${response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.warn('[WeatherGPT API] Backend connection error:', error);
-    throw error;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+class ApiClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string = API_BASE_URL) {
+    this.baseUrl = baseUrl;
   }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    try {
+      const response = await fetch(url, { ...options, headers });
+      
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData: ApiErrorResponse = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch {
+          // If JSON parsing fails, fallback to HTTP status message
+        }
+        throw new Error(errorMessage);
+      }
+
+      return await response.json() as T;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unexpected network error occurred');
+    }
+  }
+
+  public async get<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  }
+
+  public async post<T>(endpoint: string, body?: unknown, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  public async checkHealth(): Promise<HealthCheckResponse> {
+    return this.get<HealthCheckResponse>('/api/health');
+  }
+}
+
+export const apiClient = new ApiClient();
+
+export async function checkBackendHealth(): Promise<HealthCheckResponse> {
+  return apiClient.checkHealth();
 }

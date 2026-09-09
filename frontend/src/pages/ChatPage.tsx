@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { useWeather } from '../context/WeatherContext';
+import { useLanguage } from '../context/LanguageContext';
+import { useLocation } from '../hooks/useLocation';
 import { Conversation, ChatMessage as ChatMessageType, ActiveNavPage } from '../types/chat';
 import { chatService, getSuggestedPromptsByRole } from '../services/chatService';
 import { ChatHeader } from '../components/chat/ChatHeader';
@@ -19,6 +20,8 @@ interface Props {
   onNavigate: (page: ActiveNavPage) => void;
   conversations: Conversation[];
   onRefreshConversations: () => void;
+  initialPrompt?: string | null;
+  onClearInitialPrompt?: () => void;
 }
 
 export const ChatPage: React.FC<Props> = ({
@@ -28,9 +31,12 @@ export const ChatPage: React.FC<Props> = ({
   onNavigate,
   conversations,
   onRefreshConversations,
+  initialPrompt,
+  onClearInitialPrompt,
 }) => {
   const { profile } = useAuthContext();
-  const { userLocation } = useWeather();
+  const { language } = useLanguage();
+  const { location } = useLocation();
 
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -47,11 +53,9 @@ export const ChatPage: React.FC<Props> = ({
 
   const userId = profile?.user_id || 'dev_user';
   const userRole = profile?.role || 'citizen';
-  const locationDisplay = userLocation
-    ? `${userLocation.city}, ${userLocation.state || userLocation.country}`
-    : profile?.city
-    ? `${profile.city}, ${profile.state || profile.country}`
-    : 'Nashik, Maharashtra';
+  const city = location?.city || profile?.city || '';
+  const state = location?.state || profile?.state || '';
+  const locationDisplay = city ? (state ? `${city}, ${state}` : city) : (location ? `${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)}` : 'Local Area');
 
   // Time of day greeting
   const getGreeting = () => {
@@ -96,23 +100,20 @@ export const ChatPage: React.FC<Props> = ({
     let convId = activeConversationId;
     setErrorNotice(null);
 
-    // If no active conversation, create a new one first
-    if (!convId) {
-      try {
-        const newConv = await chatService.createConversation(
-          userId,
-          userRole,
-          locationDisplay,
-          'New Conversation'
-        );
-        convId = newConv.id;
-        onSelectConversation(newConv.id);
-        onRefreshConversations();
-      } catch (err) {
-        setErrorNotice("Something went wrong while creating your chat.");
-        return;
-      }
-    }
+    // Pass user's real GPS or profile location, or undefined to trigger location request
+    const targetLocation = location ? {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      city: location.city || city || undefined,
+      district: location.district || undefined,
+      state: location.state || state || undefined,
+    } : (profile?.latitude && profile?.longitude ? {
+      latitude: profile.latitude,
+      longitude: profile.longitude,
+      city: profile.city || undefined,
+      district: undefined,
+      state: profile.state || undefined,
+    } : undefined);
 
     setIsSending(true);
     try {
@@ -121,24 +122,30 @@ export const ChatPage: React.FC<Props> = ({
         userId,
         text,
         userRole,
-        locationDisplay
+        targetLocation,
+        language
       );
 
-      setMessages((prev) => [...prev, result.userMessage]);
+      setMessages((prev) => [...prev, result.userMessage, result.assistantMessage]);
+      setIsSending(false);
 
-      // Simulate AI typing latency (600ms)
-      setTimeout(() => {
-        setMessages((prev) => [...prev, result.assistantMessage]);
-        setIsSending(false);
-        if (result.updatedTitle) {
-          onRefreshConversations();
-        }
-      }, 600);
-    } catch (err) {
-      setErrorNotice("WeatherGPT couldn't send your message. Please try again.");
+      if (!activeConversationId && result.conversationId) {
+        onSelectConversation(result.conversationId);
+      }
+      onRefreshConversations();
+    } catch (err: any) {
+      setErrorNotice(err?.message || "WeatherGPT couldn't send your message. Please try again.");
       setIsSending(false);
     }
   };
+
+  // Auto-send initial prompt if provided
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      handleSendMessage(initialPrompt.trim());
+      if (onClearInitialPrompt) onClearInitialPrompt();
+    }
+  }, [initialPrompt]);
 
   // Rename action submit
   const handleRenameSubmit = async (e: React.FormEvent) => {
@@ -161,7 +168,6 @@ export const ChatPage: React.FC<Props> = ({
   };
 
   const suggestions = getSuggestedPromptsByRole(userRole);
-  const activeConversation = conversations.find((c) => c.id === activeConversationId);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#F4F7FC] font-['Arimo'] relative">
@@ -192,7 +198,7 @@ export const ChatPage: React.FC<Props> = ({
 
         {/* --- EMPTY CHAT / WELCOME STATE --- */}
         {(!activeConversationId || (messages.length === 0 && !isLoadingMessages)) ? (
-          <div className="my-auto py-8 text-center space-y-6 animate-fadeIn">
+          <div className="my-auto py-8 text-center space-y-6 animate-fadeIn font-['Arimo']">
             {/* Logo & Welcome Banner */}
             <div className="space-y-3">
               <div className="flex justify-center">
@@ -200,18 +206,24 @@ export const ChatPage: React.FC<Props> = ({
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                {getGreeting()}, <span className="text-[#004aad]">{profile?.username || 'Friend'}</span> 👋
+                Hello, <span className="text-[#004aad]">{profile?.username || 'Friend'}</span>! 👋
               </h2>
 
-              <p className="text-sm font-extrabold text-slate-600 max-w-md mx-auto leading-relaxed">
-                What would you like to know about your weather today?
+              <p className="text-sm font-bold text-slate-600 max-w-md mx-auto leading-relaxed">
+                I'm WeatherGPT. I can help you understand the weather, forecasts, warnings and weather-related decisions for your location.
               </p>
+
+              {/* Exact Location Pill */}
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sky-50 border border-sky-200/80 text-xs font-black text-slate-800 shadow-2xs">
+                <span className="text-slate-500 font-semibold">Current location:</span>
+                <span className="text-slate-900 underline decoration-[#38b6ff]">📍 {locationDisplay}</span>
+              </div>
             </div>
 
             {/* Suggested Question Prompt Cards */}
             <div className="space-y-2 text-left max-w-lg mx-auto pt-2">
               <div className="text-[11px] font-black uppercase text-slate-400 tracking-wider px-1">
-                Suggested for {userRole.toUpperCase()}
+                Suggested Questions
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -228,13 +240,27 @@ export const ChatPage: React.FC<Props> = ({
         ) : (
           /* --- ACTIVE MESSAGES FEED --- */
           <div className="space-y-4 pb-4 flex-1">
-            {messages.map((msg) => (
-              <ChatMessage
-                key={msg.id}
-                message={msg}
-                onFollowupClick={handleSendMessage}
-              />
-            ))}
+            {messages.map((msg, idx) => {
+              // Find the prompt that generated this assistant response if regenerating
+              let prevUserQuery = '';
+              if (msg.sender === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (messages[i].sender === 'user') {
+                    prevUserQuery = messages[i].text;
+                    break;
+                  }
+                }
+              }
+
+              return (
+                <ChatMessage
+                  key={msg.id}
+                  message={msg}
+                  onFollowupClick={handleSendMessage}
+                  onRegenerate={prevUserQuery ? () => handleSendMessage(prevUserQuery) : undefined}
+                />
+              );
+            })}
 
             {isSending && <TypingIndicator />}
 
@@ -297,7 +323,7 @@ export const ChatPage: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Delete Confirmation Modal (EXACT SPEC FROM PROMPT) */}
+      {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-white rounded-3xl p-6 space-y-4 shadow-2xl border border-slate-200 text-center font-['Arimo']">

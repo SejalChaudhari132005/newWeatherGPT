@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState } from 'react';
 export type ActiveTab =
   | 'home'
   | 'ask'
+  | 'chat'
   | 'live'
   | 'radar'
   | 'alerts'
