@@ -25,6 +25,7 @@ import { QuickActions } from '../components/dashboard/QuickActions';
 import { WeatherInsightCard } from '../components/dashboard/WeatherInsightCard';
 import { WeatherConfidenceCard } from '../components/dashboard/WeatherConfidenceCard';
 import { RiskOverview } from '../components/dashboard/RiskOverview';
+import { AirQualityCard } from '../components/airquality/AirQualityCard';
 
 interface Props {
   onBack?: () => void;
@@ -275,7 +276,18 @@ export const DashboardPage: React.FC<Props> = ({
           {/* 4. Current Environmental Metrics */}
           <WeatherMetrics current={currentMetrics} />
 
-          {/* 5. Verified Risk Matrix */}
+          {/* 5. Live Air Quality Intelligence & Health Advisory */}
+          {location && (
+            <AirQualityCard
+              latitude={location.latitude}
+              longitude={location.longitude}
+              locationName={locationDisplay}
+              onOpenDetails={() => onNavigatePage && onNavigatePage('advisories')}
+              onAskGpt={handleAskGpt}
+            />
+          )}
+
+          {/* 6. Verified Risk Matrix */}
           <RiskOverview
             risks={intelligence?.risks}
             legacyRisks={fallbackMock.risks}

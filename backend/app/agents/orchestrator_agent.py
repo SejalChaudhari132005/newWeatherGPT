@@ -302,7 +302,93 @@ class OrchestratorAgent(BaseAgent):
                 "updated_title": f"{origin_name} to {dest_name} Route Weather",
             }
 
-        # 5. Fetch Verified Weather Intelligence (Standard Single-Location Flow)
+        # 5. Handle Air Quality Intelligence Query (Step 11)
+        if intent_res.intent == "AIR_QUALITY":
+            from backend.app.services.air_quality_service import air_quality_service
+            aq_res = await air_quality_service.get_current_air_quality(
+                latitude=target_lat,
+                longitude=target_lon,
+            )
+
+            loc_data = aq_res.get("location", {})
+            aq_data = aq_res.get("air_quality", {})
+            interp = aq_res.get("interpretation", {})
+
+            city_label = target_city or loc_data.get("city") or "your location"
+
+            if not aq_res.get("success") or aq_data.get("aqi") is None:
+                raw_content = f"I'm unable to retrieve the latest real-time air quality observations for {city_label} right now. Please check back shortly."
+            else:
+                aqi = aq_data.get("aqi")
+                cat_label = aq_data.get("category_label", "Moderate")
+                primary = aq_data.get("primary_pollutant_name") or "Particulate Matter (PM2.5)"
+                pm25 = aq_data.get("pm2_5")
+                pm10 = aq_data.get("pm10")
+                outdoor_adv = interp.get("outdoor_advisory", "")
+                sensitive_adv = interp.get("sensitive_group_advisory", "")
+                comb_note = interp.get("combined_weather_note")
+                trend_desc = interp.get("trend_description", "")
+
+                raw_content = (
+                    f"🌬️ **Air Quality Intelligence for {city_label}**\n\n"
+                    f"• **Air Quality Index**: **{aqi}** ({cat_label}) [{aq_data.get('aqi_scale', 'European AQI (CAMS)')}]\n"
+                    f"• **Main Pollutant of Concern**: {primary}\n"
+                    f"• **Key Pollutants**: PM2.5: **{pm25} μg/m³** | PM10: **{pm10} μg/m³**\n\n"
+                    f"👉 **Outdoor Activity**: {outdoor_adv}\n"
+                    f"👉 **Sensitive Groups**: {sensitive_adv}\n"
+                )
+                if comb_note:
+                    raw_content += f"\n🌦️ **Weather Synergy**: {comb_note}\n"
+                if trend_desc:
+                    raw_content += f"\n📈 **Trend**: {trend_desc}\n"
+
+                raw_content += f"\n*Source: {aq_res.get('source', 'Open-Meteo / CAMS')} — Model-based telemetry.*"
+
+            if target_lang != "en":
+                final_content = await language_service.translate_response(
+                    english_text=raw_content,
+                    target_language=target_lang,
+                )
+            else:
+                final_content = raw_content
+
+            total_ms = (time.perf_counter() - start_total) * 1000.0
+            msg_id = str(uuid.uuid4())
+            now_iso = datetime.now(timezone.utc).isoformat()
+
+            return {
+                "conversation_id": conversation_id or str(uuid.uuid4()),
+                "message": {
+                    "id": msg_id,
+                    "role": "assistant",
+                    "content": final_content,
+                    "created_at": now_iso,
+                },
+                "intent": "AIR_QUALITY",
+                "location": {"city": city_label, "latitude": target_lat, "longitude": target_lon},
+                "weather_used": True,
+                "sources": [
+                    {"name": "Open-Meteo Air Quality", "provider": "CAMS / ECMWF", "type": "atmospheric_composition"},
+                ],
+                "official_warning": aq_data.get("category") in ["POOR", "VERY_POOR", "EXTREMELY_POOR"],
+                "action_buttons": [
+                    {"id": "view_aqi", "label": "🌬️ View Air Quality Card", "action": "navigate_advisories"},
+                    {"id": "ask_pollutant", "label": "🔬 What is PM2.5?", "action": "What is PM2.5 and how does it affect health?"},
+                ],
+                "metadata": {
+                    "intent": "AIR_QUALITY",
+                    "location": {"city": city_label, "latitude": target_lat, "longitude": target_lon},
+                    "air_quality": aq_data,
+                    "interpretation": interp,
+                    "sources": [{"name": "Open-Meteo Air Quality", "provider": "CAMS / ECMWF"}],
+                    "confidence": {"score": 0.95, "level": "High", "label": "High"},
+                    "timings": {"total_ms": total_ms},
+                },
+                "updated_title": f"Air Quality in {city_label}" if not conversation_id else None,
+            }
+
+        # 6. Fetch Verified Weather Intelligence (Standard Single-Location Flow)
+
         t_weather_start = time.perf_counter()
         loc_meta = {"city": target_city, "state": target_state}
         intelligence = None

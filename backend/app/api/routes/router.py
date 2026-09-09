@@ -13,6 +13,7 @@ from backend.app.api.routes import (
     map as map_routes,
     imd_diagnostics,
     radar,
+    air_quality,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -31,5 +32,7 @@ api_router.include_router(route.router, tags=["Weather-Aware Route Intelligence"
 api_router.include_router(map_routes.router, tags=["Weather Map & Radar Layers"])
 api_router.include_router(imd_diagnostics.router, tags=["IMD Diagnostics"])
 api_router.include_router(radar.router, tags=["Precipitation Radar"])
+api_router.include_router(air_quality.router, tags=["Air Quality Intelligence"])
+
 
 

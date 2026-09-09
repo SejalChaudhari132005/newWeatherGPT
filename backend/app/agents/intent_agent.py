@@ -163,8 +163,14 @@ class IntentAgent(BaseAgent):
             requires_alert = True
         elif any(w in q for w in ["umbrella", "raincoat"]):
             intent = "WEATHER_ADVISORY"
-        elif any(w in q for w in ["air quality", "aqi", "pollution", "pm2.5", "pm10", "smog"]):
+        elif any(w in q for w in [
+            "air quality", "aqi", "pollution", "pm2.5", "pm2_5", "pm10", "smog",
+            "how is the air", "is the air safe", "air safe", "hawa", "हवा",
+            "clean air", "breathe", "mask", "ozone", "nitrogen dioxide", "sulfur dioxide",
+            "हवेची गुणवत्ता", "प्रदूषण"
+        ]):
             intent = "AIR_QUALITY"
+
         elif any(w in q for w in ["rain", "shower", "downpour", "precipitation", "drizzle", "monsoon", "पाऊस", "बारिश"]):
             if time_range in ["tomorrow", "tomorrow_morning", "tomorrow_evening", "weekend", "week", "tonight"]:
                 intent = "RAIN_FORECAST"

@@ -28,6 +28,7 @@ import { LocationConfirmationScreen } from './components/onboarding/LocationConf
 
 import { DashboardPage } from './pages/DashboardPage';
 import { AlertsPage } from './pages/AlertsPage';
+import { AirQualityPage } from './pages/AirQualityPage';
 import { ClimatePage } from './pages/ClimatePage';
 import { WhatIfPage } from './pages/WhatIfPage';
 import { TravelPage } from './pages/TravelPage';
@@ -98,6 +99,7 @@ const MainAppContent: React.FC = () => {
               if (page === 'map' || page === 'radar') setActiveTab('radar');
               else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
+              else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') setActiveTab('advisories');
             }}
           />
         );
@@ -130,13 +132,7 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'advisories':
-        return (
-          <div className="p-4 space-y-4 pb-12">
-            <RoleBasedAdvisoryCard />
-            <FarmerAdvisory />
-            <FisherAdvisory />
-          </div>
-        );
+        return <AirQualityPage onOpenChatWithPrompt={handleOpenChatWithPrompt} />;
       case 'alerts':
         return <AlertsPage />;
       case 'climate':
@@ -153,6 +149,7 @@ const MainAppContent: React.FC = () => {
               if (page === 'map' || page === 'radar') setActiveTab('radar');
               else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
+              else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') setActiveTab('advisories');
             }}
           />
         );
