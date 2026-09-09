@@ -160,13 +160,16 @@ async def bhashini_tts_endpoint(payload: BhashiniTTSRequest):
             gender=gender,
         )
 
+        audio_payload = res.get("audio_content") or res.get("audio_base64", "")
+
         return BhashiniTTSResponse(
             success=True,
-            audioContent=res.get("audio_base64", ""),
+            audioContent=audio_payload,
             audioFormat=res.get("audio_format", "wav"),
             language=lang_iso,
             gender=gender,
         )
+
     except Exception as e:
         logger.error(f"[BhashiniAPI] TTS error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -99,7 +99,48 @@ class OrchestratorAgent(BaseAgent):
         target_state = gps_state
         resolved_override = None
 
-        if intent_res.location_query:
+        # Multi-Role Specific Geolocation Override
+        if intent_res.icao_query:
+            from backend.app.services.aviation_weather_service import INDIAN_AIRPORTS_CATALOG
+            apt = INDIAN_AIRPORTS_CATALOG.get(intent_res.icao_query)
+            if apt:
+                target_lat = apt["latitude"]
+                target_lon = apt["longitude"]
+                target_city = apt["name"]
+                target_state = apt["state"]
+                resolved_override = {
+                    "city": target_city,
+                    "state": target_state,
+                    "latitude": target_lat,
+                    "longitude": target_lon,
+                    "icao": apt["icao"],
+                }
+        elif intent_res.harbor_query:
+            harbor_coords = {
+                "Sassoon Docks (Mumbai)": (18.9100, 72.8250, "Sassoon Docks", "Maharashtra"),
+                "Versova Harbor (Mumbai)": (19.1350, 72.8100, "Versova", "Maharashtra"),
+                "Ratnagiri Mirkarwada": (16.9800, 73.2800, "Ratnagiri", "Maharashtra"),
+                "Malpe Fishing Harbor (Karnataka)": (13.3500, 74.7000, "Malpe", "Karnataka"),
+                "Kochi Fishing Harbor (Kerala)": (9.9300, 76.2600, "Kochi", "Kerala"),
+                "Kasimedu Harbor (Chennai)": (13.1200, 80.2900, "Kasimedu, Chennai", "Tamil Nadu"),
+                "Visakhapatnam Harbor (AP)": (17.6900, 83.2900, "Visakhapatnam", "Andhra Pradesh"),
+                "Porbandar Harbor (Gujarat)": (21.6400, 69.6000, "Porbandar", "Gujarat"),
+                "Paradip Port (Odisha)": (20.2600, 86.6700, "Paradip", "Odisha"),
+                "Veraval Harbor (Gujarat)": (20.9000, 70.3600, "Veraval", "Gujarat"),
+            }
+            if intent_res.harbor_query in harbor_coords:
+                h_lat, h_lon, h_city, h_state = harbor_coords[intent_res.harbor_query]
+                target_lat = h_lat
+                target_lon = h_lon
+                target_city = h_city
+                target_state = h_state
+                resolved_override = {
+                    "city": target_city,
+                    "state": target_state,
+                    "latitude": target_lat,
+                    "longitude": target_lon,
+                }
+        elif intent_res.location_query:
             try:
                 places = await location_service.search_location(intent_res.location_query)
                 if places and len(places) > 0:
@@ -432,8 +473,15 @@ class OrchestratorAgent(BaseAgent):
                 "updated_title": None,
             }
 
-        # 5. Route through RoleRouter -> RoleAgent (CitizenAgent for Step 8)
-        active_role_agent = role_router.get_agent(user_role)
+        # 7. Route through RoleRouter -> RoleAgent (FarmerAgent, FishermanAgent, AviationAgent, CitizenAgent)
+        effective_role = user_role
+        if not effective_role or effective_role == "citizen":
+            if intent_res.detected_role:
+                effective_role = intent_res.detected_role
+            else:
+                effective_role = "citizen"
+
+        active_role_agent = role_router.get_agent(effective_role)
         chat_agent_result = await active_role_agent.generate_chat_context(
             intelligence=intelligence,
             query=normalized_query,
@@ -445,7 +493,7 @@ class OrchestratorAgent(BaseAgent):
         raw_content = chat_agent_result["content"]
         structured_context = weather_context_service.build_structured_context(intelligence)
 
-        # 5b. Multilingual Translation: Translate response to target Indian language
+        # 7b. Multilingual Translation: Translate response to target Indian language
         if target_lang != "en":
             final_content = await language_service.translate_response(
                 english_text=raw_content,
@@ -458,10 +506,44 @@ class OrchestratorAgent(BaseAgent):
         total_ms = (time.perf_counter() - start_total) * 1000.0
         has_warning = bool(intelligence.alerts and len(intelligence.alerts) > 0)
 
-        # 6. Assemble Comprehensive Metadata
+        # 8. Dynamic Role-Specific Action Buttons
+        canonical_role = (effective_role or "citizen").lower()
+        action_buttons: List[Dict[str, str]] = []
+        if canonical_role in ["farmer", "agriculture", "farm", "krishi"]:
+            action_buttons = [
+                {"id": "view_farm", "label": "🌾 Open My Farm Dashboard", "action": "navigate_farmer"},
+                {"id": "spray_risk", "label": "🧪 Check Spraying Window", "action": "Should I spray pesticide tomorrow morning?"},
+                {"id": "irrigation", "label": "💧 Irrigation Need", "action": "Is irrigation recommended today for my field?"},
+            ]
+        elif canonical_role in ["fisher", "fisherman", "marine", "sea"]:
+            action_buttons = [
+                {"id": "view_sea", "label": "🎣 Open My Sea Dashboard", "action": "navigate_fisher"},
+                {"id": "return_time", "label": "⏱️ Check Return Deadline", "action": "When must I return back to harbor?"},
+                {"id": "tide_curve", "label": "🌊 Tide & Sea State", "action": "What are the tide timings and wave heights today?"},
+            ]
+        elif canonical_role in ["aviation", "pilot", "flight", "dispatcher"]:
+            action_buttons = [
+                {"id": "view_aviation", "label": "✈️ Open Flight Ops Dashboard", "action": "navigate_aviation"},
+                {"id": "crosswind", "label": "💨 Runway Crosswind", "action": f"Calculate crosswind for active runway at {target_city or 'airport'}"},
+                {"id": "metar_taf", "label": "📑 Decode METAR/TAF", "action": f"Decode METAR for {intent_res.icao_query or 'current airport'}"},
+            ]
+        else:
+            action_buttons = [
+                {"id": "hourly", "label": "⏱️ Hourly Forecast", "action": f"What is the hourly forecast for {intelligence.location.city}?"},
+                {"id": "air_quality", "label": "🌬️ Check Air Quality", "action": f"How is the air quality in {intelligence.location.city}?"},
+                {"id": "travel", "label": "🚗 Route Weather", "action": f"Drive from {intelligence.location.city} to Pune"},
+            ]
+
+        # 9. Assemble Comprehensive Metadata
         metadata = {
             "intent": intent_res.intent,
             "time_range": intent_res.time_range,
+            "role": {
+                "requested": user_role,
+                "detected": intent_res.detected_role,
+                "effective": effective_role,
+                "agent_name": active_role_agent.role_name,
+            },
             "language": {
                 "detected_input": detected_lang,
                 "target_language": target_lang,
@@ -509,19 +591,19 @@ class OrchestratorAgent(BaseAgent):
 
         # Structured logging per Rule 28
         logger.info(
-            f"[ChatPipeline] req_id={request_id} user_id={user_id} intent={intent_res.intent} "
+            f"[ChatPipeline] req_id={request_id} user_id={user_id} intent={intent_res.intent} role={effective_role} "
             f"location='{intelligence.location.city}, {intelligence.location.state}' sources={chat_agent_result.get('sources', ['Open-Meteo'])} "
             f"weather_fetch_ms={weather_ms:.1f} groq_latency_ms={chat_agent_result.get('llm_latency_ms', 0.0):.1f} "
             f"total_latency_ms={total_ms:.1f} status={'SUCCESS' if not chat_agent_result.get('llm_failed') else 'DEGRADED_FALLBACK'}"
         )
 
-        # 7. Persist Conversation & Messages
+        # 10. Persist Conversation & Messages
         conv_record = await conversation_service.get_or_create_conversation(
             conversation_id=conversation_id,
             user_id=user_id,
             initial_query=query,
             location_name=intelligence.location.city,
-            role=user_role
+            role=effective_role
         )
         active_conv_id = conv_record["id"]
         msg_id = str(uuid.uuid4())
@@ -532,7 +614,7 @@ class OrchestratorAgent(BaseAgent):
             conversation_id=active_conv_id,
             role="user",
             content=query,
-            metadata={"location": user_gps},
+            metadata={"location": user_gps, "role": effective_role},
             user_id=user_id
         )
 
@@ -563,6 +645,7 @@ class OrchestratorAgent(BaseAgent):
             "weather_used": True,
             "sources": chat_agent_result.get("sources", ["Open-Meteo"]),
             "official_warning": has_warning,
+            "action_buttons": action_buttons,
             "metadata": metadata,
             "weather_context": structured_context,
             "updated_title": conv_record.get("title"),
@@ -570,3 +653,4 @@ class OrchestratorAgent(BaseAgent):
 
 
 orchestrator_agent = OrchestratorAgent()
+
