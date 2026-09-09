@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { bhashiniVoiceService } from '../services/bhashiniVoiceService';
 
 export function useVoice(onTranscriptResult?: (text: string) => void) {
   const [isListening, setIsListening] = useState<boolean>(false);
@@ -69,26 +70,36 @@ export function useVoice(onTranscriptResult?: (text: string) => void) {
   }, [transcript, onTranscriptResult]);
 
   const speakText = useCallback((text: string, lang: string = 'en-US') => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel(); // Stop any previous speech
+    if (!text || !text.trim()) return;
 
-    const cleanText = text.replace(/[*#_`]/g, ''); // strip markdown chars
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = lang;
-    utterance.rate = 1.0;
+    // Map language tags like "mr-IN" to "mr"
+    let isoLang = 'en';
+    if (lang.startsWith('mr')) isoLang = 'mr';
+    else if (lang.startsWith('hi')) isoLang = 'hi';
+    else if (lang.startsWith('ta')) isoLang = 'ta';
+    else if (lang.startsWith('te')) isoLang = 'te';
+    else if (lang.startsWith('kn')) isoLang = 'kn';
+    else if (lang.startsWith('gu')) isoLang = 'gu';
+    else if (lang.startsWith('bn')) isoLang = 'bn';
+    else if (lang.startsWith('ml')) isoLang = 'ml';
+    else if (lang.startsWith('pa')) isoLang = 'pa';
+    else if (lang.startsWith('or')) isoLang = 'or';
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
+    bhashiniVoiceService.speakText(
+      text,
+      isoLang,
+      () => setIsSpeaking(true),
+      () => setIsSpeaking(false),
+      (err) => {
+        console.warn('[useVoice] TTS Error:', err);
+        setIsSpeaking(false);
+      }
+    );
   }, []);
 
   const stopSpeaking = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+    bhashiniVoiceService.stopSpeaking();
+    setIsSpeaking(false);
   }, []);
 
   return {
@@ -101,3 +112,4 @@ export function useVoice(onTranscriptResult?: (text: string) => void) {
     isSpeaking
   };
 }
+

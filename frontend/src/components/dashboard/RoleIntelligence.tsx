@@ -6,9 +6,10 @@ interface Props {
   intelligence: RoleIntelligenceDetail;
   roleTitle: string;
   onAskGpt: (promptText: string) => void;
+  onOpenRoleDashboard?: () => void;
 }
 
-export const RoleIntelligence: React.FC<Props> = ({ intelligence, roleTitle, onAskGpt }) => {
+export const RoleIntelligence: React.FC<Props> = ({ intelligence, roleTitle, onAskGpt, onOpenRoleDashboard }) => {
   const getStatusBadge = (status: 'good' | 'warning' | 'critical') => {
     switch (status) {
       case 'critical':
@@ -64,13 +65,25 @@ export const RoleIntelligence: React.FC<Props> = ({ intelligence, roleTitle, onA
           </div>
         </div>
 
-        <button
-          onClick={() => onAskGpt(`Provide a detailed ${roleTitle} weather advisory for ${intelligence.heading}`)}
-          className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-[#004aad] hover:bg-[#003882] text-white font-extrabold text-[11px] shadow-sm flex items-center justify-center gap-1 shrink-0 cursor-pointer active:scale-98"
-        >
-          <span>Ask WeatherGPT</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+          {onOpenRoleDashboard && (
+            <button
+              onClick={onOpenRoleDashboard}
+              className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] shadow-sm flex items-center justify-center gap-1 shrink-0 cursor-pointer active:scale-98"
+            >
+              <span>🌾 Open {roleTitle} Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            onClick={() => onAskGpt(`Provide a detailed ${roleTitle} weather advisory for ${intelligence.heading}`)}
+            className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-[#004aad] hover:bg-[#003882] text-white font-extrabold text-[11px] shadow-sm flex items-center justify-center gap-1 shrink-0 cursor-pointer active:scale-98"
+          >
+            <span>Ask WeatherGPT</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

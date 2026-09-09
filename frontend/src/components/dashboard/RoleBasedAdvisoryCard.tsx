@@ -27,10 +27,28 @@ export const RoleBasedAdvisoryCard: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setActiveTab('advisories')}
-          className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer shrink-0"
+          onClick={() => {
+            if (activeRole.toLowerCase() === 'farmer') {
+              setActiveTab('farmer');
+            } else if (activeRole.toLowerCase() === 'fisher') {
+              setActiveTab('fisher');
+            } else if (activeRole.toLowerCase() === 'aviation') {
+              setActiveTab('aviation');
+            } else {
+              setActiveTab('advisories');
+            }
+          }}
+          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer shrink-0"
         >
-          <span>All Advisories</span>
+          <span>
+            {activeRole.toLowerCase() === 'farmer'
+              ? '🌾 My Farm'
+              : activeRole.toLowerCase() === 'fisher'
+              ? '🎣 My Sea'
+              : activeRole.toLowerCase() === 'aviation'
+              ? '✈️ My Operations'
+              : 'All Advisories'}
+          </span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -39,13 +57,21 @@ export const RoleBasedAdvisoryCard: React.FC = () => {
       <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2.5 overflow-x-auto snap-x snap-mandatory py-1 no-scrollbar">
         {roles.map((r) => {
           const Icon = r.icon;
-          const isSelected = activeRole === r.id;
+          const isSelected = activeRole.toLowerCase() === r.id.toLowerCase();
           return (
             <button
               key={r.id}
               onClick={() => {
                 setActiveRole(r.id);
-                if (r.id === 'Farmer' || r.id === 'Fisher' || r.id === 'Disaster Manager') {
+                if (r.id === 'Farmer') {
+                  setActiveTab('farmer');
+                } else if (r.id === 'Fisher') {
+                  setActiveTab('fisher');
+                } else if (r.id === 'Aviation') {
+                  setActiveTab('aviation');
+                } else if (r.id === 'Citizen') {
+                  setActiveTab('home');
+                } else if (r.id === 'Disaster Manager') {
                   setActiveTab('advisories');
                 }
               }}

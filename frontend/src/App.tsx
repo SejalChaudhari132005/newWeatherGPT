@@ -27,6 +27,9 @@ import { LocationSetupScreen } from './components/onboarding/LocationSetupScreen
 import { LocationConfirmationScreen } from './components/onboarding/LocationConfirmationScreen';
 
 import { DashboardPage } from './pages/DashboardPage';
+import { FarmerDashboardPage } from './pages/FarmerDashboardPage';
+import { FisherDashboardPage } from './pages/FisherDashboardPage';
+import { AviationDashboardPage } from './pages/AviationDashboardPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { AirQualityPage } from './pages/AirQualityPage';
 import { ClimatePage } from './pages/ClimatePage';
@@ -76,6 +79,8 @@ const MainAppContent: React.FC = () => {
     setActiveTab('ask');
   };
 
+  const { activeRole, setActiveRole } = useWeather();
+
   const handleNavPage = (page: ActiveNavPage) => {
     if (page === 'dashboard') setActiveTab('home');
     else if (page === 'chat') setActiveTab('ask');
@@ -96,12 +101,30 @@ const MainAppContent: React.FC = () => {
           <DashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}
             onNavigatePage={(page) => {
-              if (page === 'map' || page === 'radar') setActiveTab('radar');
+              if (page === 'home' || page === 'live') setActiveTab('home');
+              else if (page === 'map' || page === 'radar') setActiveTab('radar');
               else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
-              else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') setActiveTab('advisories');
+              else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') {
+                if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+                  setActiveTab('farmer');
+                } else if (profile?.role?.toLowerCase() === 'fisher' || activeRole?.toLowerCase() === 'fisher') {
+                  setActiveTab('fisher');
+                } else if (profile?.role?.toLowerCase() === 'aviation' || activeRole?.toLowerCase() === 'aviation') {
+                  setActiveTab('aviation');
+                } else {
+                  setActiveTab('advisories');
+                }
+              } else if (page === 'farmer') {
+                setActiveTab('farmer');
+              } else if (page === 'fisher') {
+                setActiveTab('fisher');
+              } else if (page === 'aviation') {
+                setActiveTab('aviation');
+              }
             }}
           />
+
         );
       case 'ask':
       case 'chat':
@@ -132,7 +155,50 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'advisories':
+        if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+          return (
+            <FarmerDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
+            />
+          );
+        } else if (profile?.role?.toLowerCase() === 'fisher' || activeRole?.toLowerCase() === 'fisher') {
+          return (
+            <FisherDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
+            />
+          );
+        } else if (profile?.role?.toLowerCase() === 'aviation' || activeRole?.toLowerCase() === 'aviation') {
+          return (
+            <AviationDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
+            />
+          );
+        }
         return <AirQualityPage onOpenChatWithPrompt={handleOpenChatWithPrompt} />;
+      case 'farmer':
+        return (
+          <FarmerDashboardPage
+            onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            onBack={() => setActiveTab('home')}
+          />
+        );
+      case 'fisher':
+        return (
+          <FisherDashboardPage
+            onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            onBack={() => setActiveTab('home')}
+          />
+        );
+      case 'aviation':
+        return (
+          <AviationDashboardPage
+            onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            onBack={() => setActiveTab('home')}
+          />
+        );
       case 'alerts':
         return <AlertsPage />;
       case 'climate':
@@ -146,12 +212,30 @@ const MainAppContent: React.FC = () => {
           <DashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}
             onNavigatePage={(page) => {
-              if (page === 'map' || page === 'radar') setActiveTab('radar');
+              if (page === 'home' || page === 'live') setActiveTab('home');
+              else if (page === 'map' || page === 'radar') setActiveTab('radar');
               else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
-              else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') setActiveTab('advisories');
+              else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') {
+                if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+                  setActiveTab('farmer');
+                } else if (profile?.role?.toLowerCase() === 'fisher' || activeRole?.toLowerCase() === 'fisher') {
+                  setActiveTab('fisher');
+                } else if (profile?.role?.toLowerCase() === 'aviation' || activeRole?.toLowerCase() === 'aviation') {
+                  setActiveTab('aviation');
+                } else {
+                  setActiveTab('advisories');
+                }
+              } else if (page === 'farmer') {
+                setActiveTab('farmer');
+              } else if (page === 'fisher') {
+                setActiveTab('fisher');
+              } else if (page === 'aviation') {
+                setActiveTab('aviation');
+              }
             }}
           />
+
         );
     }
   };

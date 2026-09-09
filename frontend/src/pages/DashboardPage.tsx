@@ -26,6 +26,10 @@ import { WeatherInsightCard } from '../components/dashboard/WeatherInsightCard';
 import { WeatherConfidenceCard } from '../components/dashboard/WeatherConfidenceCard';
 import { RiskOverview } from '../components/dashboard/RiskOverview';
 import { AirQualityCard } from '../components/airquality/AirQualityCard';
+import { RoleBasedAdvisoryCard } from '../components/dashboard/RoleBasedAdvisoryCard';
+import { RoleDashboardSwitcher } from '../components/roles/RoleDashboardSwitcher';
+import { useWeather } from '../context/WeatherContext';
+import { Sprout, ArrowRight, Sparkles } from 'lucide-react';
 
 interface Props {
   onBack?: () => void;
@@ -41,8 +45,10 @@ export const DashboardPage: React.FC<Props> = ({
   const { location, openSelector } = useLocation();
   const { profile } = useAuthContext();
   const { language, setLanguage } = useLanguage();
+  const { activeRole } = useWeather();
 
-  const role = (profile?.role || 'citizen').toLowerCase();
+  const role = (profile?.role || activeRole || 'citizen').toLowerCase();
+  const isFarmerRole = role === 'farmer' || activeRole === 'Farmer';
 
   // Location display strictly from coordinates/geocoding
   const city = location?.city || intelligence?.location?.city || '';
@@ -248,6 +254,16 @@ export const DashboardPage: React.FC<Props> = ({
         </div>
       ) : (
         <>
+          {/* Global Role Dashboard Switcher Bar */}
+          <div className="space-y-2">
+            <RoleDashboardSwitcher
+              currentDashboard="home"
+              onNavigate={(tab) => {
+                if (onNavigatePage) onNavigatePage(tab);
+              }}
+            />
+          </div>
+
           {/* 1. Location-Aware Hero (Current Weather) */}
           {heroWeatherData && (
             <WeatherHero
@@ -257,6 +273,7 @@ export const DashboardPage: React.FC<Props> = ({
               onAskGpt={handleAskGpt}
             />
           )}
+
 
           {/* 2. Deterministic Weather Insights Card */}
           {intelligence?.insights && intelligence.insights.length > 0 && (
@@ -314,13 +331,18 @@ export const DashboardPage: React.FC<Props> = ({
             onOpenFullMap={() => onNavigatePage && onNavigatePage('map')}
           />
 
-          {/* 10. Role Intelligence & Quick Actions */}
-          <RoleIntelligence
-            intelligence={roleIntelligence}
-            roleTitle={role.replace('_', ' ').toUpperCase()}
-            onAskGpt={handleAskGpt}
+          {/* 10. Role Decision Workspace Quick Access (for Farmer/Fisher/Aviation) */}
+          <RoleDashboardSwitcher
+            currentDashboard="home"
+            variant="cards"
+            onNavigate={(tab) => {
+              if (onNavigatePage) onNavigatePage(tab);
+            }}
           />
+
           <QuickActions role={role} locationName={locationDisplay} onAskGpt={handleAskGpt} />
+
+
 
           {/* 11. Data Provenance & Official IMD Attribution Card */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 font-['Arimo']">

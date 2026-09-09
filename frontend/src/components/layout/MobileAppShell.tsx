@@ -69,7 +69,7 @@ export const MobileAppShell: React.FC<{ children: React.ReactNode }> = ({ childr
         </div>
 
         {/* Scrollable Main Mobile Content Body */}
-        <div className="flex-1 overflow-y-auto relative pb-20">
+        <div className="flex-1 overflow-y-auto relative pb-28">
           {children}
         </div>
 

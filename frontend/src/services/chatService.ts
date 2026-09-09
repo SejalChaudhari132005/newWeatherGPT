@@ -45,44 +45,95 @@ export const getSuggestedPromptsByRole = (role: string): PromptSuggestion[] => {
 export class ChatService {
   /**
    * Sends a user query to the FastAPI OrchestratorAgent and receives verified intelligence.
+   * Supports both positional parameters and an options object.
    */
   async sendMessage(
-    conversationId: string | undefined,
-    userId: string,
-    content: string,
-    role: string,
-    location?: {
+    conversationIdOrOptions:
+      | string
+      | undefined
+      | {
+          conversationId?: string;
+          conversation_id?: string;
+          userId?: string;
+          user_id?: string;
+          message?: string;
+          content?: string;
+          role?: string;
+          userRole?: string;
+          location?: {
+            latitude: number;
+            longitude: number;
+            city?: string | null;
+            district?: string | null;
+            state?: string | null;
+          } | null;
+          language?: string;
+        },
+    userIdArg?: string,
+    contentArg?: string,
+    roleArg?: string,
+    locationArg?: {
       latitude: number;
       longitude: number;
       city?: string | null;
       district?: string | null;
       state?: string | null;
     } | null,
-    language?: string
-  ): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage; updatedTitle?: string; conversationId: string }> {
+    languageArg?: string
+  ): Promise<{
+    userMessage: ChatMessage;
+    assistantMessage: ChatMessage;
+    updatedTitle?: string;
+    conversationId: string;
+    message: string;
+    text: string;
+  }> {
+    let convId: string | undefined;
+    let uid: string;
+    let text: string;
+    let userRole: string;
+    let loc: any = null;
+    let lang: string | undefined;
+
+    if (typeof conversationIdOrOptions === 'object' && conversationIdOrOptions !== null) {
+      convId = conversationIdOrOptions.conversationId || conversationIdOrOptions.conversation_id;
+      uid = conversationIdOrOptions.userId || conversationIdOrOptions.user_id || 'anonymous';
+      text = conversationIdOrOptions.message || conversationIdOrOptions.content || '';
+      userRole = conversationIdOrOptions.role || conversationIdOrOptions.userRole || 'citizen';
+      loc = conversationIdOrOptions.location || null;
+      lang = conversationIdOrOptions.language;
+    } else {
+      convId = conversationIdOrOptions;
+      uid = userIdArg || 'anonymous';
+      text = contentArg || '';
+      userRole = roleArg || 'citizen';
+      loc = locationArg || null;
+      lang = languageArg;
+    }
+
     const userMsgId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `msg_u_${Date.now()}`;
     const userMessage: ChatMessage = {
       id: userMsgId,
-      conversationId,
-      userId,
+      conversationId: convId,
+      userId: uid,
       sender: 'user',
-      text: content,
+      text: text,
       timestamp: new Date().toISOString(),
     };
 
     const payload = {
-      conversation_id: conversationId || null,
-      message: content,
-      user_id: userId || 'anonymous',
-      role: role || 'citizen',
-      language: language || null,
-      location: location
+      conversation_id: convId || null,
+      message: text,
+      user_id: uid || 'anonymous',
+      role: userRole || 'citizen',
+      language: lang || null,
+      location: loc
         ? {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            city: location.city || null,
-            district: location.district || null,
-            state: location.state || null,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+            city: loc.city || null,
+            district: loc.district || null,
+            state: loc.state || null,
           }
         : null,
     };
@@ -100,13 +151,14 @@ export class ChatService {
 
     const data = await response.json();
     const assistantMsgId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `msg_a_${Date.now()}`;
+    const assistantContent = data.message?.content || (typeof data.message === 'string' ? data.message : '');
 
     const assistantMessage: ChatMessage = {
       id: assistantMsgId,
       conversationId: data.conversation_id,
-      userId,
+      userId: uid,
       sender: 'assistant',
-      text: data.message.content,
+      text: assistantContent,
       timestamp: new Date().toISOString(),
       metadata: data.metadata,
     };
@@ -116,6 +168,8 @@ export class ChatService {
       assistantMessage,
       updatedTitle: data.updated_title,
       conversationId: data.conversation_id,
+      message: assistantContent,
+      text: assistantContent,
     };
   }
 

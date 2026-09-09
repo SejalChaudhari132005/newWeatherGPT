@@ -7,6 +7,7 @@ import { locationService } from '../services/locationService';
 import { weatherService } from '../services/weatherService';
 import { forecastService } from '../services/forecastService';
 import { MOCK_CURRENT_WEATHER, MOCK_HOURLY_FORECAST, MOCK_DAILY_FORECAST, MOCK_HYPERLOCAL_RISKS } from '../data/mockWeather';
+import { useAuthContext } from './AuthContext';
 
 interface WeatherContextType {
   userLocation: UserLocation | null;
@@ -31,6 +32,7 @@ interface WeatherContextType {
 const WeatherContext = createContext<WeatherContextType | undefined>(undefined);
 
 export const WeatherProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { userProfile } = useAuthContext();
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationLoading, setLocationLoading] = useState<boolean>(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -41,6 +43,20 @@ export const WeatherProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [sevenDayForecast, setSevenDayForecast] = useState<DailyForecast[]>(MOCK_DAILY_FORECAST);
   const [hyperlocalRisks, setHyperlocalRisks] = useState<HyperlocalRisk[]>(MOCK_HYPERLOCAL_RISKS);
   const [activeRole, setActiveRole] = useState<UserRole>('Citizen');
+
+  // Synchronize activeRole whenever userProfile changes
+  useEffect(() => {
+    if (userProfile?.role) {
+      const r = userProfile.role.toLowerCase();
+      if (r === 'farmer') setActiveRole('Farmer');
+      else if (r === 'fisherman') setActiveRole('Fisher');
+      else if (r === 'disaster_manager') setActiveRole('Disaster Manager');
+      else if (r === 'aviation') setActiveRole('Aviation');
+      else if (r === 'urban_planner') setActiveRole('Urban Planner');
+      else if (r === 'researcher') setActiveRole('Researcher');
+      else setActiveRole('Citizen');
+    }
+  }, [userProfile?.role]);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {

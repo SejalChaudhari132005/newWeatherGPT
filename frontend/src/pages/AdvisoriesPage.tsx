@@ -1,5 +1,4 @@
-import React from 'react';
-import { FarmerAdvisory } from '../components/roles/FarmerAdvisory';
+import { FarmerDashboardPage } from './FarmerDashboardPage';
 import { FisherAdvisory } from '../components/roles/FisherAdvisory';
 import { AviationDisasterAdvisory } from '../components/roles/AviationDisasterAdvisory';
 import { RoleBasedAdvisoryCard } from '../components/dashboard/RoleBasedAdvisoryCard';
@@ -7,6 +6,10 @@ import { useWeather } from '../context/WeatherContext';
 
 export const AdvisoriesPage: React.FC = () => {
   const { activeRole } = useWeather();
+
+  if (activeRole === 'Farmer') {
+    return <FarmerDashboardPage />;
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -17,7 +20,6 @@ export const AdvisoriesPage: React.FC = () => {
 
       <RoleBasedAdvisoryCard />
 
-      <FarmerAdvisory />
       <FisherAdvisory />
       <AviationDisasterAdvisory />
     </div>
