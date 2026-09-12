@@ -121,8 +121,64 @@ export const FishermanHeroCard: React.FC<FishermanHeroCardProps> = ({
         </span>
       </div>
 
+      {/* Harbor Location & Departure Control Bar (Placed ABOVE the image) */}
+      <div className="p-2.5 sm:p-3 bg-[#F8FAFC] border-b border-[#CBD5E1] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="space-y-1 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-[#FF9933] shrink-0" />
+            <div className="relative inline-block w-full max-w-[280px]">
+              <select
+                value={harbor.name}
+                onChange={(e) => {
+                  const found = harborsList.find((h) => h.name === e.target.value);
+                  if (found) onSelectHarbor(found);
+                }}
+                className="w-full bg-white text-[#17365D] font-black text-xs py-1.5 px-2.5 pr-6 rounded-xs border border-[#CBD5E1] outline-none cursor-pointer appearance-none truncate hover:border-[#FF9933] transition-all shadow-2xs"
+              >
+                {harborsList.map((h) => (
+                  <option key={h.name} value={h.name} className="bg-white text-slate-900 font-bold">
+                    {h.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
+          <div className="text-[10px] text-[#5B6770] font-mono pl-5.5">
+            Lat: {harbor.lat.toFixed(4)}°N, Lon: {harbor.lon.toFixed(4)}°E • {harbor.state}
+          </div>
+        </div>
+
+        {/* Departure Selector & Live Time */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 text-right border-t sm:border-t-0 border-[#E2E8F0] pt-2 sm:pt-0">
+          <div className="flex items-center gap-1 bg-white px-2.5 py-1 rounded-xs border border-[#CBD5E1] text-[11px] font-bold shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-[#FF9933]" />
+            <span className="text-[#5B6770] text-[10px] uppercase font-bold">DEPART:</span>
+            <select
+              value={departureTime}
+              onChange={(e) => onSelectDeparture(e.target.value)}
+              className="bg-transparent text-[#17365D] font-black outline-none cursor-pointer text-xs"
+            >
+              {departureTimesList.map((t) => (
+                <option key={t} value={t} className="bg-white text-slate-900">
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="text-[10px] text-[#5B6770] font-mono shrink-0 pl-1">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              {formattedDateTime || 'Live'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Visual Image Container with Telemetry Overlay */}
-      <div className="relative min-h-[280px] sm:min-h-[320px] bg-slate-900 overflow-hidden flex flex-col justify-between">
+      <div className="relative min-h-[260px] sm:min-h-[300px] bg-slate-900 overflow-hidden flex flex-col justify-end">
         {/* Background Photo (Uploaded Fishing Boat & Harbor Image) */}
         {!imgError && (
           <img
@@ -134,65 +190,7 @@ export const FishermanHeroCard: React.FC<FishermanHeroCardProps> = ({
         )}
 
         {/* Transparent Gradient Scrim */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/30 pointer-events-none" />
-
-        {/* Top Overlay: Harbor Location Selector & Live Timestamp */}
-        <div className="relative z-10 p-2.5 sm:p-4 text-white">
-          <div className="bg-black/60 backdrop-blur-md rounded-md p-2.5 border border-white/15 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
-            <div className="space-y-1 min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-[#FF9933] shrink-0" />
-                <div className="relative inline-block w-full max-w-[240px] sm:max-w-[280px]">
-                  <select
-                    value={harbor.name}
-                    onChange={(e) => {
-                      const found = harborsList.find((h) => h.name === e.target.value);
-                      if (found) onSelectHarbor(found);
-                    }}
-                    className="w-full bg-white/15 text-white font-bold text-xs py-1 px-2.5 pr-6 rounded-sm border border-white/20 outline-none cursor-pointer appearance-none truncate hover:bg-white/25 transition-all"
-                  >
-                    {harborsList.map((h) => (
-                      <option key={h.name} value={h.name} className="bg-slate-900 text-white font-normal">
-                        {h.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-white/80 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="text-[9px] sm:text-[10px] text-white/80 font-mono pl-5.5 drop-shadow-xs">
-                Lat: {harbor.lat.toFixed(4)}°N, Lon: {harbor.lon.toFixed(4)}°E • {harbor.state}
-              </div>
-            </div>
-
-            {/* Departure Selector & Live Time */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 text-right border-t sm:border-t-0 border-white/10 pt-1.5 sm:pt-0">
-              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-sm border border-white/15 text-[10px] font-bold">
-                <Clock className="w-3 h-3 text-[#FF9933]" />
-                <span className="text-white/70">DEPART:</span>
-                <select
-                  value={departureTime}
-                  onChange={(e) => onSelectDeparture(e.target.value)}
-                  className="bg-transparent text-white font-black outline-none cursor-pointer text-[10px]"
-                >
-                  {departureTimesList.map((t) => (
-                    <option key={t} value={t} className="bg-slate-900 text-white">
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="text-[9px] sm:text-[10px] text-white/90 font-mono shrink-0 pl-2">
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  {formattedDateTime || 'Live'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent pointer-events-none" />
 
         {/* Bottom Overlay: Primary Safe-to-Sail Indicator */}
         <div className="relative z-10 p-2.5 sm:p-4 text-white">
