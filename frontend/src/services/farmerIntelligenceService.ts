@@ -7,19 +7,37 @@ import { apiClient } from './api';
 import { FarmerDecisionResponse, FarmerDecisionData } from '../types/farmerIntelligence';
 
 class FarmerIntelligenceService {
-  public async getFarmerDecisions(params: {
-    latitude: number;
-    longitude: number;
-    crop?: string;
-    stage?: string;
-    plannedSprayHour?: number;
-  }): Promise<FarmerDecisionData> {
+  public async getFarmerDecisions(
+    arg1: number | { latitude: number; longitude: number; crop?: string; stage?: string; plannedSprayHour?: number },
+    arg2?: number,
+    arg3?: string,
+    arg4?: string
+  ): Promise<FarmerDecisionData> {
+    let lat = 19.2437;
+    let lon = 73.1355;
+    let crop = 'soybean';
+    let stage = 'flowering';
+    let plannedSprayHour = 8;
+
+    if (typeof arg1 === 'object' && arg1 !== null) {
+      lat = arg1.latitude ?? lat;
+      lon = arg1.longitude ?? lon;
+      crop = arg1.crop ?? crop;
+      stage = arg1.stage ?? stage;
+      plannedSprayHour = arg1.plannedSprayHour ?? plannedSprayHour;
+    } else if (typeof arg1 === 'number') {
+      lat = arg1;
+      lon = typeof arg2 === 'number' ? arg2 : lon;
+      crop = typeof arg3 === 'string' ? arg3 : crop;
+      stage = typeof arg4 === 'string' ? arg4 : stage;
+    }
+
     const query = new URLSearchParams({
-      latitude: params.latitude.toString(),
-      longitude: params.longitude.toString(),
-      crop: params.crop || 'soybean',
-      stage: params.stage || 'flowering',
-      planned_spray_hour: (params.plannedSprayHour ?? 8).toString(),
+      latitude: lat.toString(),
+      longitude: lon.toString(),
+      crop: crop || 'soybean',
+      stage: stage || 'flowering',
+      planned_spray_hour: plannedSprayHour.toString(),
     });
 
     try {
@@ -30,11 +48,11 @@ class FarmerIntelligenceService {
       throw new Error(response?.message || 'Failed to retrieve farmer decision data');
     } catch (error) {
       console.warn('[FarmerIntelligenceService] Backend fetch failed, synthesizing grounded fallback:', error);
-      return this.getFallbackDecisionData(params.latitude, params.longitude, params.crop || 'soybean', params.stage || 'flowering');
+      return this.getFallbackDecisionData(lat, lon, crop, stage);
     }
   }
 
-  private getFallbackDecisionData(lat: number, lon: number, crop: string, stage: string): FarmerDecisionData {
+  public getFallbackDecisionData(lat: number = 19.2437, lon: number = 73.1355, crop: string = 'soybean', stage: string = 'flowering'): FarmerDecisionData {
     const nowIso = new Date().toISOString();
     return {
       location: {

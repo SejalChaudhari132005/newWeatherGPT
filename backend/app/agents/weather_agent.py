@@ -91,19 +91,34 @@ class WeatherAgent:
             "observed_at": now_iso,
         }
 
-        # 5. Parse 24-Hour Forecast Timeline
+        # 5. Parse 24-Hour Forecast Timeline (Starting from CURRENT HOUR)
         hourly_raw = raw.get("hourly", {})
         times = hourly_raw.get("time", [])
         temps = hourly_raw.get("temperature_2m", [])
         rain_probs = hourly_raw.get("precipitation_probability", [])
         codes = hourly_raw.get("weather_code", [])
+        precips = hourly_raw.get("precipitation", [])
+
+        # Locate index of current hour
+        now_local = datetime.now()
+        start_idx = 0
+        min_diff = float("inf")
+        for idx, t_str in enumerate(times):
+            try:
+                dt = datetime.fromisoformat(t_str)
+                diff = abs((dt.replace(tzinfo=None) - now_local.replace(tzinfo=None)).total_seconds())
+                if diff < min_diff:
+                    min_diff = diff
+                    start_idx = idx
+            except Exception:
+                pass
 
         hourly_norm: List[Dict[str, Any]] = []
-        for i in range(min(24, len(times))):
+        for step, i in enumerate(range(start_idx, min(start_idx + 24, len(times)))):
             t_str = times[i]
             try:
                 dt = datetime.fromisoformat(t_str)
-                time_label = "NOW" if i == 0 else dt.strftime("%I %p").lstrip("0")
+                time_label = "NOW" if step == 0 else dt.strftime("%I %p").lstrip("0")
             except Exception:
                 time_label = t_str
 
@@ -111,8 +126,9 @@ class WeatherAgent:
             cond = decode_weather_code(code)
             prob = rain_probs[i] if i < len(rain_probs) else 0
             temp = round(temps[i], 1) if i < len(temps) and temps[i] is not None else None
+            precip = precips[i] if i < len(precips) and precips[i] is not None else 0.0
 
-            if i == 0:
+            if step == 0:
                 current_norm["rain_probability"] = prob or 0
 
             hourly_norm.append({
@@ -121,7 +137,9 @@ class WeatherAgent:
                 "temp": temp,
                 "condition": cond["condition"],
                 "icon": cond["icon"],
+                "weatherCode": code,
                 "rainProb": prob,
+                "precipitation": precip,
                 "highlight": (prob or 0) >= 60,
             })
 

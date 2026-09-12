@@ -182,27 +182,34 @@ DROP POLICY IF EXISTS "Enable all operations for travel_plans" ON public.travel_
 CREATE POLICY "Enable all operations for travel_plans" ON public.travel_plans FOR ALL USING (true) WITH CHECK (true);
 
 -- =========================================================
--- 12. STEP 10: Route Alert Preferences Table
+-- 13. Farms Table for Farmer Role Intelligence
 -- =========================================================
-CREATE TABLE IF NOT EXISTS public.route_alert_preferences (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL DEFAULT 'anonymous',
-  plan_id UUID REFERENCES public.travel_plans(id) ON DELETE CASCADE,
-  origin_name TEXT NOT NULL,
-  destination_name TEXT NOT NULL,
-  alert_on_rain BOOLEAN DEFAULT TRUE,
-  alert_on_thunderstorm BOOLEAN DEFAULT TRUE,
-  alert_on_fog BOOLEAN DEFAULT TRUE,
-  alert_on_severe BOOLEAN DEFAULT TRUE,
-  notify_window_hours INTEGER DEFAULT 3,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT now()
+CREATE TABLE IF NOT EXISTS public.farms (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  farm_name TEXT NOT NULL DEFAULT 'My Farm',
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  address TEXT,
+  village TEXT,
+  district TEXT,
+  state TEXT,
+  farm_size DOUBLE PRECISION DEFAULT 2.5,
+  farm_size_unit TEXT DEFAULT 'acres',
+  primary_crop TEXT DEFAULT 'soybean',
+  crop_variety TEXT,
+  growth_stage TEXT DEFAULT 'flowering',
+  sowing_date DATE,
+  irrigation_type TEXT DEFAULT 'drip',
+  soil_type TEXT DEFAULT 'black_cotton',
+  background_image_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS route_alert_prefs_user_idx ON public.route_alert_preferences(user_id);
-CREATE INDEX IF NOT EXISTS route_alert_prefs_plan_idx ON public.route_alert_preferences(plan_id);
+CREATE INDEX IF NOT EXISTS farms_user_idx ON public.farms(user_id);
 
-ALTER TABLE public.route_alert_preferences ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Enable all operations for route_alert_preferences" ON public.route_alert_preferences;
-CREATE POLICY "Enable all operations for route_alert_preferences" ON public.route_alert_preferences FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE public.farms ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable all operations for farms" ON public.farms;
+CREATE POLICY "Enable all operations for farms" ON public.farms FOR ALL USING (true) WITH CHECK (true);
 

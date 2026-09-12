@@ -52,6 +52,8 @@ export interface WeatherHourlyItem {
   condition: string;
   icon: string;
   rainProb: number;
+  precipitation?: number;
+  weatherCode?: number;
   highlight?: boolean;
   source?: string;
 }

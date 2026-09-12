@@ -27,11 +27,11 @@ export const HourlyAirQualityChart: React.FC<Props> = ({ hourly, trend, trendSum
   const getTrendIcon = () => {
     switch (trend?.toUpperCase()) {
       case 'IMPROVING':
-        return <TrendingDown className="w-4 h-4 text-emerald-600" />;
+        return <TrendingDown className="w-3.5 h-3.5 text-[#006B3C]" />;
       case 'WORSENING':
-        return <TrendingUp className="w-4 h-4 text-rose-600" />;
+        return <TrendingUp className="w-3.5 h-3.5 text-[#B42318]" />;
       default:
-        return <Minus className="w-4 h-4 text-amber-600" />;
+        return <Minus className="w-3.5 h-3.5 text-[#B7791F]" />;
     }
   };
 
@@ -41,19 +41,19 @@ export const HourlyAirQualityChart: React.FC<Props> = ({ hourly, trend, trendSum
     switch (trend?.toUpperCase()) {
       case 'IMPROVING':
         return (
-          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-200 flex items-center gap-1">
+          <span className="gov-badge gov-badge-success flex items-center gap-1">
             {getTrendIcon()} {localizedTrend}
           </span>
         );
       case 'WORSENING':
         return (
-          <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black border border-rose-200 flex items-center gap-1">
+          <span className="gov-badge gov-badge-danger flex items-center gap-1">
             {getTrendIcon()} {localizedTrend}
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black border border-amber-200 flex items-center gap-1">
+          <span className="gov-badge gov-badge-warning flex items-center gap-1">
             {getTrendIcon()} {localizedTrend}
           </span>
         );
@@ -64,64 +64,64 @@ export const HourlyAirQualityChart: React.FC<Props> = ({ hourly, trend, trendSum
   const maxAqi = Math.max(...displayItems.map((h) => h.aqi || 0), 100);
 
   return (
-    <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 font-['Arimo']">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-[#004aad]" />
-          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-            {translatePhrase('hourlyTrendTitle', language)}
-          </h3>
+    <div className="gov-panel font-sans">
+      {/* Panel Header */}
+      <div className="gov-panel-header">
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-[#17365D]" />
+          <span>{translatePhrase('hourlyTrendTitle', language).toUpperCase()}</span>
         </div>
         {getTrendBadge()}
       </div>
 
-      {trendSummary && (
-        <p className="text-[11px] text-slate-600 font-medium">
-          {trendSummary}
-        </p>
-      )}
+      <div className="p-3 bg-white space-y-2">
+        {trendSummary && (
+          <p className="text-[11px] text-[#5B6770] font-semibold">
+            {trendSummary}
+          </p>
+        )}
 
-      {/* Horizontal scrollable hourly forecast timeline */}
-      <div className="pt-2 pb-1 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 flex gap-2.5 items-end min-h-[140px]">
-        {displayItems.map((item, idx) => {
-          const color = airQualityService.getCategoryColor(item.category);
-          const heightPct = Math.min(Math.max(((item.aqi || 0) / maxAqi) * 100, 18), 100);
+        {/* Horizontal scrollable hourly forecast timeline with sharp bars */}
+        <div className="pt-2 pb-1 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 flex gap-2 items-end min-h-[130px] border-b border-[#D6DCE1]">
+          {displayItems.map((item, idx) => {
+            const color = airQualityService.getCategoryColor(item.category);
+            const heightPct = Math.min(Math.max(((item.aqi || 0) / maxAqi) * 100, 18), 100);
 
-          return (
-            <div
-              key={idx}
-              className="flex flex-col items-center justify-end flex-shrink-0 w-12 text-center group cursor-pointer"
-            >
-              {/* Value on top */}
-              <span className="text-[10px] font-black text-slate-800 mb-1 group-hover:scale-110 transition-transform">
-                {item.aqi ?? '--'}
-              </span>
-
-              {/* Colored Bar */}
+            return (
               <div
-                className="w-4 sm:w-5 rounded-t-lg transition-all group-hover:brightness-110"
-                style={{
-                  height: `${heightPct * 0.75}px`,
-                  backgroundColor: color,
-                  boxShadow: `0 2px 8px ${color}40`,
-                }}
-                title={`Hour: ${item.time} | AQI: ${item.aqi} | PM2.5: ${item.pm2_5 ?? '--'} μg/m³`}
-              />
-
-              {/* Hour Label */}
-              <span className="text-[10px] font-bold text-slate-500 mt-2 truncate w-full">
-                {item.time}
-              </span>
-
-              {/* PM2.5 footnote */}
-              {item.pm2_5 != null && (
-                <span className="text-[8px] text-slate-400 font-medium truncate">
-                  {item.pm2_5.toFixed(0)}µg
+                key={idx}
+                className="flex flex-col items-center justify-end flex-shrink-0 w-11 text-center group cursor-pointer"
+              >
+                {/* Value on top */}
+                <span className="text-[10px] font-bold text-[#1F2933] mb-1">
+                  {item.aqi ?? '--'}
                 </span>
-              )}
-            </div>
-          );
-        })}
+
+                {/* Solid Colored Bar */}
+                <div
+                  className="w-3.5 rounded-none transition-all group-hover:brightness-90"
+                  style={{
+                    height: `${heightPct * 0.7}px`,
+                    backgroundColor: color,
+                  }}
+                  title={`Hour: ${item.time} | AQI: ${item.aqi} | PM2.5: ${item.pm2_5 ?? '--'} μg/m³`}
+                />
+
+                {/* Hour Label */}
+                <span className="text-[10px] font-bold text-[#5B6770] mt-1.5 truncate w-full">
+                  {item.time}
+                </span>
+
+                {/* PM2.5 footnote */}
+                {item.pm2_5 != null && (
+                  <span className="text-[8px] text-[#8C9BA5] font-semibold truncate">
+                    {item.pm2_5.toFixed(0)}µg
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

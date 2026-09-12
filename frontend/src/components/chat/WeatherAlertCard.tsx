@@ -67,7 +67,7 @@ export const WeatherAlertCard: React.FC<Props> = ({ alerts }) => {
       <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-200/60 text-[10px] font-bold text-slate-500 mt-2">
         <div className="flex items-center gap-1">
           <Building2 className="w-3.5 h-3.5 text-[#004aad]" />
-          <span>Source: {alert.source || 'India Meteorological Department (IMD)'}</span>
+          <span>{alert.source || 'Early Warning Division'}</span>
         </div>
 
         {alert.valid_until && (

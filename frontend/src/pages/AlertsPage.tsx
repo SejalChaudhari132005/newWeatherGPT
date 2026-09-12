@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from '../hooks/useLocation';
 import { useAuthContext } from '../context/AuthContext';
 import { alertService } from '../services/alertService';
-import { CitizenAlert, AlertSeverity } from '../types/alert';
+import { CitizenAlert } from '../types/alert';
 import { AlertDetailModal } from '../components/alerts/AlertDetailModal';
 import {
   AlertTriangle,
@@ -12,7 +12,6 @@ import {
   RefreshCw,
   MapPin,
   Clock,
-  CheckCircle2,
   History,
   Bell,
   CloudRain,
@@ -21,11 +20,20 @@ import {
   Zap,
   Eye,
   AlertCircle,
+  ArrowRight,
+  Sprout,
+  Bug,
+  Droplets,
+  MessageSquare,
 } from 'lucide-react';
-import { DemoBadge } from '../components/common/DemoBadge';
 import { useLanguage } from '../context/LanguageContext';
+import { translatePhrase } from '../utils/dashboardTranslator';
 
-export const AlertsPage: React.FC = () => {
+interface AlertsPageProps {
+  onOpenChatWithPrompt?: (prompt: string) => void;
+}
+
+export const AlertsPage: React.FC<AlertsPageProps> = ({ onOpenChatWithPrompt }) => {
   const { location } = useLocation();
   const { profile } = useAuthContext();
   const { language } = useLanguage();
@@ -34,7 +42,7 @@ export const AlertsPage: React.FC = () => {
   const [historyAlerts, setHistoryAlerts] = useState<CitizenAlert[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedAlert, setSelectedAlert] = useState<CitizenAlert | null>(null);
-  const [filterTab, setFilterTab] = useState<'all' | 'active' | 'history'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'active' | 'rain' | 'spray' | 'pest' | 'history'>('all');
 
   const userId = profile?.user_id || 'anonymous';
   const lat = location?.latitude || profile?.latitude || 19.2437;
@@ -46,7 +54,6 @@ export const AlertsPage: React.FC = () => {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      // 1. Fetch current active alerts in user's selected language
       const curRes = await alertService.getCurrentAlerts(
         lat,
         lon,
@@ -58,7 +65,6 @@ export const AlertsPage: React.FC = () => {
       );
       setActiveAlerts(curRes.alerts || []);
 
-      // 2. Fetch history alerts from Supabase
       const hist = await alertService.getAlertHistory(lat, lon, city, userId, 20);
       setHistoryAlerts(hist || []);
     } catch (err) {
@@ -86,216 +92,380 @@ export const AlertsPage: React.FC = () => {
     switch (severity?.toUpperCase()) {
       case 'EMERGENCY':
         return {
-          cardBg: 'bg-red-50 border-red-400',
-          badgeBg: 'bg-red-600 text-white',
-          titleColor: 'text-red-950',
-          iconColor: 'text-red-600',
+          borderAccent: 'border-l-4 border-l-[#B42318]',
+          badgeClass: 'gov-badge-danger',
+          iconBg: 'bg-red-50 text-[#B42318] border border-red-200',
+          actionBtn: 'gov-btn-danger',
+          boxBg: 'bg-red-50/70 border-red-200 text-red-950',
+          label: translatePhrase('emergency', language) || 'EMERGENCY',
         };
       case 'SEVERE':
         return {
-          cardBg: 'bg-rose-50 border-rose-300',
-          badgeBg: 'bg-rose-600 text-white',
-          titleColor: 'text-rose-950',
-          iconColor: 'text-rose-600',
+          borderAccent: 'border-l-4 border-l-[#B42318]',
+          badgeClass: 'gov-badge-danger',
+          iconBg: 'bg-red-50 text-[#B42318] border border-red-200',
+          actionBtn: 'gov-btn-danger',
+          boxBg: 'bg-red-50/70 border-red-200 text-red-950',
+          label: translatePhrase('severe', language) || 'SEVERE',
         };
       case 'WARNING':
         return {
-          cardBg: 'bg-orange-50 border-orange-300',
-          badgeBg: 'bg-orange-600 text-white',
-          titleColor: 'text-orange-950',
-          iconColor: 'text-orange-600',
+          borderAccent: 'border-l-4 border-l-[#B7791F]',
+          badgeClass: 'gov-badge-warning',
+          iconBg: 'bg-amber-50 text-[#B7791F] border border-amber-200',
+          actionBtn: 'gov-btn-primary',
+          boxBg: 'bg-amber-50/70 border-amber-200 text-amber-950',
+          label: translatePhrase('warning', language) || 'WARNING',
         };
       case 'WATCH':
         return {
-          cardBg: 'bg-amber-50 border-amber-300',
-          badgeBg: 'bg-amber-500 text-slate-900',
-          titleColor: 'text-amber-950',
-          iconColor: 'text-amber-600',
+          borderAccent: 'border-l-4 border-l-[#B7791F]',
+          badgeClass: 'gov-badge-warning',
+          iconBg: 'bg-orange-50 text-orange-700 border border-orange-200',
+          actionBtn: 'gov-btn-primary',
+          boxBg: 'bg-orange-50/70 border-orange-200 text-orange-950',
+          label: translatePhrase('watch', language) || 'WATCH',
         };
       case 'ADVISORY':
         return {
-          cardBg: 'bg-yellow-50 border-yellow-300',
-          badgeBg: 'bg-yellow-400 text-slate-900',
-          titleColor: 'text-yellow-950',
-          iconColor: 'text-yellow-700',
+          borderAccent: 'border-l-4 border-l-[#006B3C]',
+          badgeClass: 'gov-badge-success',
+          iconBg: 'bg-emerald-50 text-[#006B3C] border border-emerald-200',
+          actionBtn: 'gov-btn-primary',
+          boxBg: 'bg-emerald-50/70 border-emerald-200 text-emerald-950',
+          label: translatePhrase('advisory', language) || 'ADVISORY',
         };
       case 'INFO':
       default:
         return {
-          cardBg: 'bg-blue-50/70 border-blue-200',
-          badgeBg: 'bg-blue-100 text-blue-900',
-          titleColor: 'text-blue-950',
-          iconColor: 'text-blue-600',
+          borderAccent: 'border-l-4 border-l-[#1D5F91]',
+          badgeClass: 'gov-badge-info',
+          iconBg: 'bg-sky-50 text-[#1D5F91] border border-sky-200',
+          actionBtn: 'gov-btn-secondary',
+          boxBg: 'bg-sky-50/70 border-sky-200 text-slate-900',
+          label: translatePhrase('info', language) || 'NOTICE',
         };
     }
   };
 
   const getAlertIcon = (type: string) => {
     const t = type?.toUpperCase() || '';
-    if (t.includes('RAIN')) return <CloudRain className="w-5 h-5 shrink-0" />;
-    if (t.includes('THUNDER') || t.includes('LIGHTNING')) return <Zap className="w-5 h-5 shrink-0" />;
-    if (t.includes('HEAT') || t.includes('TEMPERATURE')) return <Flame className="w-5 h-5 shrink-0" />;
-    if (t.includes('WIND') || t.includes('CYCLONE')) return <Wind className="w-5 h-5 shrink-0" />;
-    if (t.includes('FOG') || t.includes('VISIBILITY')) return <Eye className="w-5 h-5 shrink-0" />;
-    return <AlertTriangle className="w-5 h-5 shrink-0" />;
+    if (t.includes('RAIN') || t.includes('PRECIPITATION')) return <CloudRain className="w-4 h-4 shrink-0" />;
+    if (t.includes('SPRAY') || t.includes('AGRICULTURE') || t.includes('CROP')) return <Sprout className="w-4 h-4 shrink-0" />;
+    if (t.includes('PEST') || t.includes('DISEASE') || t.includes('FUNGAL')) return <Bug className="w-4 h-4 shrink-0" />;
+    if (t.includes('IRRIGATION') || t.includes('SOIL') || t.includes('MOISTURE')) return <Droplets className="w-4 h-4 shrink-0" />;
+    if (t.includes('THUNDER') || t.includes('LIGHTNING')) return <Zap className="w-4 h-4 shrink-0" />;
+    if (t.includes('HEAT') || t.includes('TEMPERATURE')) return <Flame className="w-4 h-4 shrink-0" />;
+    if (t.includes('WIND') || t.includes('CYCLONE')) return <Wind className="w-4 h-4 shrink-0" />;
+    if (t.includes('FOG') || t.includes('VISIBILITY')) return <Eye className="w-4 h-4 shrink-0" />;
+    return <AlertTriangle className="w-4 h-4 shrink-0" />;
   };
 
   const formatTimestamp = (ts?: string) => {
     if (!ts) return '';
     try {
       const d = new Date(ts);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return (
+        d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) +
+        ', ' +
+        d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+      );
     } catch {
       return ts;
     }
   };
 
-  const pageLabels = {
-    title: language === 'mr' ? 'WeatherGPT हवामान चेतावणी' : language === 'hi' ? 'WeatherGPT मौसम चेतावनियां' : 'WeatherGPT Alerts',
-    liveBadge: language === 'mr' ? 'थेट पूर्वसूचना' : language === 'hi' ? 'लाइव पूर्व चेतावनी' : 'Live Early Warning',
-    currentLocation: language === 'mr' ? 'सध्याचे स्थान' : language === 'hi' ? 'वर्तमान स्थान' : 'Current Location',
-    refresh: language === 'mr' ? 'चेतावणी रीफ्रेश करा' : language === 'hi' ? 'चेतावनी रीफ्रेश करें' : 'Refresh Warnings',
-    all: language === 'mr' ? 'सर्व' : language === 'hi' ? 'सभी' : 'All',
-    activeNow: language === 'mr' ? 'सध्या सक्रिय' : language === 'hi' ? 'अभी सक्रिय' : 'Active Now',
-    recentAlerts: language === 'mr' ? 'मागील चेतावण्या' : language === 'hi' ? 'हालिया चेतावनियां' : 'Recent Alerts',
-    evaluating: language === 'mr' ? `${city} साठी हवामान धोक्यांचे मूल्यांकन सुरू आहे...` : language === 'hi' ? `${city} के लिए मौसम खतरों का मूल्यांकन किया जा रहा है...` : `Evaluating multi-hazard meteorological alerts for ${city}...`,
-    noAlertsTitle: language === 'mr' ? '✓ कोणतीही तीव्र हवामान चेतावणी नाही' : language === 'hi' ? '✓ कोई गंभीर मौसम चेतावनी सक्रिय नहीं है' : '✓ No active severe weather warnings',
-    noAlertsDesc: language === 'mr' ? `${city} परिसरातील हवामान घटक सध्या सुरक्षित मर्यादेत आहेत.` : language === 'hi' ? `${city} के लिए मौसम की स्थिति वर्तमान में सुरक्षित सीमा में है।` : `Atmospheric parameters for ${city} are currently within safe thresholds.`,
+  const handleAskAgriAI = (alertTitle: string, alertDesc: string) => {
+    if (onOpenChatWithPrompt) {
+      const prompt =
+        language === 'mr'
+          ? `चेतावणी: "${alertTitle}" - ${alertDesc} यावर माझ्या पिकासाठी काय खबरदारी घ्यावी व काय उपाय करावेत?`
+          : language === 'hi'
+          ? `चेतावनी: "${alertTitle}" - ${alertDesc} इस स्थिति में मेरी फसल के लिए क्या सावधानी और उपाय करने चाहिए?`
+          : `Alert: "${alertTitle}" - ${alertDesc}. What immediate precautions and field actions should I take for my crops?`;
+      onOpenChatWithPrompt(prompt);
+    }
   };
 
+  const isFarmer = (profile?.role || '').toLowerCase() === 'farmer';
+
+  const isAgriAlert = (a: CitizenAlert) => {
+    const t = (a.type || '').toUpperCase();
+    const title = (a.title || '').toUpperCase();
+    const desc = (a.description || '').toUpperCase();
+    return (
+      t.includes('SPRAY') ||
+      t.includes('PEST') ||
+      t.includes('DISEASE') ||
+      t.includes('FUNGAL') ||
+      t.includes('CROP') ||
+      t.includes('AGRICULTURE') ||
+      t.includes('SOIL') ||
+      t.includes('IRRIGAT') ||
+      title.includes('SPRAY') ||
+      title.includes('PEST') ||
+      title.includes('CROP') ||
+      title.includes('पिका') ||
+      title.includes('फसल') ||
+      desc.includes('पिका') ||
+      desc.includes('फसल')
+    );
+  };
+
+  const filteredAlerts = activeAlerts.filter((a) => {
+    if (!isFarmer && isAgriAlert(a)) return false;
+    if (filterTab === 'all' || filterTab === 'active') return true;
+    const t = (a.type || '').toUpperCase();
+    if (filterTab === 'rain') return t.includes('RAIN') || t.includes('FLOOD') || t.includes('PRECIPITATION');
+    if (filterTab === 'spray') return t.includes('SPRAY') || t.includes('WIND') || t.includes('HEAT');
+    if (filterTab === 'pest') return t.includes('PEST') || t.includes('DISEASE') || t.includes('FUNGAL');
+    return true;
+  });
+
   return (
-    <div className="space-y-5 max-w-4xl mx-auto p-4 sm:p-6 font-['Arimo'] pb-20">
-      {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">{pageLabels.title}</h1>
-            <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 text-[10px] font-black uppercase">
-              {pageLabels.liveBadge}
+    <div className="space-y-3.5 max-w-4xl mx-auto px-3 sm:px-4 py-2 font-sans pb-28">
+      {/* 1. Official National Weather & Early Warning Bulletin Header */}
+      <div className="gov-panel">
+        <div className="h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#006B3C]" />
+        <div className="p-3.5 sm:p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2 border-b border-[#D6DCE1] pb-2">
+            <div className="flex items-center gap-2">
+              <span className="gov-badge gov-badge-danger flex items-center gap-1 text-[10px]">
+                <ShieldAlert className="w-3 h-3" />
+                <span>{translatePhrase('liveEarlyWarning', language) || 'EARLY WARNING BULLETIN'}</span>
+              </span>
+              <span className="text-[11px] text-[#5B6770] font-semibold hidden sm:inline">
+                National Weather & Disaster Information
+              </span>
+            </div>
+
+            <button
+              onClick={fetchAlerts}
+              disabled={loading}
+              className="gov-btn-secondary px-2.5 py-1 text-[11px] flex items-center gap-1.5 shrink-0"
+              title="Refresh Warnings"
+            >
+              <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin text-[#006B3C]' : 'text-[#1F2933]'}`} />
+              <span>{translatePhrase('refreshWarnings', language) || 'Refresh'}</span>
+            </button>
+          </div>
+
+          <div>
+            <h1 className="text-base sm:text-lg font-bold text-[#17365D] uppercase tracking-wide">
+              {isFarmer
+                ? (translatePhrase('farmAlertsTitle', language) || 'Meteorological & Agricultural Warning Bulletins')
+                : 'Meteorological Hazard & Weather Warning Bulletins'}
+            </h1>
+            <p className="text-xs text-[#5B6770] pt-0.5">
+              {isFarmer
+                ? (translatePhrase('farmAlertsSubtitle', language) || 'Official localized advisories issued for crop protection and disaster mitigation')
+                : 'Official localized alerts issued for public safety and disaster mitigation'}
+            </p>
+          </div>
+
+          <div className="pt-1 flex items-center gap-1.5 text-xs text-[#1F2933] font-medium bg-[#F8FAFC] p-2 border border-[#D6DCE1]">
+            <MapPin className="w-3.5 h-3.5 text-[#006B3C] shrink-0" />
+            <span className="truncate">
+              {translatePhrase('monitoredLocation', language) || 'Monitored Jurisdiction'}:{' '}
+              <strong className="font-bold text-[#17365D]">
+                {city}, {district !== city ? `${district}, ` : ''}{state}
+              </strong>
             </span>
           </div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 pt-1">
-            <MapPin className="w-3.5 h-3.5 text-[#004aad]" />
-            <span>{pageLabels.currentLocation}: <strong className="text-slate-900 underline decoration-sky-400">{city}, {state}</strong></span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchAlerts}
-            disabled={loading}
-            className="px-3 py-2 rounded-2xl bg-white border border-slate-200 text-slate-700 hover:text-[#004aad] transition-all flex items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer active:scale-95"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#38b6ff]' : ''}`} />
-            <span>{pageLabels.refresh}</span>
-          </button>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-100 border border-slate-200/80 w-fit">
+      {/* 2. Government Tab Bar */}
+      <div className="flex items-center gap-1 p-1 bg-white border border-[#D6DCE1] rounded-none overflow-x-auto no-scrollbar">
         <button
           onClick={() => setFilterTab('all')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            filterTab === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          className={`px-3 py-1.5 text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+            filterTab === 'all'
+              ? 'bg-[#17365D] text-white border-[#17365D]'
+              : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
           }`}
         >
-          {pageLabels.all} ({activeAlerts.length + historyAlerts.length})
+          {translatePhrase('all', language) || 'All Bulletins'} ({filteredAlerts.length})
         </button>
         <button
           onClick={() => setFilterTab('active')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-            filterTab === 'active' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          className={`px-3 py-1.5 text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            filterTab === 'active'
+              ? 'bg-[#17365D] text-white border-[#17365D]'
+              : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
           }`}
         >
-          <span>{pageLabels.activeNow}</span>
-          {activeAlerts.length > 0 && (
-            <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+          <span>{translatePhrase('activeNow', language) || 'Active Warnings'}</span>
+          {filteredAlerts.length > 0 && (
+            <span className="w-2 h-2 rounded-none bg-[#B42318]" />
           )}
         </button>
         <button
-          onClick={() => setFilterTab('history')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            filterTab === 'history' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          onClick={() => setFilterTab('rain')}
+          className={`px-3 py-1.5 text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+            filterTab === 'rain'
+              ? 'bg-[#17365D] text-white border-[#17365D]'
+              : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
           }`}
         >
-          {pageLabels.recentAlerts} ({historyAlerts.length})
+          <CloudRain className="w-3.5 h-3.5 text-[#1D5F91]" />
+          <span>{translatePhrase('rainAndFlood', language) || 'Rain & Flooding'}</span>
+        </button>
+        {isFarmer && (
+          <>
+            <button
+              onClick={() => setFilterTab('spray')}
+              className={`px-3 py-1.5 text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                filterTab === 'spray'
+                  ? 'bg-[#17365D] text-white border-[#17365D]'
+                  : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
+              }`}
+            >
+              <Sprout className="w-3.5 h-3.5 text-[#006B3C]" />
+              <span>{translatePhrase('sprayingAndField', language) || 'Agromet Operations'}</span>
+            </button>
+            <button
+              onClick={() => setFilterTab('pest')}
+              className={`px-3 py-1.5 text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                filterTab === 'pest'
+                  ? 'bg-[#17365D] text-white border-[#17365D]'
+                  : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
+              }`}
+            >
+              <Bug className="w-3.5 h-3.5 text-[#B7791F]" />
+              <span>{translatePhrase('pestAndDisease', language) || 'Pest & Disease'}</span>
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => setFilterTab('history')}
+          className={`px-3 py-1.5 text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+            filterTab === 'history'
+              ? 'bg-[#17365D] text-white border-[#17365D]'
+              : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
+          }`}
+        >
+          {translatePhrase('recentAlerts', language) || 'Archived Records'} ({historyAlerts.length})
         </button>
       </div>
 
+      {/* 3. Bulletins Content */}
       {loading ? (
-        <div className="p-12 rounded-3xl bg-white border border-slate-200 shadow-md flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="w-8 h-8 text-[#004aad] animate-spin" />
-          <p className="text-xs font-bold text-slate-600">{pageLabels.evaluating}</p>
+        <div className="gov-panel p-8 flex flex-col items-center justify-center space-y-2">
+          <Loader2 className="w-6 h-6 text-[#006B3C] animate-spin" />
+          <p className="text-xs font-bold text-[#1F2933] uppercase tracking-wide">
+            {translatePhrase('evaluatingAlerts', language) || 'Retrieving Official Meteorological Data...'}
+          </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* SECTION 1: ACTIVE NOW */}
-          {(filterTab === 'all' || filterTab === 'active') && (
+        <div className="space-y-3.5">
+          {/* SECTION 1: ACTIVE WARNINGS */}
+          {filterTab !== 'history' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5 text-orange-600" />
-                  <span>{pageLabels.activeNow} ({activeAlerts.length})</span>
-                </h3>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase text-[#17365D] tracking-wider flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5 text-[#006B3C]" />
+                  <span>
+                    {translatePhrase('activeNow', language) || 'Active Warnings'} ({filteredAlerts.length})
+                  </span>
+                </h2>
               </div>
 
-              {activeAlerts.length === 0 ? (
-                <div className="p-5 bg-white rounded-3xl border border-emerald-200 shadow-sm flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 shrink-0">
-                    <ShieldCheck className="w-8 h-8" />
+              {filteredAlerts.length === 0 ? (
+                <div className="gov-panel p-4 flex items-center gap-3 border-l-4 border-l-[#006B3C]">
+                  <div className="w-9 h-9 bg-emerald-50 border border-emerald-200 text-[#006B3C] flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-emerald-950">{pageLabels.noAlertsTitle}</h3>
-                    <p className="text-xs text-slate-500 font-medium pt-0.5">
-                      {pageLabels.noAlertsDesc}
+                    <h3 className="text-xs font-bold text-[#17365D] uppercase tracking-wide">
+                      {translatePhrase('noAlertsTitle', language) || 'No Severe Weather Warnings Active'}
+                    </h3>
+                    <p className="text-xs text-[#5B6770] pt-0.5">
+                      {translatePhrase('noAlertsDesc', language) || 'Current atmospheric conditions are within normal baseline thresholds for this district.'}
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {activeAlerts.map((alert) => {
+                <div className="space-y-3">
+                  {filteredAlerts.map((alert) => {
                     const style = getSeverityStyle(alert.severity);
                     return (
                       <div
                         key={alert.id}
-                        onClick={() => {
-                          setSelectedAlert(alert);
-                          handleMarkRead(alert.id);
-                        }}
-                        className={`p-4 sm:p-5 bg-white rounded-3xl border ${style.cardBg} shadow-sm space-y-3 cursor-pointer hover:shadow-md transition-all relative overflow-hidden`}
+                        className={`gov-panel ${style.borderAccent} p-3.5 space-y-2.5`}
                       >
-                        {!alert.is_read && (
-                          <span className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-rose-600 ring-4 ring-rose-100" />
-                        )}
+                        {/* Bulletin Header */}
+                        <div className="flex items-start justify-between gap-2 border-b border-[#D6DCE1] pb-2">
+                          <div className="flex items-start gap-2.5 min-w-0">
+                            <div className={`p-1.5 ${style.iconBg} shrink-0 mt-0.5`}>
+                              {getAlertIcon(alert.type)}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-sm font-bold text-[#1F2933] leading-snug">
+                                {alert.title}
+                              </h3>
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#5B6770] pt-0.5">
+                                <span className="inline-flex items-center gap-1 text-[#1F2933] font-semibold">
+                                  <MapPin className="w-3 h-3 text-[#006B3C]" />
+                                  <span>{alert.location_name}</span>
+                                </span>
+                                <span>|</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-[#5B6770]" />
+                                  <span>Valid: {formatTimestamp(alert.valid_until)}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
 
-                        <div className="flex items-start justify-between gap-3 pr-4">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={style.iconColor}>{getAlertIcon(alert.type)}</span>
-                            <span className={`text-base font-black ${style.titleColor}`}>
-                              {alert.title}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`gov-badge ${style.badgeClass}`}>
+                              {style.label}
                             </span>
                           </div>
-                          <span className={`px-2.5 py-0.5 rounded-full ${style.badgeBg} text-[10px] font-black uppercase tracking-wider`}>
-                            {alert.severity}
-                          </span>
                         </div>
 
-                        <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        {/* Bulletin Body */}
+                        <p className="text-xs text-[#1F2933] leading-relaxed">
                           {alert.description}
                         </p>
 
+                        {/* Advisory Recommendations */}
                         {alert.recommended_actions && alert.recommended_actions.length > 0 && (
-                          <div className="p-2.5 rounded-2xl bg-white/80 border border-slate-200/70 text-xs font-bold text-slate-800 flex items-center gap-2">
-                            <span className="text-[#004aad]">👉</span>
-                            <span>{alert.recommended_actions[0]}</span>
+                          <div className={`p-2.5 ${style.boxBg} border text-xs space-y-1`}>
+                            <div className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#17365D]">
+                              <AlertCircle className="w-3.5 h-3.5 text-[#006B3C] shrink-0" />
+                              <span>{translatePhrase('cropImpact', language) || 'Mandatory Field Advisory'}</span>
+                            </div>
+                            <p className="text-xs text-[#1F2933] pl-4">
+                              {alert.recommended_actions[0]}
+                            </p>
                           </div>
                         )}
 
-                        <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between text-[11px] font-bold text-slate-500 gap-2">
-                          <span>📍 {alert.location_name}</span>
-                          <span>🕒 Valid until: {formatTimestamp(alert.valid_until)}</span>
-                          <span className="text-[#004aad] font-extrabold hover:underline">Tap for details & actions →</span>
+                        {/* Bulletin Actions */}
+                        <div className="pt-2 border-t border-[#D6DCE1] flex flex-wrap items-center justify-end gap-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleAskAgriAI(alert.title, alert.description)}
+                              className="gov-btn-secondary px-2.5 py-1 text-[11px] flex items-center gap-1"
+                              title="Consult WeatherGPT Advisory Desk"
+                            >
+                              <MessageSquare className="w-3 h-3 text-[#006B3C]" />
+                              <span>{translatePhrase('askAgriAI', language) || 'Agromet Query'}</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedAlert(alert);
+                                handleMarkRead(alert.id);
+                              }}
+                              className={`${style.actionBtn} px-2.5 py-1 text-[11px] flex items-center gap-1`}
+                            >
+                              <span>{translatePhrase('viewDetails', language) || 'Full Bulletin'}</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -305,47 +475,47 @@ export const AlertsPage: React.FC = () => {
             </div>
           )}
 
-          {/* SECTION 2: RECENT ALERTS (History from Supabase) */}
+          {/* SECTION 2: ARCHIVED RECORDS */}
           {(filterTab === 'all' || filterTab === 'history') && historyAlerts.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
-                  <History className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Recent Alert History ({historyAlerts.length})</span>
-                </h3>
-              </div>
+            <div className="space-y-2.5 pt-2">
+              <h2 className="text-xs font-bold uppercase text-[#5B6770] tracking-wider flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5 text-[#5B6770]" />
+                <span>
+                  {translatePhrase('historyTitle', language) || 'Historical Warning Archive'} ({historyAlerts.length})
+                </span>
+              </h2>
 
-              <div className="space-y-2.5">
-                {historyAlerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    onClick={() => setSelectedAlert(alert)}
-                    className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between gap-3 font-['Arimo']"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
-                        {getAlertIcon(alert.type)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-black text-slate-900 truncate">
-                            {alert.title}
-                          </h4>
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[9px] font-extrabold uppercase">
+              <div className="gov-panel overflow-x-auto">
+                <table className="gov-table min-w-[420px] sm:min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="whitespace-nowrap">{language === 'mr' ? 'दिनांक / वेळ' : language === 'hi' ? 'दिनांक / समय' : 'Date / Time'}</th>
+                      <th>{language === 'mr' ? 'धोका प्रकार' : language === 'hi' ? 'खतरा प्रकार' : 'Hazard Type'}</th>
+                      <th>{language === 'mr' ? 'स्थान' : language === 'hi' ? 'स्थान' : 'Location'}</th>
+                      <th className="whitespace-nowrap">{language === 'mr' ? 'तीव्रता' : language === 'hi' ? 'तीव्रता' : 'Severity'}</th>
+                      <th className="text-right whitespace-nowrap">{language === 'mr' ? 'कृती' : language === 'hi' ? 'कार्रवाई' : 'Action'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyAlerts.map((alert) => (
+                      <tr key={alert.id} className="hover:bg-[#F8FAFC] cursor-pointer" onClick={() => setSelectedAlert(alert)}>
+                        <td className="text-[11px] sm:text-xs font-mono whitespace-nowrap">{formatTimestamp(alert.created_at)}</td>
+                        <td className="font-medium text-[#1F2933]">{alert.title}</td>
+                        <td className="text-[11px] sm:text-xs text-[#5B6770]">{alert.location_name}</td>
+                        <td>
+                          <span className="gov-badge gov-badge-neutral text-[9px] uppercase whitespace-nowrap">
                             {alert.severity}
                           </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 font-semibold pt-0.5">
-                          {formatTimestamp(alert.created_at)} • {alert.location_name}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span className="text-xs font-extrabold text-[#004aad] shrink-0">
-                      View →
-                    </span>
-                  </div>
-                ))}
+                        </td>
+                        <td className="text-right whitespace-nowrap">
+                          <button className="text-[11px] sm:text-xs font-bold text-[#006B3C] hover:underline">
+                            {language === 'mr' ? 'पहा' : language === 'hi' ? 'देखें' : 'View'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

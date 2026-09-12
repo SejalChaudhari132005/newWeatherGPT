@@ -183,13 +183,25 @@ class RouteWeatherService:
             w_current = await self.weather_service.get_current_weather(w_lat, w_lon, {"city": wp["name"]})
             w_warnings = await self.weather_service.get_warnings(w_lat, w_lon, {"city": wp["name"]})
 
+            raw_cond = w_current.get("condition") or w_current.get("forecast_summary") or "Clear"
+            if "model" in str(raw_cond).lower() or "simulation" in str(raw_cond).lower() or not raw_cond:
+                rain_val = float(w_current.get("rainfall_past_24h", 0))
+                if rain_val > 10:
+                    raw_cond = "Heavy Rain"
+                elif rain_val > 2:
+                    raw_cond = "Moderate Rain"
+                elif rain_val > 0:
+                    raw_cond = "Light Showers"
+                else:
+                    raw_cond = "Partly Cloudy"
+
             weather_params = {
                 "temperature": w_current.get("temperature", 28.0),
                 "rain_probability": 15.0 if float(w_current.get("rainfall_past_24h", 0)) > 0 else 5.0,
                 "precipitation": float(w_current.get("rainfall_past_24h", 0)),
                 "wind_speed": float(w_current.get("wind_speed", 10.0)),
                 "visibility": float(w_current.get("visibility", 10.0)),
-                "condition": w_current.get("forecast_summary", "Clear"),
+                "condition": raw_cond,
                 "weather_code": 0,
             }
 
@@ -229,7 +241,13 @@ class RouteWeatherService:
 
         overall_risk_str = reverse_risk_map[max_risk_level]
         unique_hazards = list(dict.fromkeys(all_hazards))
-        unique_reasons = list(dict.fromkeys(all_reasons))
+
+        # Keep only meaningful reasons - filter out repetitive "Favorable weather" if specific hazards exist
+        hazard_reasons = [r for r in all_reasons if "favorable" not in r.lower()]
+        if hazard_reasons:
+            unique_reasons = list(dict.fromkeys(hazard_reasons))[:3]
+        else:
+            unique_reasons = ["Clear skies and favorable travel conditions along the route."]
 
         recommendation = self._generate_travel_recommendation(
             overall_risk=overall_risk_str,

@@ -222,18 +222,22 @@ class CitizenAlertEngine:
                 else:
                     title = f"Rainfall Advisory for {loc_city}"
                     desc = f"Rain probability is {int(max_forecast_rain_prob)}% over the next several hours. Carry an umbrella when stepping outdoors."
-            elif max_forecast_rain_prob >= alert_thresholds.RAIN_PROB_ADVISORY:
+            elif max_forecast_rain_prob >= 20.0 or rain_prob >= 20.0 or max_forecast_rain_mm > 0.1 or _get_val(curr.precipitation, 0.0) > 0.1 or weather_code in alert_thresholds.RAIN_CODES or weather_code in alert_thresholds.DRIZZLE_CODES:
                 sev = AlertSeverity.INFO.value
                 valid_hrs = 6
+                calc_prob = int(max(max_forecast_rain_prob, rain_prob, 25))
                 if lang == "mr":
-                    title = f"{loc_city} मध्ये हलक्या सरींची शक्यता"
-                    desc = f"हलक्या पावसाच्या सरी पडण्याची शक्यता ({int(max_forecast_rain_prob)}%)."
+                    title = f"{loc_city} मध्ये पावसाचा अंदाज ({calc_prob}%)"
+                    desc = f"पुढील काही तासांत पावसाच्या हलक्या ते मध्यम सरींची शक्यता ({calc_prob}%). शेती कामांचे नियोजन पावसाचा अंदाज घेऊन करावे."
                 elif lang == "hi":
-                    title = f"{loc_city} में हल्की फुहारों की संभावना"
-                    desc = f"कुछ स्थानों पर हल्की बारिश की संभावना ({int(max_forecast_rain_prob)}%)।"
+                    title = f"{loc_city} में बारिश का अनुमान ({calc_prob}%)"
+                    desc = f"अगले कुछ घंटों में हल्की से मध्यम बारिश की संभावना ({calc_prob}% )। कृषि व बाहरी कार्यों में सावधानी बरतें।"
+                elif lang == "gu":
+                    title = f"{loc_city} માં વરસાદની આગાહી ({calc_prob}%)"
+                    desc = f"આગામી કલાકોમાં હળવાથી મધ્યમ વરસાદની શક્યતા ({calc_prob}%). ખેતી કાર્યોમાં કાળજી રાખો."
                 else:
-                    title = f"Light Showers Likely in {loc_city}"
-                    desc = f"Isolated light showers possible ({int(max_forecast_rain_prob)}% probability)."
+                    title = f"Rainfall Forecast in {loc_city} ({calc_prob}%)"
+                    desc = f"Passing rain showers expected ({calc_prob}% probability). Plan farming and outdoor commutes accordingly."
             else:
                 sev = None
 
@@ -543,6 +547,114 @@ class CitizenAlertEngine:
                         metadata={"visibility_km": vis}
                     )
                 )
+
+        # F. Agricultural Operations & Crop Weather Alerts
+        humidity_val = _get_val(curr.humidity, 65.0)
+        if (max_forecast_rain_prob >= 35.0 or wind >= 15.0) and not any(a.type == "SPRAYING_DELAY" for a in alerts):
+            valid_until_dt = now + timedelta(hours=8)
+            fp = self._generate_fingerprint("SPRAYING_DELAY", AlertSeverity.ADVISORY.value, loc_district, valid_until_dt.strftime("%Y-%m-%d-%H"))
+            if lang == "mr":
+                agri_title = f"{loc_city} - कीटकनाशक फवारणी पुढे ढकला"
+                agri_desc = f"पावसाची शक्यता ({int(max_forecast_rain_prob)}%) किंवा वाऱ्याचा वेग ({wind:.0f} किमी/तास) असल्याने फवारलेले औषध वाहून जाण्याची किंवा उडून जाण्याची शक्यता आहे."
+                actions = ["पाऊस थांबल्यानंतर आणि पाने सुकल्यानंतरच फवारणी करावी.", "वाऱ्याचा वेग 12 किमी/तास पेक्षा कमी असताना फवारणी करा."]
+                avoids = ["पावसाच्या शक्यतेच्या काळात महागडी रासायनिक कीटकनाशके फवारणे टाळा."]
+            elif lang == "hi":
+                agri_title = f"{loc_city} - कीटनाशक छिड़काव स्थगित करें"
+                agri_desc = f"बारिश की संभावना ({int(max_forecast_rain_prob)}%) या हवा की गति ({wind:.0f} किमी/घंटा) के कारण दवा बहने का जोखिम है।"
+                actions = ["बारिश रुकने और पत्तियां सूखने के बाद ही छिड़काव करें।", "हवा की गति 12 किमी/घंटा से कम होने पर ही छिड़काव करें।"]
+                avoids = ["बारिश के अंदेशे के समय महंगे कीटनाशकों का छिड़काव न करें।"]
+            elif lang == "gu":
+                agri_title = f"{loc_city} - જંતુનાશક છંટકાવ મુલતવી રાખો"
+                agri_desc = f"વરસાદની શક્યતા ({int(max_forecast_rain_prob)}%) અથવા પવનની ગતિ ({wind:.0f} કિમી/કલાક) ને કારણે દવાનો વ્યય થવાનું જોખમ છે."
+                actions = ["વરસાદ બંધ થયા પછી અને પાંદડા સુકાયા પછી જ છંટકાવ કરવો."]
+                avoids = ["વરસાદની શક્યતા દરમિયાન મોંઘા જંતુનાશકોનો છંટકાવ ટાળો."]
+            else:
+                agri_title = f"Foliar Spraying Postpone Advisory - {loc_city}"
+                agri_desc = f"Rain probability ({int(max_forecast_rain_prob)}%) and wind ({wind:.0f} km/h) elevate chemical wash-off and wind drift risks."
+                actions = ["Postpone spraying until canopy is dry and rain probability drops below 20%.", "Spray when winds are calm (<12 km/h)."]
+                avoids = ["Do not spray contact chemicals before imminent rainfall."]
+
+            alerts.append(
+                CitizenAlert(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    fingerprint=fp,
+                    type="SPRAYING_DELAY",
+                    severity=AlertSeverity.ADVISORY.value,
+                    severity_label="Advisory",
+                    title=agri_title,
+                    description=agri_desc,
+                    location_name=loc_city,
+                    district=loc_district,
+                    state=loc_state,
+                    latitude=lat,
+                    longitude=lon,
+                    valid_from=now.isoformat(),
+                    valid_until=valid_until_dt.isoformat(),
+                    source="WeatherGPT Agri Intelligence",
+                    source_url="https://mausam.imd.gov.in",
+                    confidence=0.90,
+                    recommended_actions=actions,
+                    what_to_avoid=avoids,
+                    is_read=False,
+                    is_active=True,
+                    created_at=now.isoformat(),
+                    metadata={"rain_prob": max_forecast_rain_prob, "wind_kmh": wind}
+                )
+            )
+
+        if humidity_val >= 75.0 and temp >= 24.0 and not any(a.type == "PEST_DISEASE" for a in alerts):
+            valid_until_dt = now + timedelta(hours=12)
+            fp = self._generate_fingerprint("PEST_DISEASE", AlertSeverity.WATCH.value, loc_district, valid_until_dt.strftime("%Y-%m-%d-%H"))
+            if lang == "mr":
+                pest_title = f"{loc_city} - पिकांवर बुरशी व कीड प्रादुर्भावाची शक्यता"
+                pest_desc = f"हवेतील उच्च आर्द्रता ({humidity_val:.0f}%) आणि {temp:.1f}°C तापमान यामुळे पिकांवर बुरशीजन्य करपा, तांबेरा व रसशोषक किडींचा धोका वाढू शकतो."
+                pest_actions = ["शेतात फेरफटका मारून पानांच्या खालच्या बाजूस किडींची पाहणी करा.", "कामगंध सापळे लावा आणि योग्य जैविक बुरशीनाशकाचा वापर करा."]
+                pest_avoids = ["शेतात अनावधानाने अतिरिक्त पाणी साचू देऊ नका."]
+            elif lang == "hi":
+                pest_title = f"{loc_city} - फसलों पर फफूंद व कीट प्रकोप की संभावना"
+                pest_desc = f"हवा में उच्च नमी ({humidity_val:.0f}%) और {temp:.1f}°C तापमान के कारण फसलों में फफूंद जनित रोगों और कीटों का जोखिम बढ़ सकता है।"
+                pest_actions = ["खेत में पत्तियों के नीचे कीटों का नियमित निरीक्षण करें।", "फेरोमोन ट्रैप लगाएं और अनुशंसित जैव कीटनाशकों का प्रयोग करें।"]
+                pest_avoids = ["खेत में अनावश्यक जलभराव न होने दें।"]
+            elif lang == "gu":
+                pest_title = f"{loc_city} - પાકો પર ફૂગ અને જીવાતનો ઉપદ્રવ વધવાની શક્યતા"
+                pest_desc = f"હવામાં ઊંચો ભેજ ({humidity_val:.0f}%) અને {temp:.1f}°C તાપમાનને કારણે ફૂગ અને જીવાતોનો ઉપદ્રવ વધી શકે છે."
+                pest_actions = ["પાકની નિયમિત ચકાસણી કરો અને ફેરોમોન ટ્રેપ ગોઠવો."]
+                pest_avoids = ["ખેતરમાં બિનજરૂરી પાણી ભરાવા ન દો."]
+            else:
+                pest_title = f"Fungal & Pest Disease Advisory - {loc_city}"
+                pest_desc = f"High atmospheric humidity ({humidity_val:.0f}%) and warmth ({temp:.1f}°C) favor fungal spore propagation and sucking pests."
+                pest_actions = ["Scout crop leaves regularly for early signs of leaf spot or rust.", "Deploy pheromone traps and apply prophylactic bio-fungicides."]
+                pest_avoids = ["Avoid excess irrigation and stagnant water pools in fields."]
+
+            alerts.append(
+                CitizenAlert(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    fingerprint=fp,
+                    type="PEST_DISEASE",
+                    severity=AlertSeverity.WATCH.value,
+                    severity_label="Watch",
+                    title=pest_title,
+                    description=pest_desc,
+                    location_name=loc_city,
+                    district=loc_district,
+                    state=loc_state,
+                    latitude=lat,
+                    longitude=lon,
+                    valid_from=now.isoformat(),
+                    valid_until=valid_until_dt.isoformat(),
+                    source="WeatherGPT Agri Intelligence",
+                    source_url="https://mausam.imd.gov.in",
+                    confidence=0.88,
+                    recommended_actions=pest_actions,
+                    what_to_avoid=pest_avoids,
+                    is_read=False,
+                    is_active=True,
+                    created_at=now.isoformat(),
+                    metadata={"humidity_pct": humidity_val, "temperature_c": temp}
+                )
+            )
 
         # ---------------------------------------------------------
         # 3. DEDUPLICATION & PERSISTENCE TO SUPABASE

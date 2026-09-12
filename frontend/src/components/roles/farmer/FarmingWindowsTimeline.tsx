@@ -1,12 +1,16 @@
 import React from 'react';
 import { CalendarClock, CheckCircle2, AlertTriangle, XCircle, Droplets, SprayCan, Scissors, Sparkles } from 'lucide-react';
 import { FarmingWindowSlot } from '../../../types/farmerIntelligence';
+import { useLanguage } from '../../../context/LanguageContext';
+import { translatePhrase } from '../../../utils/dashboardTranslator';
 
 interface FarmingWindowsTimelineProps {
   windows: FarmingWindowSlot[];
 }
 
 export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ windows }) => {
+  const { language } = useLanguage();
+
   const getActivityIcon = (activity: string) => {
     switch (activity.toLowerCase()) {
       case 'spraying':
@@ -21,12 +25,22 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
     }
   };
 
+  const getActivityLabel = (activity: string) => {
+    const act = activity.toLowerCase();
+    if (act.includes('spray')) return language === 'mr' ? 'औषध फवारणी' : language === 'hi' ? 'कीटनाशक छिड़काव' : 'Spraying';
+    if (act.includes('irrigat')) return language === 'mr' ? 'सिंचन / पाणी देणे' : language === 'hi' ? 'सिंचाई' : 'Irrigation';
+    if (act.includes('harvest')) return language === 'mr' ? 'काढणी / तोडणी' : language === 'hi' ? 'कटाई' : 'Harvesting';
+    if (act.includes('field') || act.includes('work')) return language === 'mr' ? 'शेती कामे' : language === 'hi' ? 'खेत कार्य' : 'Field Work';
+    return activity.replace('_', ' ');
+  };
+
   const getSuitabilityStyle = (suitability: string) => {
     switch (suitability.toLowerCase()) {
       case 'optimal':
         return {
           bg: 'bg-emerald-50/80 border-emerald-200',
           badge: 'bg-emerald-600 text-white',
+          badgeText: translatePhrase('optimal', language),
           text: 'text-emerald-950',
           icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
           progress: 'bg-emerald-500',
@@ -35,6 +49,7 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
         return {
           bg: 'bg-amber-50/80 border-amber-200',
           badge: 'bg-amber-500 text-white',
+          badgeText: translatePhrase('moderate', language),
           text: 'text-amber-950',
           icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
           progress: 'bg-amber-500',
@@ -44,6 +59,7 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
         return {
           bg: 'bg-rose-50/80 border-rose-200',
           badge: 'bg-rose-600 text-white',
+          badgeText: language === 'mr' ? 'प्रतिकूल' : language === 'hi' ? 'प्रतिकूल' : 'Unfavorable',
           text: 'text-rose-950',
           icon: <XCircle className="w-4 h-4 text-rose-600" />,
           progress: 'bg-rose-500',
@@ -59,12 +75,16 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
             <CalendarClock className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-extrabold text-slate-900">Best Farming Windows</h3>
-            <p className="text-[11px] text-slate-500">Hourly suitability for field activities</p>
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+              {translatePhrase('bestFarmingWindows', language)}
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              {translatePhrase('hourlySuitability', language)}
+            </p>
           </div>
         </div>
         <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 flex items-center gap-1 shrink-0 whitespace-nowrap">
-          <Sparkles className="w-3 h-3 text-emerald-500" /> Next 24h
+          <Sparkles className="w-3 h-3 text-emerald-500" /> {language === 'mr' ? 'पुढील 24 तास' : language === 'hi' ? 'अगले 24 घंटे' : 'Next 24h'}
         </span>
       </div>
 
@@ -85,10 +105,10 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs sm:text-sm font-extrabold text-slate-900 capitalize truncate">
-                        {w.activity.replace('_', ' ')}
+                        {getActivityLabel(w.activity)}
                       </span>
                       <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${style.badge} shrink-0`}>
-                        {w.suitability}
+                        {style.badgeText}
                       </span>
                     </div>
                   </div>
@@ -107,13 +127,17 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
               {w.limiting_factor && (
                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md w-fit mb-2">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
-                  <span>Limiting: {w.limiting_factor}</span>
+                  <span>
+                    {language === 'mr' ? 'मर्यादा / अडथळा:' : language === 'hi' ? 'बाधा / कारण:' : 'Limiting:'} {w.limiting_factor}
+                  </span>
                 </div>
               )}
 
               {/* Score bar */}
               <div className="flex items-center gap-2 pt-0.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Score:</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
+                  {language === 'mr' ? 'गुण / स्कोअर:' : language === 'hi' ? 'अंक:' : 'Score:'}
+                </span>
                 <div className="flex-1 h-2 bg-slate-200/80 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${style.progress}`}
@@ -129,3 +153,4 @@ export const FarmingWindowsTimeline: React.FC<FarmingWindowsTimelineProps> = ({ 
     </div>
   );
 };
+

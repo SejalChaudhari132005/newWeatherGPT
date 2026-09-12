@@ -231,6 +231,9 @@ class LanguageService:
         if tgt == "en" or not english_text or not english_text.strip():
             return english_text
 
+        # Strip emojis from input to avoid translation corruption
+        clean_input = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]', '', english_text)
+
         # Protect critical tokens from mistranslation using placeholders
         protected_tokens: List[str] = []
         token_counter = 0
@@ -244,7 +247,7 @@ class LanguageService:
 
         # Protect temperature numbers with degree signs (e.g. 28°C, 31.5 °C)
         temp_pattern = r"\b\d+(\.\d+)?\s*°[CF]\b"
-        prepared_text = re.sub(temp_pattern, lambda m: protect(m.group(0)), english_text)
+        prepared_text = re.sub(temp_pattern, lambda m: protect(m.group(0)), clean_input)
 
         # Protect percentage numbers (e.g. 76%, 20 %)
         pct_pattern = r"\b\d+(\.\d+)?\s*%"
@@ -280,6 +283,41 @@ class LanguageService:
             for i, val in enumerate(protected_tokens):
                 translated = translated.replace(f"[[{i}]]", val)
                 translated = translated.replace(f"[{i}]", val)
+
+            # Post-process: remove emojis and normalize clean formatting without unusual symbols
+            translated = re.sub(r'[\U00010000-\U0010ffff]|[\u2600-\u27bf]', '', translated)
+            translated = re.sub(r'#{1,6}\s*', '', translated)  # Remove raw ### hashes
+            translated = re.sub(r'\*\s+\*\s+\*', '', translated)
+            translated = re.sub(r'\*\s+\*', '**', translated)
+            translated = re.sub(r'\*\s*-\s*', '\n- ', translated)
+            translated = re.sub(r'\*\s*•\s*', '\n- ', translated)
+            translated = re.sub(r'\*\s*:\s*\*\s*', ': ', translated)
+
+            # Add clean newlines before prominent section headers if mashed together
+            section_headers = [
+                r"हवा गुणवत्ता निर्देशांक",
+                r"सध्याची परिस्थिती(?:\s*\(निरीक्षीत\))?",
+                r"आजचा अंदाज",
+                r"अधिकृत चेतावणी",
+                r"व्यावहारिक शिफारस(?:\s*\(.*?\))?",
+                r"बाह्य क्रियाकलाप",
+                r"संवेदनशील गट",
+                r"चिंतेचे मुख्य प्रदूषक",
+                r"हवामान सारांश",
+                r"Current Conditions(?:\s*\(Observed\))?",
+                r"Today\'s Forecast",
+                r"Official Warning",
+                r"Practical Recommendation",
+                r"Outdoor Activity",
+                r"Sensitive Groups",
+                r"Weather Summary",
+            ]
+            for sec in section_headers:
+                translated = re.sub(rf"(?<!\n\n)(?:\*\*|-|\b)({sec}):?\s*(?:\*\*)?", r"\n\n\1:\n", translated, flags=re.IGNORECASE)
+
+            # Add clean newlines for numbered recommendations (e.g. 1. 2. 3.)
+            translated = re.sub(r'(?<!\n)\s+(\d+\.\s+)', r'\n\1', translated)
+            translated = re.sub(r'\n{3,}', '\n\n', translated).strip()
 
             logger.info(f"[LanguageService] Response translated to '{tgt}' successfully.")
             return translated

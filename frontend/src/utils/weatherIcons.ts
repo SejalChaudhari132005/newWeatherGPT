@@ -7,7 +7,7 @@ export interface WeatherIconInfo {
   emoji: string;
 }
 
-export const getWeatherIconInfo = (weatherCode?: number | null, condition?: string): WeatherIconInfo => {
+export const getWeatherIconInfo = (weatherCode?: number | null, condition?: string, isNight?: boolean): WeatherIconInfo => {
   const code = weatherCode ?? -1;
   const condLower = (condition || '').toLowerCase();
 
@@ -25,7 +25,7 @@ export const getWeatherIconInfo = (weatherCode?: number | null, condition?: stri
   }
   // Moderate / Light Rain / Drizzle / Showers
   if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || condLower.includes('rain') || condLower.includes('drizzle') || condLower.includes('shower')) {
-    return { iconName: 'cloud-drizzle', emoji: '🌦️' };
+    return { iconName: 'cloud-drizzle', emoji: isNight ? '🌧️' : '🌦️' };
   }
   // Fog
   if (code === 45 || code === 48 || condLower.includes('fog')) {
@@ -33,12 +33,12 @@ export const getWeatherIconInfo = (weatherCode?: number | null, condition?: stri
   }
   // Overcast / Cloudy
   if (code === 3 || condLower.includes('overcast') || condLower.includes('cloudy')) {
-    return { iconName: 'cloud', emoji: '☁️' };
+    return isNight ? { iconName: 'cloud-moon', emoji: '☁️🌙' } : { iconName: 'cloud', emoji: '☁️' };
   }
   // Partly Cloudy / Mainly Clear
   if (code === 1 || code === 2 || condLower.includes('partly') || condLower.includes('mainly clear')) {
-    return { iconName: 'cloud-sun', emoji: '⛅' };
+    return isNight ? { iconName: 'cloud-moon', emoji: '☁️🌙' } : { iconName: 'cloud-sun', emoji: '⛅' };
   }
   // Clear / Sun
-  return { iconName: 'sun', emoji: '☀️' };
+  return isNight ? { iconName: 'moon', emoji: '🌙' } : { iconName: 'sun', emoji: '☀️' };
 };

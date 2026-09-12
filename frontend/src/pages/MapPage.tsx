@@ -227,17 +227,108 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
   const lon = location?.longitude || profile?.longitude || 73.1339;
   const city = location?.city || profile?.city || intelligence?.location?.city || 'Kalyan-Dombivli';
   const state = location?.state || profile?.state || intelligence?.location?.state || 'Maharashtra';
-  const currentTemp = intelligence?.current?.temperature?.value ?? 29.5;
-  const currentCondition = intelligence?.current?.condition ?? 'Mainly Clear';
-  const rainProbability = intelligence?.current?.rain_probability?.value ?? 76;
+  const currentTemp = intelligence?.current?.temperature?.value ?? (regionalPoints.length > 0 ? regionalPoints[0].temperature : 29);
+  const currentCondition = intelligence?.current?.condition ?? 'Clear Sky';
+  const rainProbability = intelligence?.current?.rain_probability?.value ?? (intelligence?.current?.precipitation?.value ? 75 : 0);
 
   const activeAlerts = intelligence?.alerts || [];
   const primaryAlert = activeAlerts.length > 0 ? activeAlerts[0] : null;
 
-  const firstInsight = intelligence?.insights && intelligence.insights.length > 0 ? intelligence.insights[0] : null;
-  const insightText = firstInsight
-    ? `${firstInsight.headline}${firstInsight.detail ? ` — ${firstInsight.detail}` : ''}`
-    : 'Clear skies prevail over Kalyan and northern MMR. Light coastal breeze with pleasant to warm daytime temperatures.';
+  const hourlyForecast = intelligence?.forecast?.hourly || [];
+
+  // Compute real dynamic expected rain / shower window from live hourly telemetry
+  const getExpectedRainWindow = () => {
+    if (!hourlyForecast || hourlyForecast.length === 0) {
+      return rainProbability > 30
+        ? (language === 'mr' ? 'आज दिवसभरात' : language === 'hi' ? 'आज दिन भर' : 'Today')
+        : (language === 'mr' ? 'पावसाची शक्यता नाही' : language === 'hi' ? 'बारिश की संभावना नहीं' : 'No Rain Expected');
+    }
+
+    // Check hourly items with rain probability >= 25%
+    const rainyHours = hourlyForecast.slice(0, 12).filter((h) => (h.rainProb ?? 0) >= 25);
+    if (rainyHours.length > 0) {
+      const first = rainyHours[0].time;
+      const last = rainyHours[rainyHours.length - 1].time;
+      return first === last ? `${first}` : `${first} – ${last}`;
+    }
+
+    // Check hourly items with rain probability >= 10%
+    const lightRainHours = hourlyForecast.slice(0, 12).filter((h) => (h.rainProb ?? 0) >= 10);
+    if (lightRainHours.length > 0) {
+      const first = lightRainHours[0].time;
+      const last = lightRainHours[lightRainHours.length - 1].time;
+      return first === last ? `${first}` : `${first} – ${last}`;
+    }
+
+    return language === 'mr'
+      ? 'पुढील २४ तास निरभ्र'
+      : language === 'hi'
+      ? 'अगले 24 घंटे साफ'
+      : 'Clear (Next 24h)';
+  };
+
+  // Compute real dynamic recommendation based on live telemetry & alerts
+  const getDynamicRecommendation = () => {
+    // 1. Check if an advisory insight exists from backend intelligence
+    const advisoryInsight = intelligence?.insights?.find((i) => i.is_advisory);
+    if (advisoryInsight?.detail) {
+      return advisoryInsight.detail;
+    }
+
+    // 2. Check active alerts recommendations
+    if ((primaryAlert as any)?.recommended_actions && (primaryAlert as any).recommended_actions.length > 0) {
+      return (primaryAlert as any).recommended_actions[0];
+    }
+
+    // 3. Deterministic recommendation from live meteorological parameters
+    if (rainProbability >= 60) {
+      return language === 'mr'
+        ? 'मुसळधार पावसाची शक्यता, छत्री सोबत ठेवा आणि पाणी साचणाऱ्या रस्त्यांवर सावधगिरी बाळगा.'
+        : language === 'hi'
+        ? 'भारी बारिश की संभावना, छाता साथ रखें और जलभराव वाले रास्तों पर सावधानी बरतें।'
+        : 'Heavy rain probable; carry an umbrella and allow extra travel time.';
+    } else if (rainProbability >= 25) {
+      return language === 'mr'
+        ? 'हलक्या ते मध्यम सरींची शक्यता, बाहेर पडताना छत्री सोबत ठेवा.'
+        : language === 'hi'
+        ? 'हल्की से मध्यम बारिश की संभावना, बाहर निकलते समय छाता साथ रखें।'
+        : 'Scattered showers possible; carry an umbrella when going outdoors.';
+    } else if (currentTemp >= 35) {
+      return language === 'mr'
+        ? 'उष्ण हवामान, भरपूर पाणी प्या आणि दुपारच्या वेळी थेट उन्हात जाणे टाळा.'
+        : language === 'hi'
+        ? 'अधिक तापमान, पर्याप्त पानी पिएं और दोपहर में धूप से बचें।'
+        : 'High temperature; stay hydrated and limit direct sun exposure.';
+    }
+
+    return language === 'mr'
+      ? 'हवामान अनुकूल आहे; बाहेरील कामांसाठी उत्तम वेळ.'
+      : language === 'hi'
+      ? 'मौसम अनुकूल है; बाहरी गतिविधियों के लिए उपयुक्त समय।'
+      : 'Pleasant weather conditions; favorable for outdoor travel.';
+  };
+
+  // Dynamic insight text derived from live parameters
+  const getDynamicInsightText = () => {
+    const firstInsight = intelligence?.insights && intelligence.insights.length > 0 ? intelligence.insights[0] : null;
+    if (firstInsight) {
+      return `${firstInsight.headline}${firstInsight.detail ? ` — ${firstInsight.detail}` : ''}`;
+    }
+
+    if (rainProbability >= 50) {
+      return language === 'mr'
+        ? `${city} आणि परिसरात पावसाची दाट शक्यता (${rainProbability}%). हवेत आर्द्रता अधिक असून दुपारनंतर सरी वाढू शकतात.`
+        : language === 'hi'
+        ? `${city} और आसपास के क्षेत्र में बारिश की संभावना (${rainProbability}%) बनी हुई है।`
+        : `Active precipitation pattern observed over ${city} with ${rainProbability}% rain probability and ${currentCondition.toLowerCase()} conditions.`;
+    }
+
+    return language === 'mr'
+      ? `${city} परिसरात सध्या ${currentCondition} हवामान असून तापमान ${currentTemp.toFixed(1)}°C आहे.`
+      : language === 'hi'
+      ? `${city} में वर्तमान में ${currentCondition} मौसम है और तापमान ${currentTemp.toFixed(1)}°C है।`
+      : `${currentCondition} conditions prevail over ${city} with surface temperature at ${currentTemp.toFixed(1)}°C and light coastal breeze.`;
+  };
 
   // Format UNIX timestamp to IST time string
   const formatTimeLabel = (unixTime: number) => {
@@ -392,10 +483,10 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
     expectedWindow: language === 'mr' ? 'अपेक्षित वेळ' : language === 'hi' ? 'अपेक्षित समय' : 'Expected',
     imdAlert: language === 'mr' ? 'IMD इशारा' : language === 'hi' ? 'IMD अलर्ट' : 'IMD Alert',
     recommendation: language === 'mr' ? 'शिफारस' : language === 'hi' ? 'सिफारिश' : 'Recommendation',
-    askGpt: language === 'mr' ? '✨ AI कडून विचारा' : language === 'hi' ? '✨ AI से पूछें' : '✨ Ask WeatherGPT',
-    routeTitle: language === 'mr' ? 'हवामान-सजग मार्ग' : language === 'hi' ? 'मौसम-सजग मार्ग' : 'Weather-Aware Route',
-    routeSubtitle: language === 'mr' ? 'हवामान बुद्धिमत्तेसह प्रवासाचे नियोजन करा' : language === 'hi' ? 'मौसम बुद्धिमत्ता के साथ अपनी यात्रा की योजना बनाएं' : 'Plan your journey with weather intelligence',
-    planTrip: language === 'mr' ? 'प्रवास योजना ›' : language === 'hi' ? 'यात्रा प्लान ›' : 'Plan a Trip ›',
+    askGpt: language === 'mr' ? 'AI सल्ला विचारा' : language === 'hi' ? 'AI सलाह पूछें' : 'Consult WeatherGPT',
+    routeTitle: language === 'mr' ? 'हवामान-सजग मार्ग नियोजन' : language === 'hi' ? 'मौसम-सजग मार्ग नियोजन' : 'Weather-Safe Highway & Route Transit',
+    routeSubtitle: language === 'mr' ? 'हवामान बुद्धिमत्तेसह प्रवासाचे नियोजन करा' : language === 'hi' ? 'मौसम बुद्धिमत्ता के साथ अपनी यात्रा की योजना बनाएं' : 'Official transit safety & rainfall mitigation',
+    planTrip: language === 'mr' ? 'मार्ग नियोजन' : language === 'hi' ? 'मार्ग नियोजन' : 'Plan Route',
   };
 
   const tileUrls = {
@@ -494,62 +585,96 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
   const getStatusNotice = () => {
     switch (activeLayer) {
       case 'radar':
-        return `🟢 IMD Doppler Radar Active • 0 dBZ (Clear sky over ${city}) • Live scan`;
+        return `IMD Doppler Radar Active • 0 dBZ (Clear sky over ${city}) • Live scan`;
       case 'rainfall':
-        return `🌧️ Live Precipitation Intensity • Range: 0.0 - 0.1 mm/h across MMR`;
+        return `Live Precipitation Intensity • Range: 0.0 - 0.1 mm/h across MMR`;
       case 'temperature':
-        return `🌡️ Surface Thermal Grid • ${city}: ${currentTemp}°C • High: 31°C / Low: 25°C`;
+        return `Surface Thermal Grid • ${city}: ${currentTemp}°C • High: 31°C / Low: 25°C`;
       case 'wind':
-        return `💨 Regional Wind Flow • WNW Flow 7–15 km/h across coastal Maharashtra`;
+        return `Regional Wind Flow • WNW Flow 7–15 km/h across coastal Maharashtra`;
       case 'satellite':
-        return `🛰️ INSAT / IR Cloud Density Composite • Clear to scattered cloud cover`;
+        return `INSAT / IR Cloud Density Composite • Clear to scattered cloud cover`;
       case 'alerts':
-        return `🛡️ IMD Hazard Status: Green / Normal across Thane & Mumbai MMR`;
+        return `IMD Hazard Status: Green / Normal across Thane & Mumbai MMR`;
     }
   };
 
   return (
-
-    <div className="min-h-screen bg-[#F4F7FC] p-3 sm:p-5 font-['Arimo'] max-w-md sm:max-w-2xl mx-auto space-y-3.5 pb-28">
-      {/* 1. LOCATION BAR WITH [MY LOCATION] BUTTON (SINGLE CLEAN TOP BAR) */}
-      <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#004aad] flex items-center justify-center shrink-0">
-            <MapPin className="w-4 h-4" />
+    <div className="min-h-screen bg-[#F5F7F9] p-3 sm:p-4 max-w-4xl mx-auto space-y-3 pb-28 font-sans">
+      {/* 1. WEATHER-AWARE ROUTE CARD */}
+      <div className="gov-panel p-3.5 space-y-2.5">
+        <div className="flex items-center justify-between border-b border-[#D6DCE1] pb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 bg-white border border-[#D6DCE1] text-[#006B3C] flex items-center justify-center shrink-0">
+              <Car className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-bold text-[#17365D] uppercase tracking-wide truncate">
+                {labels.routeTitle}
+              </h3>
+              <div className="flex items-center gap-1.5 text-[11px] text-[#5B6770] truncate">
+                <MapPin className="w-3 h-3 text-[#006B3C] shrink-0" />
+                <span className="truncate">{city}, {state}</span>
+              </div>
+            </div>
           </div>
-          <div className="min-w-0">
-            <div className="text-xs font-black text-slate-900 truncate">
-              {city}, {state}
-            </div>
-            <div className="text-[10px] text-slate-400 font-bold">
-              {lat.toFixed(4)}, {lon.toFixed(4)}
-            </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => {
+                detectLocation();
+                openSelector();
+              }}
+              className="gov-btn-secondary p-1.5"
+              title={labels.myLocation}
+            >
+              <Crosshair className="w-3.5 h-3.5 text-[#006B3C]" />
+            </button>
+            <button
+              onClick={() => setShowRoutePlanner(!showRoutePlanner)}
+              className="gov-btn-primary px-3 py-1.5 text-xs uppercase font-bold"
+            >
+              {showRoutePlanner ? (language === 'mr' ? 'बंद करा' : language === 'hi' ? 'बंद करें' : 'Hide') : labels.planTrip}
+            </button>
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            detectLocation();
-            openSelector();
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-extrabold border border-slate-200 shadow-2xs cursor-pointer active:scale-98 transition-all shrink-0"
-        >
-          <Crosshair className="w-3.5 h-3.5 text-[#004aad]" />
-          <span>{labels.myLocation}</span>
-        </button>
+        {/* Expandable Route Planner Box */}
+        {showRoutePlanner && (
+          <div className="pt-2 border-t border-[#D6DCE1] space-y-3">
+            <RoutePlanningCard
+              defaultOrigin={city}
+              defaultOriginCoords={{ lat, lon }}
+              onAnalyze={handleAnalyzeRoute}
+              onCompareTimes={handleCompareTimes}
+              loading={analyzingRoute}
+            />
+
+            {routeAnalysis && (
+              <RouteTimeline
+                analysis={routeAnalysis}
+                onAskGpt={onAskGpt}
+              />
+            )}
+
+            {departureComparison && (
+              <DepartureComparisonCard comparison={departureComparison} />
+            )}
+          </div>
+        )}
       </div>
 
       {/* 2. PAGE HEADER & REFRESH BAR */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#004aad] flex items-center justify-center border border-blue-100 shadow-2xs">
-            <Navigation className="w-5 h-5 rotate-45" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-white border border-[#D6DCE1] text-[#17365D] flex items-center justify-center">
+            <Navigation className="w-4 h-4 rotate-45 text-[#006B3C]" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+            <h1 className="text-sm sm:text-base font-bold text-[#17365D] uppercase tracking-wide">
               {labels.pageTitle}
-            </h2>
-            <p className="text-[11px] text-slate-500 font-bold">{labels.pageSubtitle}</p>
+            </h1>
+            <p className="text-[11px] text-[#5B6770]">{labels.pageSubtitle}</p>
           </div>
         </div>
 
@@ -560,95 +685,48 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
               refreshIntelligence();
             }}
             disabled={loadingRadar}
-            className="p-2 rounded-xl bg-white text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 cursor-pointer active:scale-95 transition-all"
+            className="gov-btn-secondary p-1.5"
             title="Refresh Live Data"
           >
-            <RefreshCw className={`w-4 h-4 ${loadingRadar ? 'animate-spin text-[#004aad]' : 'text-slate-600'}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingRadar ? 'animate-spin text-[#006B3C]' : 'text-[#1F2933]'}`} />
           </button>
-          <span className="text-[10px] font-extrabold text-slate-500 flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="text-[10px] font-mono text-[#5B6770] bg-white px-2 py-1 border border-[#D6DCE1]">
             {labels.updatedAgo(lastUpdatedMinutes)}
           </span>
         </div>
       </div>
 
-      {/* 3. HORIZONTAL LAYER SELECTOR TABS */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-        <button
-          onClick={() => setActiveLayer('radar')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 ${
-            activeLayer === 'radar'
-              ? 'bg-[#004aad] text-white shadow-md shadow-blue-900/25'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <Radio className="w-3.5 h-3.5" />
-          <span>IMD Radar</span>
-        </button>
-
-        <button
-          onClick={() => setActiveLayer('rainfall')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 ${
-            activeLayer === 'rainfall'
-              ? 'bg-[#004aad] text-white shadow-md shadow-blue-900/25'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <CloudRain className="w-3.5 h-3.5" />
-          <span>Rainfall</span>
-        </button>
-
-        <button
-          onClick={() => setActiveLayer('temperature')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 ${
-            activeLayer === 'temperature'
-              ? 'bg-[#004aad] text-white shadow-md shadow-blue-900/25'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <Thermometer className="w-3.5 h-3.5" />
-          <span>Temperature</span>
-        </button>
-
-        <button
-          onClick={() => setActiveLayer('wind')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 ${
-            activeLayer === 'wind'
-              ? 'bg-[#004aad] text-white shadow-md shadow-blue-900/25'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <Wind className="w-3.5 h-3.5" />
-          <span>Wind</span>
-        </button>
-
-        <button
-          onClick={() => setActiveLayer('satellite')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 ${
-            activeLayer === 'satellite'
-              ? 'bg-[#004aad] text-white shadow-md shadow-blue-900/25'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <Satellite className="w-3.5 h-3.5" />
-          <span>Satellite</span>
-        </button>
-
-        <button
-          onClick={() => setActiveLayer('alerts')}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 ${
-            activeLayer === 'alerts'
-              ? 'bg-[#004aad] text-white shadow-md shadow-blue-900/25'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-          }`}
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>Alerts</span>
-        </button>
+      {/* 3. RECTANGULAR LAYER SELECTOR TABS */}
+      <div className="flex items-center gap-1 p-1 bg-white border border-[#D6DCE1] overflow-x-auto no-scrollbar">
+        {[
+          { key: 'radar', label: 'IMD Radar', icon: Radio },
+          { key: 'rainfall', label: 'Rainfall', icon: CloudRain },
+          { key: 'temperature', label: 'Temperature', icon: Thermometer },
+          { key: 'wind', label: 'Wind Flow', icon: Wind },
+          { key: 'satellite', label: 'INSAT Satellite', icon: Satellite },
+          { key: 'alerts', label: 'IMD Alerts', icon: ShieldAlert },
+        ].map((layer) => {
+          const Icon = layer.icon;
+          const active = activeLayer === layer.key;
+          return (
+            <button
+              key={layer.key}
+              onClick={() => setActiveLayer(layer.key as any)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shrink-0 border ${
+                active
+                  ? 'bg-[#17365D] text-white border-[#17365D]'
+                  : 'bg-white text-[#1F2933] border-transparent hover:bg-[#F5F7F9]'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{layer.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 4. REAL-TIME METEOROLOGICAL INTENSITY MAP CONTAINER */}
-      <div className="relative h-[430px] sm:h-[480px] w-full rounded-3xl overflow-hidden border border-slate-300 shadow-xl bg-slate-950">
+      <div className="relative h-[430px] sm:h-[480px] w-full border border-[#D6DCE1] bg-slate-950">
         <MapContainer
           center={[lat, lon]}
           zoom={mapZoom}
@@ -951,10 +1029,10 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
           </div>
           <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-[9px] text-slate-400">
             <span className="flex items-center gap-1 truncate">
-              <Radio className="w-2.5 h-2.5 text-sky-400 shrink-0" />
-              {currentLegend.source}
+              <Radio className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+              Live Telemetry
             </span>
-            <span className="px-1.5 py-0.2 rounded-sm bg-white/10 font-bold text-white shrink-0">IMD</span>
+            <span className="px-1.5 py-0.2 rounded-xs bg-white/10 font-bold text-white shrink-0">GIS</span>
           </div>
         </div>
 
@@ -983,7 +1061,7 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
           {/* Zoom In */}
           <button
             onClick={() => setMapZoom((prev) => Math.min(prev + 1, 16))}
-            className="w-9 h-9 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg hover:bg-slate-900 cursor-pointer active:scale-95"
+            className="w-8 h-8 bg-white border border-[#D6DCE1] text-[#17365D] flex items-center justify-center shadow-md hover:bg-[#F5F7F9] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -991,7 +1069,7 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
           {/* Zoom Out */}
           <button
             onClick={() => setMapZoom((prev) => Math.max(prev - 1, 4))}
-            className="w-9 h-9 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg hover:bg-slate-900 cursor-pointer active:scale-95"
+            className="w-8 h-8 bg-white border border-[#D6DCE1] text-[#17365D] flex items-center justify-center shadow-md hover:bg-[#F5F7F9] cursor-pointer"
           >
             <Minus className="w-4 h-4" />
           </button>
@@ -999,133 +1077,80 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
           {/* Recenter */}
           <button
             onClick={() => setRecenterTrigger((prev) => prev + 1)}
-            className="w-9 h-9 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg hover:bg-slate-900 cursor-pointer active:scale-95"
+            className="w-8 h-8 bg-white border border-[#D6DCE1] text-[#006B3C] flex items-center justify-center shadow-md hover:bg-[#F5F7F9] cursor-pointer"
             title="Center on My Location"
           >
-            <Crosshair className="w-4 h-4 text-sky-400" />
+            <Crosshair className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* OVERLAY: BOTTOM PLAYBACK TIMELINE & RADAR BADGE */}
-        <div className="absolute bottom-3 left-3 right-3 z-[1000] p-2 sm:p-2.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/20 text-white shadow-2xl pointer-events-auto space-y-2">
-          <div className="flex items-center gap-2">
-            {/* Play/Pause Button */}
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="w-8 h-8 rounded-full bg-[#004aad] text-white flex items-center justify-center hover:bg-blue-700 shadow-md shadow-blue-500/30 cursor-pointer active:scale-90 transition-all shrink-0"
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
-            </button>
-
-            {/* Timeline nodes */}
-            <div className="flex items-center justify-between flex-1 gap-1 overflow-x-auto no-scrollbar">
-              {(radarFrames.length > 0
-                ? radarFrames
-                : [
-                    { time: 1, label: '10:30', path: '' },
-                    { time: 2, label: '10:45', path: '' },
-                    { time: 3, label: '11:00', path: '' },
-                    { time: 4, label: '11:15', path: '' },
-                    { time: 5, label: '11:30', path: '' },
-                    { time: 6, label: 'Now', path: '' },
-                  ]
-              ).map((slot, idx) => {
-                const isSelected = idx === activeFrameIndex;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setIsPlaying(false);
-                      setActiveFrameIndex(idx);
-                    }}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer shrink-0 ${
-                      isSelected
-                        ? 'bg-sky-500 text-white font-black shadow-xs'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {slot.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Station & Update Status Row */}
-          <div className="flex items-center justify-between pt-1.5 border-t border-white/10 text-[10px] text-slate-300">
-            <div className="flex items-center gap-1.5">
-              <Radio className="w-3 h-3 text-sky-400" />
-              <span className="font-extrabold">
-                IMD Radar • {radarData?.city || 'Mumbai (Veravali)'}
-              </span>
-            </div>
-            <div className="text-slate-400 text-[9px] font-bold">
-              Updated: {radarData?.radar_timestamp ? formatTimeLabel(Math.floor(Date.now() / 1000)) : 'Live'}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* 5. WEATHERGPT INSIGHT CARD */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[#004aad]">
-            <Lightbulb className="w-4 h-4" />
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+      {/* 4. WEATHER ANALYSIS PANEL */}
+      <div className="gov-panel p-3.5 space-y-3">
+        <div className="flex items-center justify-between border-b border-[#D6DCE1] pb-2">
+          <div className="flex items-center gap-1.5 text-[#17365D]">
+            <Lightbulb className="w-4 h-4 text-[#006B3C]" />
+            <h3 className="text-xs font-bold uppercase tracking-wider">
               {labels.insightTitle}
             </h3>
           </div>
-          <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200/50">
-            Live AI Radar Sync
+          <span className="gov-badge gov-badge-info text-[10px]">
+            RADAR TELEMETRY
           </span>
         </div>
 
         {/* Narrative */}
-        <p className="text-xs sm:text-sm font-bold text-slate-700 leading-relaxed">
-          {insightText}
+        <p className="text-xs text-[#1F2933] leading-relaxed">
+          {getDynamicInsightText()}
         </p>
 
         {/* 3 Metric Stat Boxes */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {/* Rain Probability */}
-          <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-sky-600 mb-1">
+          <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] space-y-1">
+            <div className="flex items-center gap-1.5 text-[#1D5F91]">
               <Droplets className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold text-slate-500">{labels.rainProbability}</span>
+              <span className="text-[10px] font-bold text-[#5B6770] uppercase">{labels.rainProbability}</span>
             </div>
-            <div className="text-sm font-black text-slate-900">{rainProbability}%</div>
+            <div className="text-base font-bold text-[#17365D]">{Math.round(rainProbability)}%</div>
           </div>
 
           {/* Expected Time Window */}
-          <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-            <div className="flex items-center gap-1.5 text-amber-600 mb-1">
+          <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] space-y-1">
+            <div className="flex items-center gap-1.5 text-[#B7791F]">
               <Clock className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold text-slate-500">{labels.expectedWindow}</span>
+              <span className="text-[10px] font-bold text-[#5B6770] uppercase">{labels.expectedWindow}</span>
             </div>
-            <div className="text-xs font-black text-slate-900">2 PM – 6 PM</div>
+            <div className="text-xs font-bold text-[#1F2933] truncate">
+              {getExpectedRainWindow()}
+            </div>
           </div>
 
           {/* IMD Alert */}
           <div
             onClick={() => primaryAlert && setSelectedWarning(primaryAlert)}
-            className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between cursor-pointer hover:bg-slate-100 transition-all"
+            className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] space-y-1 cursor-pointer hover:bg-white transition-colors"
           >
-            <div className="flex items-center gap-1.5 text-red-600 mb-1">
+            <div className="flex items-center gap-1.5 text-[#B42318]">
               <ShieldAlert className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold text-slate-500">{labels.imdAlert}</span>
+              <span className="text-[10px] font-bold text-[#5B6770] uppercase">{labels.imdAlert}</span>
             </div>
-            <div className="text-[11px] font-black text-red-600 truncate flex items-center justify-between">
-              <span>{primaryAlert ? primaryAlert.title : 'Normal / Green'}</span>
-              <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+            <div className="text-xs font-bold text-[#B42318] truncate flex items-center justify-between">
+              <span className="truncate">
+                {primaryAlert
+                  ? (language === 'mr' ? 'सक्रिय इशारा' : language === 'hi' ? 'सक्रिय अलर्ट' : primaryAlert.title)
+                  : (language === 'mr' ? 'सामान्य' : language === 'hi' ? 'सामान्य' : 'Normal / Green')}
+              </span>
+              <ChevronRight className="w-3 h-3 text-[#5B6770] shrink-0" />
             </div>
           </div>
         </div>
 
-        {/* Recommendation Note + Ask GPT Button */}
-        <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Carry an umbrella and avoid low-lying roads after 2 PM.</span>
+        {/* Recommendation Note + Consult Button */}
+        <div className="pt-2 border-t border-[#D6DCE1] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-[#1F2933]">
+            <CheckCircle2 className="w-4 h-4 text-[#006B3C] shrink-0" />
+            <span className="leading-snug">{getDynamicRecommendation()}</span>
           </div>
 
           <button
@@ -1136,109 +1161,61 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
                 );
               }
             }}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#004aad] to-[#38b6ff] hover:from-blue-700 hover:to-sky-500 text-white text-xs font-black shadow-md shadow-blue-500/20 cursor-pointer active:scale-98 transition-all shrink-0"
+            className="gov-btn-primary px-3 py-1.5 text-xs uppercase font-bold cursor-pointer shrink-0"
           >
-            <Sparkles className="w-3.5 h-3.5" />
             <span>{labels.askGpt}</span>
           </button>
         </div>
       </div>
 
-      {/* 6. WEATHER-AWARE ROUTE PLANNING QUICK CARD */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#004aad] flex items-center justify-center">
-              <Car className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-xs sm:text-sm font-black text-slate-900">{labels.routeTitle}</h4>
-              <p className="text-[10px] text-slate-500 font-bold">{labels.routeSubtitle}</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setShowRoutePlanner(!showRoutePlanner)}
-            className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-[#004aad] text-xs font-black border border-slate-200/80 cursor-pointer transition-all active:scale-98"
-          >
-            {showRoutePlanner ? 'Hide' : labels.planTrip}
-          </button>
-        </div>
-
-        {/* Expandable Route Planner Box */}
-        {showRoutePlanner && (
-          <div className="pt-3 border-t border-slate-100 space-y-3">
-            <RoutePlanningCard
-              defaultOrigin={city}
-              defaultOriginCoords={{ lat, lon }}
-              onAnalyze={handleAnalyzeRoute}
-              onCompareTimes={handleCompareTimes}
-              loading={analyzingRoute}
-            />
-
-            {routeAnalysis && (
-              <RouteTimeline
-                analysis={routeAnalysis}
-                onAskGpt={onAskGpt}
-              />
-            )}
-
-            {departureComparison && (
-              <DepartureComparisonCard comparison={departureComparison} />
-            )}
-          </div>
-        )}
-      </div>
-
-
-      {/* 7. WARNING DETAIL BOTTOM SHEET MODAL */}
+      {/* 5. WARNING DETAIL MODAL */}
       {selectedWarning && (
-        <div className="fixed inset-0 z-[2000] bg-slate-900/60 backdrop-blur-xs flex items-end justify-center p-3 animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-slate-200 space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="w-5 h-5" />
-                <span className="text-sm font-black uppercase tracking-wider">
+        <div className="fixed inset-0 z-[2000] bg-[#17365D]/60 backdrop-blur-xs flex items-center justify-center p-3 animate-fadeIn">
+          <div className="bg-white w-full max-w-md border border-[#D6DCE1] p-4 shadow-xl space-y-3 max-h-[85vh] overflow-y-auto font-sans">
+            <div className="flex items-center justify-between border-b border-[#D6DCE1] pb-2">
+              <div className="flex items-center gap-1.5 text-[#B42318]">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">
                   {selectedWarning.title || 'IMD Weather Warning'}
                 </span>
               </div>
               <button
                 onClick={() => setSelectedWarning(null)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
+                className="p-1 hover:bg-[#F5F7F9] text-[#5B6770] cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-700">
+            <div className="space-y-2 text-xs text-[#1F2933]">
               <div>
-                <span className="font-extrabold text-slate-900">Type: </span>
+                <span className="font-bold text-[#17365D]">Type: </span>
                 <span>{selectedWarning.warning_type || 'Heavy Rainfall'}</span>
               </div>
               <div>
-                <span className="font-extrabold text-slate-900">Affected Area: </span>
+                <span className="font-bold text-[#17365D]">Affected Area: </span>
                 <span>{selectedWarning.affected_area || selectedWarning.district || city}</span>
               </div>
               <div>
-                <span className="font-extrabold text-slate-900">Issued: </span>
+                <span className="font-bold text-[#17365D]">Issued: </span>
                 <span>{selectedWarning.issued_at || 'Recent IMD Bulletin'}</span>
               </div>
               <div>
-                <span className="font-extrabold text-slate-900">Severity: </span>
-                <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 font-black text-[10px]">
-                  {selectedWarning.severity_label || selectedWarning.severity || 'Take Precautions (Alert)'}
+                <span className="font-bold text-[#17365D]">Severity: </span>
+                <span className="gov-badge gov-badge-danger text-[9px] uppercase ml-1">
+                  {selectedWarning.severity_label || selectedWarning.severity || 'Take Precautions'}
                 </span>
               </div>
-              <div className="pt-2 border-t border-slate-100">
-                <div className="font-black text-slate-900 mb-1">What this means:</div>
-                <p className="text-slate-600 leading-relaxed">
+              <div className="pt-2 border-t border-[#D6DCE1]">
+                <div className="font-bold text-[#17365D] mb-0.5">Summary:</div>
+                <p className="text-[#5B6770] leading-relaxed">
                   {selectedWarning.description ||
                     'Intense rainfall is predicted over the area, which may lead to waterlogging on roads and reduced travel visibility.'}
                 </p>
               </div>
-              <div className="pt-2">
-                <div className="font-black text-slate-900 mb-1">What you should do:</div>
-                <p className="text-slate-600 leading-relaxed">
+              <div className="pt-1">
+                <div className="font-bold text-[#17365D] mb-0.5">Advisory Action:</div>
+                <p className="text-[#5B6770] leading-relaxed">
                   Avoid traveling through low-lying areas, keep emergency essentials handy, and monitor official IMD local weather updates.
                 </p>
               </div>
@@ -1252,10 +1229,9 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
                   onAskGpt(prompt);
                 }
               }}
-              className="w-full py-3 rounded-2xl bg-[#004aad] text-white font-black text-xs shadow-md shadow-blue-900/20 hover:bg-blue-700 cursor-pointer flex items-center justify-center gap-2 active:scale-98 transition-all"
+              className="gov-btn-primary w-full py-2 text-xs uppercase font-bold cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Ask WeatherGPT about this</span>
+              <span>Consult WeatherGPT Advisory</span>
             </button>
           </div>
         </div>

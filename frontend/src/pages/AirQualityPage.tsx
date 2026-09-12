@@ -15,13 +15,15 @@ import {
 } from '../utils/dashboardTranslator';
 import {
   Wind,
-  HeartPulse,
   Sparkles,
   RefreshCw,
   MapPin,
   AlertTriangle,
   MessageSquare,
-  Database,
+  Activity,
+  ShieldCheck,
+  CloudFog,
+  ChevronDown,
 } from 'lucide-react';
 
 interface Props {
@@ -72,9 +74,22 @@ export const AirQualityPage: React.FC<Props> = ({ onOpenChatWithPrompt }) => {
     }
   };
 
-  const badgeStyle = currentAQI
-    ? airQualityService.getCategoryBadgeStyle(currentAQI.category)
-    : { bg: '', text: '', border: '' };
+  const getBadgeClass = (category?: string) => {
+    switch ((category || '').toUpperCase()) {
+      case 'GOOD':
+      case 'FAIR':
+        return 'gov-badge-success';
+      case 'MODERATE':
+        return 'gov-badge-warning';
+      case 'POOR':
+      case 'UNHEALTHY':
+      case 'VERY_POOR':
+      case 'HAZARDOUS':
+        return 'gov-badge-danger';
+      default:
+        return 'gov-badge-info';
+    }
+  };
 
   const localizedCategory = currentAQI ? translateAQICategory(currentAQI.category, language) : '';
   const localizedPrimary = currentAQI ? translatePollutant(currentAQI.primary_pollutant, language) : '';
@@ -82,45 +97,54 @@ export const AirQualityPage: React.FC<Props> = ({ onOpenChatWithPrompt }) => {
   const localizedAdvisory = currentAQI ? translateAirAdvisory(currentAQI.category, currentAQI.health_advisory, language) : '';
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] p-3 sm:p-4 md:p-6 font-['Arimo'] max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-24 overflow-x-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-2xl bg-white text-[#004aad] border border-slate-200 shadow-2xs">
-            <Wind className="w-6 h-6 text-[#004aad]" />
+    <div className="min-h-screen bg-[#F5F7F9] p-3 sm:p-4 md:p-6 font-sans max-w-4xl mx-auto space-y-3 sm:space-y-4 pb-24 overflow-x-hidden">
+      {/* Top Header & Action Bar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap bg-white p-3 border border-[#D6DCE1] rounded-xs shadow-2xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xs bg-[#17365D] text-white flex items-center justify-center font-black shrink-0">
+            <Activity className="w-4 h-4" />
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-[#17365D] tracking-tight truncate uppercase">
               {translatePhrase('airQualityIntelligence', language)}
             </h1>
-            <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-slate-400" />
-              <span>{locationName}</span>
+            <div className="flex items-center gap-1 text-[11px] text-[#5B6770] font-semibold">
+              <MapPin className="w-3 h-3 text-[#006B3C] shrink-0" />
+              <span className="truncate">{locationName}</span>
               <button
+                type="button"
                 onClick={openSelector}
-                className="text-[#004aad] font-bold hover:underline ml-1 cursor-pointer"
+                className="text-[#1D5F91] font-bold hover:underline ml-1 cursor-pointer"
               >
                 {language === 'mr' ? 'बदला' : language === 'hi' ? 'बदलें' : 'Change'}
               </button>
-            </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
+            type="button"
             onClick={fetchData}
             disabled={loading}
-            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-[#004aad] hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+            className="p-1.5 rounded-xs bg-white border border-[#D6DCE1] text-[#17365D] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
             title="Refresh AQI Data"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#38b6ff]' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#17365D]' : ''}`} />
           </button>
 
           <button
-            onClick={() => handleAskGpt(`How is the air quality right now in ${locationName}, and what precautions should I take?`)}
-            className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-[#004aad] to-[#38b6ff] text-white shadow-md flex items-center gap-1.5 text-xs font-black cursor-pointer hover:opacity-95 transition-all"
+            type="button"
+            onClick={() => handleAskGpt(
+              language === 'mr'
+                ? `सध्या ${locationName} मध्ये हवेची गुणवत्ता कशी आहे आणि मी कोणती खबरदारी घ्यावी?`
+                : language === 'hi'
+                ? `वर्तमान में ${locationName} में वायु गुणवत्ता कैसी है और मुझे क्या सावधानियां बरतनी चाहिए?`
+                : `How is the air quality right now in ${locationName}, and what precautions should I take?`
+            )}
+            className="px-3 py-1.5 rounded-xs bg-[#17365D] hover:bg-[#0F233D] text-white flex items-center gap-1.5 text-xs font-bold cursor-pointer transition-colors border border-[#0F233D]"
           >
-            <MessageSquare className="w-4 h-4 text-[#fcd444]" />
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-300" />
             <span>{translatePhrase('askWeatherGptAir', language)}</span>
           </button>
         </div>
@@ -128,11 +152,12 @@ export const AirQualityPage: React.FC<Props> = ({ onOpenChatWithPrompt }) => {
 
       {/* Error Banner */}
       {error && (
-        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center justify-between gap-2 font-semibold">
+        <div className="p-3 rounded-xs bg-[#FEE2E2] border border-[#FCA5A5] text-[#7F1D1D] text-xs flex items-center justify-between gap-2 font-bold">
           <span>{error}</span>
           <button
+            type="button"
             onClick={fetchData}
-            className="px-3 py-1 rounded-xl bg-rose-600 text-white font-black text-[11px] hover:bg-rose-700 cursor-pointer"
+            className="px-2.5 py-1 rounded-xs bg-[#B42318] text-white font-bold text-[10px] hover:bg-[#911C13] cursor-pointer"
           >
             Retry
           </button>
@@ -141,129 +166,159 @@ export const AirQualityPage: React.FC<Props> = ({ onOpenChatWithPrompt }) => {
 
       {/* Loading Skeleton */}
       {loading && !currentAQI ? (
-        <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-md flex flex-col items-center justify-center space-y-3">
-          <RefreshCw className="w-8 h-8 text-[#004aad] animate-spin" />
-          <p className="text-xs font-bold text-slate-600">
+        <div className="p-8 rounded-xs bg-white border border-[#D6DCE1] flex flex-col items-center justify-center space-y-2">
+          <RefreshCw className="w-6 h-6 text-[#17365D] animate-spin" />
+          <p className="text-xs font-bold text-[#5B6770]">
             {language === 'mr' ? 'हवेची गुणवत्ता व प्रदूषक घटकांची माहिती मिळवत आहे...' : language === 'hi' ? 'वायु गुणवत्ता और प्रदूषक डेटा प्राप्त किया जा रहा है...' : 'Fetching live atmospheric & pollutant data...'}
           </p>
         </div>
       ) : currentAQI ? (
         <>
-          {/* Main Hero Card */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-white via-white to-slate-50 border border-slate-200/90 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                  {translatePhrase('airQualityStatus', language)}
-                </span>
-                <h2 className="text-lg sm:text-xl font-black text-slate-900">
-                  {localizedCategory} {translatePhrase('airQualityStatus', language)}
-                </h2>
+          {/* Main Government AQI Panel */}
+          <div className="gov-panel">
+            {/* Panel Header */}
+            <div className="gov-panel-header">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-xs bg-[#287D3C]" />
+                <span>NATIONAL AIR QUALITY MONITORING BULLETIN</span>
               </div>
-
-              <span
-                className="px-3.5 py-1.5 rounded-full text-xs font-black tracking-wide flex items-center gap-2"
-                style={{
-                  backgroundColor: badgeStyle.bg,
-                  color: badgeStyle.text,
-                  border: `1px solid ${badgeStyle.border}`,
-                }}
-              >
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: badgeStyle.text }} />
+              <span className={`gov-badge ${getBadgeClass(currentAQI.category)}`}>
                 {localizedCategory}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* AQI Big Box */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  {translatePhrase('currentIndex', language)}
-                </span>
-                <div className="flex items-baseline gap-2 my-1">
-                  <span
-                    className="text-4xl sm:text-5xl font-black tracking-tight"
-                    style={{ color: airQualityService.getCategoryColor(currentAQI.category) }}
-                  >
-                    {currentAQI.aqi}
-                  </span>
-                  <span className="text-xs font-bold text-slate-400">
-                    / 100+
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-slate-400">
-                  {currentAQI.aqi_scale}
-                </span>
-              </div>
-
-              {/* Primary Pollutant */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  {translatePhrase('dominantContaminant', language)}
-                </span>
-                <div className="my-1">
-                  <span className="text-lg sm:text-xl font-black text-slate-800 block">
-                    {localizedPrimary}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  {language === 'mr' ? 'हवेच्या गुणवत्तेवर प्रभाव टाकणारा मुख्य घटक' : language === 'hi' ? 'वायु गुणवत्ता को प्रभावित करने वाला मुख्य कारक' : 'Primary factor influencing current index'}
-                </span>
-              </div>
-
-              {/* 24-Hour Trend */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  {translatePhrase('shortTermTrend', language)}
-                </span>
-                <div className="my-1">
-                  <span className="text-lg sm:text-xl font-black text-slate-800 capitalize">
-                    {localizedTrend}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium line-clamp-1">
-                  {hourlyAQI?.trend_summary || 'Conditions steady'}
-                </span>
-              </div>
-            </div>
-
-            {/* Health Advisories */}
-            <div className="space-y-2 pt-2 border-t border-slate-100">
-              <div className="flex items-start gap-2.5 text-slate-800">
-                <HeartPulse className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            {/* Panel Content */}
+            <div className="p-3 space-y-3 bg-white">
+              {/* Status Row */}
+              <div className="flex items-center justify-between pb-2 border-b border-[#D6DCE1]">
                 <div>
-                  <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider">
-                    {translatePhrase('generalPublicAdvisory', language)}
-                  </h4>
-                  <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-700 mt-0.5">
-                    {localizedAdvisory}
-                  </p>
+                  <span className="text-[10px] font-bold text-[#5B6770] uppercase tracking-wider block">
+                    {translatePhrase('airQualityStatus', language)}
+                  </span>
+                  <h2 className="text-base sm:text-lg font-bold text-[#1F2933]">
+                    {localizedCategory} {translatePhrase('airQualityStatus', language)}
+                  </h2>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-[#5B6770] block">SCALE</span>
+                  <span className="text-xs font-bold text-[#17365D]">{currentAQI.aqi_scale}</span>
                 </div>
               </div>
 
-              {currentAQI.sensitive_group_advisory && (
-                <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-950 space-y-1">
-                  <div className="flex items-center gap-1.5 text-amber-900 font-black text-xs uppercase tracking-wider">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <span>{translatePhrase('sensitiveGroupsGuidance', language)}</span>
+              {/* 3 Telemetry Columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* AQI Index Box */}
+                <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] rounded-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#17365D] uppercase">
+                      {translatePhrase('currentIndex', language)}
+                    </span>
+                    <Activity className="w-3.5 h-3.5 text-[#1D5F91]" />
                   </div>
-                  <p className="text-xs leading-relaxed font-medium">
-                    {currentAQI.sensitive_group_advisory}
-                  </p>
+                  <div className="flex items-baseline gap-1 my-1">
+                    <span
+                      className="text-3xl sm:text-4xl font-black"
+                      style={{ color: airQualityService.getCategoryColor(currentAQI.category) }}
+                    >
+                      {currentAQI.aqi}
+                    </span>
+                    <span className="text-xs font-bold text-[#5B6770]">
+                      / 100+
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-[#5B6770]">
+                    Index Category: {currentAQI.category}
+                  </span>
                 </div>
-              )}
 
-              {currentAQI.weather_synergy_note && (
-                <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-blue-950 space-y-1">
-                  <div className="flex items-center gap-1.5 text-blue-900 font-black text-xs uppercase tracking-wider">
-                    <Sparkles className="w-4 h-4 text-blue-600" />
-                    <span>{translatePhrase('weatherSynergyTitle', language)}</span>
+                {/* Primary Pollutant Box */}
+                <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] rounded-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#17365D] uppercase">
+                      {translatePhrase('dominantContaminant', language)}
+                    </span>
+                    <CloudFog className="w-3.5 h-3.5 text-[#1D5F91]" />
                   </div>
-                  <p className="text-xs leading-relaxed font-medium">
-                    {currentAQI.weather_synergy_note}
-                  </p>
+                  <div className="my-1">
+                    <span className="text-base sm:text-lg font-bold text-[#1F2933] block">
+                      {localizedPrimary}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#5B6770] font-medium line-clamp-1">
+                    {language === 'mr' ? 'हवेच्या गुणवत्तेवर प्रभाव टाकणारा मुख्य घटक' : language === 'hi' ? 'वायु गुणवत्ता को प्रभावित करने वाला मुख्य कारक' : 'Primary influencing contaminant'}
+                  </span>
                 </div>
-              )}
+
+                {/* 24-Hour Trend Box */}
+                <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] rounded-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#17365D] uppercase">
+                      {translatePhrase('shortTermTrend', language)}
+                    </span>
+                    <Wind className="w-3.5 h-3.5 text-[#1D5F91]" />
+                  </div>
+                  <div className="my-1">
+                    <span className="text-base sm:text-lg font-bold text-[#1F2933] capitalize block">
+                      {localizedTrend}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#5B6770] font-medium line-clamp-1">
+                    {hourlyAQI?.trend_summary || 'Conditions steady'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Health Advisories in Official Strips */}
+              <div className="space-y-2 pt-1 border-t border-[#D6DCE1]">
+                {/* General Advisory */}
+                <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] border-l-3 border-l-[#287D3C] rounded-xs flex items-start gap-2.5">
+                  <div className="p-1 rounded-xs bg-[#DCFCE7] text-[#14532D] shrink-0 mt-0.5 border border-[#86EFAC]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase text-[#17365D]">
+                      {translatePhrase('generalPublicAdvisory', language)}
+                    </h4>
+                    <p className="text-xs font-semibold leading-relaxed text-[#1F2933] mt-0.5">
+                      {localizedAdvisory}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sensitive Group Guidance */}
+                {currentAQI.sensitive_group_advisory && (
+                  <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] border-l-3 border-l-[#B7791F] rounded-xs flex items-start gap-2.5">
+                    <div className="p-1 rounded-xs bg-[#FEF3C7] text-[#78350F] shrink-0 mt-0.5 border border-[#FDE68A]">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h4 className="text-[11px] font-bold uppercase text-[#17365D]">
+                        {translatePhrase('sensitiveGroupsGuidance', language)}
+                      </h4>
+                      <p className="text-xs leading-relaxed font-semibold text-[#1F2933] mt-0.5">
+                        {currentAQI.sensitive_group_advisory}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Weather Synergy Note */}
+                {currentAQI.weather_synergy_note && (
+                  <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] border-l-3 border-l-[#1D5F91] rounded-xs flex items-start gap-2.5">
+                    <div className="p-1 rounded-xs bg-[#E0F2FE] text-[#0369A1] shrink-0 mt-0.5 border border-[#BAE6FD]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h4 className="text-[11px] font-bold uppercase text-[#17365D]">
+                        {translatePhrase('weatherSynergyTitle', language)}
+                      </h4>
+                      <p className="text-xs leading-relaxed font-semibold text-[#1F2933] mt-0.5">
+                        {currentAQI.weather_synergy_note}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -282,82 +337,70 @@ export const AirQualityPage: React.FC<Props> = ({ onOpenChatWithPrompt }) => {
             primaryCode={currentAQI.primary_pollutant}
           />
 
-          {/* FAQ / Pre-populated Chat Queries */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4 text-[#004aad]" />
-              {translatePhrase('quickAirQualityQuestions', language)}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                onClick={() => handleAskGpt(
-                  language === 'mr'
-                    ? `आज ${locationName} मध्ये बाहेर व्यायाम करणे किंवा फिरणे सुरक्षित आहे का?`
-                    : language === 'hi'
-                    ? `क्या आज ${locationName} में बाहर व्यायाम या दौड़ना सुरक्षित है?`
-                    : `Is it safe to go for a run or workout outdoors in ${locationName} today?`
-                )}
-                className="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 text-left text-xs font-bold text-slate-800 hover:text-[#004aad] transition-colors cursor-pointer"
-              >
-                🏃 {language === 'mr' ? 'आज बाहेर व्यायाम करणे सुरक्षित आहे का?' : language === 'hi' ? 'क्या आज बाहर व्यायाम करना सुरक्षित है?' : 'Is it safe to exercise outdoors today?'}
-              </button>
-              <button
-                onClick={() => handleAskGpt(
-                  language === 'mr'
-                    ? `PM2.5 आणि PM10 मध्ये काय फरक आहे आणि ते आरोग्यासाठी कसे घातक आहेत?`
-                    : language === 'hi'
-                    ? `PM2.5 और PM10 में क्या अंतर है और यह स्वास्थ्य को कैसे प्रभावित करता है?`
-                    : `What is the difference between PM2.5 and PM10, and why is PM2.5 dangerous?`
-                )}
-                className="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 text-left text-xs font-bold text-slate-800 hover:text-[#004aad] transition-colors cursor-pointer"
-              >
-                🔬 {language === 'mr' ? 'PM2.5 काय आहे आणि ते आरोग्याला कसे हानी पोहोचवते?' : language === 'hi' ? 'PM2.5 क्या है और यह स्वास्थ्य को कैसे प्रभावित करता है?' : 'What is PM2.5 and how does it affect health?'}
-              </button>
-              <button
-                onClick={() => handleAskGpt(
-                  language === 'mr'
-                    ? `आज ${locationName} मध्ये संवेदनशील व्यक्तींनी (वृद्ध/दमेकरी) N95 मास्क वापरावा का?`
-                    : language === 'hi'
-                    ? `क्या आज ${locationName} में संवेदनशील लोगों को मास्क पहनना चाहिए?`
-                    : `Should sensitive people wear an N95 mask outside in ${locationName} today?`
-                )}
-                className="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 text-left text-xs font-bold text-slate-800 hover:text-[#004aad] transition-colors cursor-pointer"
-              >
-                😷 {language === 'mr' ? 'संवेदनशील व्यक्तींनी बाहेर मास्क वापरावा का?' : language === 'hi' ? 'क्या संवेदनशील लोगों को मास्क पहनना चाहिए?' : 'Should sensitive individuals wear a mask?'}
-              </button>
-              <button
-                onClick={() => handleAskGpt(
-                  language === 'mr'
-                    ? `${locationName} मध्ये हवेची गुणवत्ता कधी सुधारण्याची शक्यता आहे?`
-                    : language === 'hi'
-                    ? `${locationName} में हवा की गुणवत्ता कब सुधरने की संभावना है?`
-                    : `When is the air quality expected to improve in ${locationName}?`
-                )}
-                className="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 text-left text-xs font-bold text-slate-800 hover:text-[#004aad] transition-colors cursor-pointer"
-              >
-                ⏳ {language === 'mr' ? 'हवेची गुणवत्ता कधी सुधारेल?' : language === 'hi' ? 'हवा की गुणवत्ता कब सुधरेगी?' : 'When will air quality improve?'}
-              </button>
+          {/* Official Inquiries / FAQ Guidance */}
+          <div className="gov-panel">
+            <div className="gov-panel-header">
+              <div className="flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-[#17365D]" />
+                <span>{translatePhrase('quickAirQualityQuestions', language).toUpperCase()}</span>
+              </div>
             </div>
-          </div>
-
-          {/* Attribution & Provenance */}
-          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 text-[11px] text-slate-500 space-y-1">
-            <div className="flex items-center justify-between font-bold text-slate-700">
-              <span className="flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-[#004aad]" />
-                {language === 'mr' ? 'माहिती स्रोत व डेटा संदर्भ' : language === 'hi' ? 'डेटा स्रोत एवं संदर्भ' : 'Air Quality Data Provenance'}
-              </span>
-              <span className="text-[10px] text-slate-400">
-                Model: CAMS European Regional
-              </span>
+            <div className="p-3 bg-white">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAskGpt(
+                    language === 'mr'
+                      ? `आज ${locationName} मध्ये बाहेर व्यायाम करणे किंवा फिरणे सुरक्षित आहे का?`
+                      : language === 'hi'
+                      ? `क्या आज ${locationName} में बाहर व्यायाम या दौड़ना सुरक्षित है?`
+                      : `Is it safe to go for a run or workout outdoors in ${locationName} today?`
+                  )}
+                  className="p-2.5 rounded-xs bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#D6DCE1] text-left text-xs font-bold text-[#17365D] transition-colors cursor-pointer"
+                >
+                  🏃 {language === 'mr' ? 'आज बाहेर व्यायाम करणे सुरक्षित आहे का?' : language === 'hi' ? 'क्या आज बाहर व्यायाम करना सुरक्षित है?' : 'Is it safe to exercise outdoors today?'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAskGpt(
+                    language === 'mr'
+                      ? `PM2.5 आणि PM10 मध्ये काय फरक आहे आणि ते आरोग्यासाठी कसे घातक आहेत?`
+                      : language === 'hi'
+                      ? `PM2.5 और PM10 में क्या अंतर है और यह स्वास्थ्य को कैसे प्रभावित करता है?`
+                      : `What is the difference between PM2.5 and PM10, and why is PM2.5 dangerous?`
+                  )}
+                  className="p-2.5 rounded-xs bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#D6DCE1] text-left text-xs font-bold text-[#17365D] transition-colors cursor-pointer"
+                >
+                  🔬 {language === 'mr' ? 'PM2.5 काय आहे आणि ते आरोग्याला कसे हानी पोहोचवते?' : language === 'hi' ? 'PM2.5 क्या है और यह स्वास्थ्य को कैसे प्रभावित करता है?' : 'What is PM2.5 and how does it affect health?'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAskGpt(
+                    language === 'mr'
+                      ? `आज ${locationName} मध्ये संवेदनशील व्यक्तींनी (वृद्ध/दमेकरी) N95 मास्क वापरावा का?`
+                      : language === 'hi'
+                      ? `क्या आज ${locationName} में संवेदनशील लोगों को मास्क पहनना चाहिए?`
+                      : `Should sensitive people wear an N95 mask outside in ${locationName} today?`
+                  )}
+                  className="p-2.5 rounded-xs bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#D6DCE1] text-left text-xs font-bold text-[#17365D] transition-colors cursor-pointer"
+                >
+                  😷 {language === 'mr' ? 'संवेदनशील व्यक्तींनी बाहेर मास्क वापरावा का?' : language === 'hi' ? 'क्या संवेदनशील लोगों को मास्क पहनना चाहिए?' : 'Should sensitive individuals wear a mask?'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAskGpt(
+                    language === 'mr'
+                      ? `${locationName} मध्ये हवेची गुणवत्ता कधी सुधारण्याची शक्यता आहे?`
+                      : language === 'hi'
+                      ? `${locationName} में हवा की गुणवत्ता कब सुधरने की संभावना है?`
+                      : `When is the air quality expected to improve in ${locationName}?`
+                  )}
+                  className="p-2.5 rounded-xs bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#D6DCE1] text-left text-xs font-bold text-[#17365D] transition-colors cursor-pointer"
+                >
+                  ⏳ {language === 'mr' ? 'हवेची गुणवत्ता कधी सुधारेल?' : language === 'hi' ? 'हवा की गुणवत्ता कब सुधरेगी?' : 'When will air quality improve?'}
+                </button>
+              </div>
             </div>
-            <p className="text-[10px] text-slate-500 leading-tight">
-              {language === 'mr'
-                ? 'हवेच्या गुणवत्तेची माहिती Open-Meteo आणि युरोपियन कोपर्निकस (CAMS) वायुमंडलीय मॉडेलवरून रिअल-टाइममध्ये प्राप्त केली जाते.'
-                : language === 'hi'
-                ? 'वायु गुणवत्ता डेटा वास्तविक समय में Open-Meteo और कॉपरनिकस (CAMS) वायुमंडलीय मॉडल से प्राप्त किया जाता है।'
-                : 'Air quality data is fetched in real-time from Open-Meteo leveraging Copernicus Atmosphere Monitoring Service (CAMS) ensemble models. Advisories are informational and non-diagnostic.'}
-            </p>
           </div>
         </>
       ) : null}

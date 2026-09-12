@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, Sparkles, Languages, Loader2 } from 'lucide-react';
 import { useVoice } from '../../../hooks/useVoice';
+import { useLanguage } from '../../../context/LanguageContext';
+import { translatePhrase } from '../../../utils/dashboardTranslator';
 
 interface VernacularVoiceButtonProps {
   marathiText: string;
@@ -11,13 +13,25 @@ export const VernacularVoiceButton: React.FC<VernacularVoiceButtonProps> = ({
   marathiText,
   englishText,
 }) => {
-  const { speakText, isSpeaking, stopSpeech } = useVoice();
+  const { speakText, isSpeaking, stopSpeaking } = useVoice();
+  const { language } = useLanguage();
   const [selectedLang, setSelectedLang] = useState<'mr-IN' | 'hi-IN' | 'en-IN'>('mr-IN');
   const [showTranscript, setShowTranscript] = useState(false);
 
+  // Sync selected voice language with global language selection
+  useEffect(() => {
+    if (language === 'hi') {
+      setSelectedLang('hi-IN');
+    } else if (language === 'en') {
+      setSelectedLang('en-IN');
+    } else {
+      setSelectedLang('mr-IN');
+    }
+  }, [language]);
+
   const handlePlayVoice = () => {
     if (isSpeaking) {
-      stopSpeech();
+      stopSpeaking();
       return;
     }
 
@@ -36,14 +50,14 @@ export const VernacularVoiceButton: React.FC<VernacularVoiceButtonProps> = ({
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="text-sm sm:text-base font-extrabold text-white">
-                Regional Voice Briefing
+                {translatePhrase('regionalVoiceBriefing', language)}
               </h3>
               <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 whitespace-nowrap">
                 BHASHINI AI
               </span>
             </div>
             <p className="text-[11px] text-emerald-100/80">
-              Listen to your farm advisory in Marathi / Hindi / English
+              {translatePhrase('listenInVernacular', language)}
             </p>
           </div>
         </div>
@@ -71,12 +85,12 @@ export const VernacularVoiceButton: React.FC<VernacularVoiceButtonProps> = ({
             {isSpeaking ? (
               <>
                 <VolumeX className="w-4 h-4 shrink-0" />
-                <span>थांबवा (Stop)</span>
+                <span>{language === 'mr' ? 'थांबवा' : language === 'hi' ? 'रोकें' : 'Stop'}</span>
               </>
             ) : (
               <>
                 <Volume2 className="w-4 h-4 shrink-0" />
-                <span>🎙 ऐका (Listen)</span>
+                <span>🎙 {language === 'mr' ? 'ऐका' : language === 'hi' ? 'सुनें' : 'Listen'}</span>
               </>
             )}
           </button>
@@ -88,7 +102,9 @@ export const VernacularVoiceButton: React.FC<VernacularVoiceButtonProps> = ({
         <div className="p-3.5 rounded-2xl bg-black/30 border border-white/15 backdrop-blur-md space-y-1.5 animate-fadeIn">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
             <Sparkles className="w-3 h-3" />
-            <span>Regional Voice Advisory Text:</span>
+            <span>
+              {language === 'mr' ? 'प्रादेशिक ऑडिओ मजकूर:' : language === 'hi' ? 'क्षेत्रीय ऑडियो संदेश:' : 'Regional Voice Advisory Text:'}
+            </span>
           </div>
           <p className="text-xs sm:text-sm font-medium leading-relaxed text-white/95">
             {selectedLang === 'mr-IN' ? marathiText : englishText}
@@ -98,3 +114,4 @@ export const VernacularVoiceButton: React.FC<VernacularVoiceButtonProps> = ({
     </div>
   );
 };
+

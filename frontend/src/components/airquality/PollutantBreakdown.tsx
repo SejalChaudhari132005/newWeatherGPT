@@ -7,7 +7,7 @@ import {
   translateAQICategory,
   translatePollutant,
 } from '../../utils/dashboardTranslator';
-import { Activity } from 'lucide-react';
+import { Activity, CloudFog, Sparkles, Flame, Zap, Droplets, Wind } from 'lucide-react';
 
 interface Props {
   pollutants: PollutantItem[];
@@ -21,73 +21,114 @@ export const PollutantBreakdown: React.FC<Props> = ({ pollutants, primaryCode })
     return null;
   }
 
+  const getPollutantIcon = (code: string = '') => {
+    const c = code.toLowerCase();
+    if (c.includes('pm2') || c.includes('pm10') || c.includes('dust')) {
+      return <CloudFog className="w-3.5 h-3.5 text-[#1D5F91]" />;
+    }
+    if (c.includes('o3') || c.includes('ozone')) {
+      return <Sparkles className="w-3.5 h-3.5 text-[#006B3C]" />;
+    }
+    if (c.includes('no2') || c.includes('nitrogen')) {
+      return <Flame className="w-3.5 h-3.5 text-[#B7791F]" />;
+    }
+    if (c.includes('so2') || c.includes('sulfur')) {
+      return <Zap className="w-3.5 h-3.5 text-[#B42318]" />;
+    }
+    if (c.includes('co')) {
+      return <Droplets className="w-3.5 h-3.5 text-[#17365D]" />;
+    }
+    return <Wind className="w-3.5 h-3.5 text-[#006B3C]" />;
+  };
+
+  const getBadgeClass = (category?: string) => {
+    switch ((category || '').toUpperCase()) {
+      case 'GOOD':
+      case 'FAIR':
+        return 'gov-badge-success';
+      case 'MODERATE':
+        return 'gov-badge-warning';
+      case 'POOR':
+      case 'UNHEALTHY':
+      case 'VERY_POOR':
+      case 'HAZARDOUS':
+        return 'gov-badge-danger';
+      default:
+        return 'gov-badge-info';
+    }
+  };
+
   return (
-    <div className="space-y-3 font-['Arimo']">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black text-slate-800 tracking-wider uppercase flex items-center gap-1.5">
-          <Activity className="w-4 h-4 text-[#004aad]" />
-          {translatePhrase('keyPollutantBreakdown', language)}
-        </h3>
-        <span className="text-[10px] font-bold text-slate-400">
-          European CAMS Standards
+    <div className="gov-panel font-sans">
+      {/* Panel Header */}
+      <div className="gov-panel-header">
+        <div className="flex items-center gap-1.5">
+          <Activity className="w-3.5 h-3.5 text-[#17365D]" />
+          <span>{translatePhrase('keyPollutantBreakdown', language).toUpperCase()}</span>
+        </div>
+        <span className="text-[10px] font-bold text-[#5B6770]">
+          CPCB / CAMS Standards
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {pollutants.map((pollutant) => {
-          const badgeStyle = airQualityService.getCategoryBadgeStyle(pollutant.category);
-          const isPrimary = pollutant.code === primaryCode || pollutant.is_primary;
-          const localizedName = translatePollutant(pollutant.code || pollutant.name, language);
-          const localizedCategory = translateAQICategory(pollutant.category, language);
+      {/* Grid of Pollutant Telemetry Cards */}
+      <div className="p-3 bg-white">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {pollutants.map((pollutant) => {
+            const isPrimary = pollutant.code === primaryCode || pollutant.is_primary;
+            const localizedName = translatePollutant(pollutant.code || pollutant.name, language);
+            const localizedCategory = translateAQICategory(pollutant.category, language);
+            const badgeClass = getBadgeClass(pollutant.category);
 
-          return (
-            <div
-              key={pollutant.code}
-              className={`p-3 rounded-2xl bg-white border transition-all shadow-xs relative overflow-hidden flex flex-col justify-between ${
-                isPrimary ? 'border-[#38b6ff] ring-1 ring-[#38b6ff]/30' : 'border-slate-200/80 hover:border-slate-300'
-              }`}
-            >
-              {isPrimary && (
-                <span className="absolute top-0 right-0 px-2 py-0.5 rounded-bl-xl bg-[#004aad] text-white text-[8px] font-black uppercase tracking-wider">
-                  {translatePhrase('primaryPollutant', language)}
-                </span>
-              )}
+            return (
+              <div
+                key={pollutant.code}
+                className={`p-2.5 bg-[#F8FAFC] border rounded-xs transition-all relative flex flex-col justify-between ${
+                  isPrimary
+                    ? 'border-[#17365D] bg-slate-50 border-l-3 border-l-[#17365D]'
+                    : 'border-[#D6DCE1]'
+                }`}
+              >
+                {isPrimary && (
+                  <div className="absolute top-1.5 right-1.5">
+                    <span className="px-1 py-0.2 bg-[#17365D] text-white text-[8px] font-black uppercase rounded-xs">
+                      {translatePhrase('primaryPollutant', language)}
+                    </span>
+                  </div>
+                )}
 
-              <div className="space-y-1">
-                <div className="flex items-center justify-between pr-2">
-                  <span className="text-xs font-extrabold text-slate-900">
-                    {localizedName}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 line-clamp-1">
-                  {pollutant.description || `${localizedName}`}
-                </p>
-              </div>
-
-              <div className="mt-3 flex items-baseline justify-between">
                 <div>
-                  <span className="text-base sm:text-lg font-black text-slate-900">
-                    {pollutant.concentration != null ? pollutant.concentration.toFixed(1) : '--'}
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-500 ml-1">
-                    {pollutant.unit}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1 rounded-xs bg-white border border-[#D6DCE1]">
+                      {getPollutantIcon(pollutant.code)}
+                    </div>
+                    <span className="text-xs font-bold text-[#17365D] truncate">
+                      {localizedName}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#5B6770] font-medium mt-1 line-clamp-1">
+                    {pollutant.description || localizedName}
+                  </p>
                 </div>
 
-                <span
-                  className="px-2 py-0.5 rounded-lg text-[10px] font-black"
-                  style={{
-                    backgroundColor: badgeStyle.bg,
-                    color: badgeStyle.text,
-                    border: `1px solid ${badgeStyle.border}`,
-                  }}
-                >
-                  {localizedCategory}
-                </span>
+                <div className="mt-2.5 pt-1.5 border-t border-[#D6DCE1] flex items-baseline justify-between">
+                  <div>
+                    <span className="text-base font-bold text-[#1F2933]">
+                      {pollutant.concentration != null ? pollutant.concentration.toFixed(1) : '--'}
+                    </span>
+                    <span className="text-[10px] font-bold text-[#5B6770] ml-1">
+                      {pollutant.unit}
+                    </span>
+                  </div>
+
+                  <span className={`gov-badge ${badgeClass} text-[9px]`}>
+                    {localizedCategory}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

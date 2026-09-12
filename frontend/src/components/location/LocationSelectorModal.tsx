@@ -17,8 +17,18 @@ const POPULAR_LOCATIONS: UserLocation[] = [
   { latitude: 23.0225, longitude: 72.5714, city: 'Ahmedabad', district: 'Ahmedabad', state: 'Gujarat', country: 'India', source: 'manual' },
 ];
 
+import { useUI } from '../../context/UIContext';
+
 export const LocationSelectorModal: React.FC = () => {
   const { location, detectLocation, selectLocation, loading, statusMessage, error, isSelectorOpen, closeSelector } = useLocation();
+  const { locationModalOpen, setLocationModalOpen } = useUI();
+  const isOpen = isSelectorOpen || locationModalOpen;
+
+  const handleClose = () => {
+    closeSelector();
+    setLocationModalOpen(false);
+  };
+
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserLocation[]>([]);
   const [searching, setSearching] = useState(false);
@@ -26,13 +36,13 @@ export const LocationSelectorModal: React.FC = () => {
 
   // Auto-focus input on open
   useEffect(() => {
-    if (isSelectorOpen) {
+    if (isOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
       setQuery('');
       setSearchResults([]);
     }
-  }, [isSelectorOpen]);
+  }, [isOpen]);
 
   // Debounced Search
   useEffect(() => {
@@ -65,18 +75,18 @@ export const LocationSelectorModal: React.FC = () => {
     };
   }, [query]);
 
-  if (!isSelectorOpen) return null;
+  if (!isOpen) return null;
 
   const handleGPSDetect = async () => {
     const res = await detectLocation();
     if (res) {
-      closeSelector();
+      handleClose();
     }
   };
 
   const handleSelect = async (loc: UserLocation) => {
     await selectLocation(loc);
-    closeSelector();
+    handleClose();
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {

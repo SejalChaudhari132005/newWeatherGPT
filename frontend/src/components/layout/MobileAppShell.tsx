@@ -1,15 +1,39 @@
 import React from 'react';
-import { CloudSun, Wind, Activity, Bell, Sparkles, MessageSquare, Radar, MapPin, Sliders, AlertTriangle } from 'lucide-react';
+import {
+  CloudSun,
+  Activity,
+  MessageSquare,
+  Radar,
+  AlertTriangle,
+  Sprout,
+  User,
+  ChevronDown,
+  Menu,
+  CalendarCheck,
+  Bell,
+} from 'lucide-react';
 import { useUI, ActiveTab } from '../../context/UIContext';
 import { useWeather } from '../../context/WeatherContext';
-import { useLanguage } from '../../context/LanguageContext';
+import { useAuthContext } from '../../context/AuthContext';
+import { useLanguage, LANGUAGES, LanguageCode } from '../../context/LanguageContext';
 import { translatePhrase } from '../../utils/dashboardTranslator';
+import { ProfileModal } from '../profile/ProfileModal';
 
-export const MobileAppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface MobileAppShellProps {
+  children: React.ReactNode;
+  onOpenSidebar?: () => void;
+}
+
+export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpenSidebar }) => {
   const { activeTab, setActiveTab } = useUI();
-  const { userLocation } = useWeather();
-  const { language } = useLanguage();
+  const { userLocation, activeRole } = useWeather();
+  const { profile } = useAuthContext();
+  const { language, setLanguage } = useLanguage();
   const [unreadAlertCount, setUnreadAlertCount] = React.useState<number>(0);
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState<boolean>(false);
+
+  const roleKey = (profile?.role || activeRole || 'citizen').toLowerCase();
+  const isFarmer = roleKey === 'farmer';
 
   // Poll for active unread alerts count
   React.useEffect(() => {
@@ -44,76 +68,167 @@ export const MobileAppShell: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const navDockItems: { id: ActiveTab; label: string; icon: any }[] = [
     { id: 'home', label: translatePhrase('weather', language), icon: CloudSun },
-    { id: 'advisories', label: translatePhrase('airQuality', language), icon: Activity },
-    { id: 'ask', label: 'Ask GPT', icon: MessageSquare }, // Center Logo Button
+    {
+      id: 'advisories',
+      label: isFarmer ? translatePhrase('myFarm', language) : translatePhrase('airQuality', language),
+      icon: isFarmer ? Sprout : Activity,
+    },
+    { id: 'ask', label: 'WeatherGPT', icon: MessageSquare },
     { id: 'alerts', label: translatePhrase('alerts', language), icon: AlertTriangle },
-    { id: 'radar', label: translatePhrase('mapRadar', language), icon: Radar },
+    {
+      id: 'radar',
+      label: isFarmer ? translatePhrase('planMyDay', language) : translatePhrase('mapRadar', language),
+      icon: isFarmer ? CalendarCheck : Radar,
+    },
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[#F4F7FC] flex justify-center font-sans antialiased selection:bg-sky-500 selection:text-white">
-      {/* Mobile Application Viewport (Full width on mobile/tablets, clean centered mobile column on desktop) */}
-      <div className="w-full max-w-md min-h-screen bg-[#F4F7FC] shadow-xl relative flex flex-col justify-between overflow-x-hidden">
+    <div className="min-h-screen w-full flex justify-center bg-[#F0F3F6] font-['Noto_Sans',sans-serif] antialiased selection:bg-[#006B3C] selection:text-white">
+      {/* Mobile Application Frame */}
+      <div className="w-full max-w-md min-h-screen bg-[#F5F7F9] shadow-md relative flex flex-col justify-between overflow-x-hidden border-x border-[#D6DCE1]">
+        
+        {/* Portal Header */}
+        <header className="sticky top-0 z-40 bg-white border-b border-[#D6DCE1] select-none">
+          {/* Main Portal Header Bar */}
+          <div className="px-3 py-2 flex items-center justify-between bg-white">
+            {/* Left: Branding & Portal Name */}
+            <div className="flex items-center gap-2 min-w-0">
+              {(activeTab === 'ask' || activeTab === 'chat') && onOpenSidebar && (
+                <button
+                  type="button"
+                  onClick={onOpenSidebar}
+                  aria-label="Open chat history"
+                  className="p-1 rounded bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#17365D] border border-[#CBD5E1] transition-colors cursor-pointer shrink-0"
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
+              )}
 
-        {/* Top Status & Mobile Platform Header */}
-        <div className="sticky top-0 z-40 bg-[#F4F7FC]/90 backdrop-blur-md px-4 pt-3 pb-2 flex items-center justify-between border-b border-slate-200/50 select-none">
-          <div className="flex items-center gap-2">
-            <img src="/assets/logo-icon.png" alt="WeatherGPT Icon" className="w-6 h-6 object-contain" />
-            <span className="text-xs font-extrabold text-slate-900 tracking-tight">WeatherGPT</span>
-            <span className="bg-sky-100 text-[#0F52BA] text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">AI Platform</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{translatePhrase('liveAtmosphericSync', language)}</span>
-          </div>
-        </div>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xs bg-[#006B3C] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                  IN
+                </div>
+                <div className="flex flex-col leading-tight min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-black text-[#17365D] tracking-tight">WeatherGPT</span>
+                    <span className="text-[9px] font-bold bg-[#E2E8F0] text-[#17365D] px-1 rounded-xs uppercase">
+                      Portal
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-bold text-[#5B6770] truncate">
+                    {isFarmer ? 'National Agro-Meteorological System' : 'National Weather Intelligence Service'}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-        {/* Scrollable Main Mobile Content Body */}
-        <div className="flex-1 overflow-y-auto relative pb-28">
+            {/* Right: Language Selector & Profile */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Language Selector */}
+              <div className="relative">
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as LanguageCode)}
+                  className="appearance-none bg-[#F8FAFC] border border-[#D6DCE1] text-[#17365D] text-[11px] font-bold py-1 pl-2 pr-5 rounded-xs hover:border-[#17365D] focus:outline-none transition-colors cursor-pointer"
+                  title="Select Language"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="font-semibold text-slate-800">
+                      {lang.nativeName}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#5B6770]" />
+              </div>
+
+              {/* Profile / Role Button */}
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="p-1.5 rounded-xs bg-[#17365D] text-white hover:bg-[#0F233D] transition-colors cursor-pointer border border-[#17365D]"
+                title="User Profile & Settings"
+              >
+                <User className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* User Profile & Role Switcher Modal */}
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
+
+        {/* Scrollable Main Content Body */}
+        <main
+          className={`flex-1 relative ${
+            activeTab === 'ask' || activeTab === 'chat'
+              ? 'flex flex-col overflow-hidden h-[calc(100dvh-75px)] pb-0'
+              : 'overflow-y-auto pb-28'
+          }`}
+        >
           {children}
-        </div>
+        </main>
 
-        {/* Bottom Floating Curved Dock Navigation Bar */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-4 py-2 flex items-center justify-around shadow-2xl shrink-0">
+        {/* Official Government Bottom Navigation Bar (Rectangular, 0px radius, top indicator) */}
+        <nav
+          aria-label="Portal Navigation"
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 bg-white border-t border-[#D6DCE1] shadow-lg grid grid-cols-5 shrink-0"
+        >
           {navDockItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
-            const isCenterLogo = item.id === 'ask';
-
-            if (isCenterLogo) {
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab('ask')}
-                  className="-mt-7 p-2.5 bg-white rounded-full shadow-xl shadow-sky-500/30 border-4 border-sky-400/80 transition-transform active:scale-90 cursor-pointer flex items-center justify-center"
-                  title="Ask WeatherGPT AI"
-                >
-                  <img src="/assets/logo-icon.png" alt="Ask WeatherGPT AI" className="w-8 h-8 object-contain animate-float" />
-                </button>
-              );
-            }
+            const isAlertTab = item.id === 'alerts';
 
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center py-1 px-2.5 transition-all cursor-pointer relative ${
-                  isActive ? 'text-sky-600 font-extrabold' : 'text-slate-400 hover:text-slate-600'
+                className={`relative flex flex-col items-center justify-center py-2 px-1 transition-colors cursor-pointer border-r border-[#E2E8F0] last:border-r-0 ${
+                  isActive
+                    ? isFarmer
+                      ? 'bg-[#F0FDF4] text-[#006B3C] font-black'
+                      : 'bg-[#F1F5F9] text-[#17365D] font-black'
+                    : 'bg-white text-[#5B6770] hover:bg-[#F8FAFC] font-bold'
                 }`}
               >
-                <div className="relative">
-                  <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'text-sky-600 stroke-[2.5]' : 'text-slate-400'}`} />
-                  {item.id === 'alerts' && unreadAlertCount > 0 && (
-                    <span className="absolute -top-1 -right-2 px-1.5 py-0.2 bg-rose-600 text-white rounded-full text-[8px] font-black animate-pulse shadow-xs">
+                {/* Active Top Border Indicator */}
+                {isActive && (
+                  <div
+                    className={`absolute top-0 left-0 right-0 h-[3px] ${
+                      isAlertTab ? 'bg-[#B42318]' : isFarmer ? 'bg-[#006B3C]' : 'bg-[#17365D]'
+                    }`}
+                  />
+                )}
+
+                <div className="relative mb-0.5">
+                  <Icon
+                    className={`w-4 h-4 ${
+                      isActive
+                        ? isAlertTab
+                          ? 'text-[#B42318]'
+                          : isFarmer
+                          ? 'text-[#006B3C]'
+                          : 'text-[#17365D]'
+                        : 'text-[#5B6770]'
+                    }`}
+                  />
+                  {isAlertTab && unreadAlertCount > 0 && (
+                    <span className="absolute -top-1 -right-2 px-1 py-0.2 bg-[#B42318] text-white rounded-xs text-[8px] font-black">
                       {unreadAlertCount}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] capitalize tracking-tight font-bold">{item.label}</span>
+
+                <span className="text-[10px] tracking-tight truncate w-full text-center">
+                  {item.label}
+                </span>
               </button>
             );
           })}
-        </div>
+        </nav>
       </div>
     </div>
   );

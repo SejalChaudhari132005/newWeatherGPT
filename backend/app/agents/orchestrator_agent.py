@@ -325,9 +325,9 @@ class OrchestratorAgent(BaseAgent):
                 ],
                 "official_warning": bool(route_analysis_payload.get("hazards")),
                 "action_buttons": [
-                    {"id": "compare_times", "label": "⏱️ Compare Departure Times", "action": f"Compare 6 AM and 9 AM departure from {origin_name} to {dest_name}"},
-                    {"id": "show_route", "label": "🗺️ View Route on Map", "action": "navigate_map"},
-                    {"id": "set_alert", "label": "🔔 Set Travel Alert", "action": f"Set route alert for {origin_name} to {dest_name}"},
+                    {"id": "compare_times", "label": "Compare Departure Times", "action": f"Compare 6 AM and 9 AM departure from {origin_name} to {dest_name}"},
+                    {"id": "show_route", "label": "View Route on Map", "action": "navigate_map"},
+                    {"id": "set_alert", "label": "Set Travel Alert", "action": f"Set route alert for {origin_name} to {dest_name}"},
                 ],
                 "metadata": {
                     "intent": intent_res.intent,
@@ -371,19 +371,20 @@ class OrchestratorAgent(BaseAgent):
                 trend_desc = interp.get("trend_description", "")
 
                 raw_content = (
-                    f"🌬️ **Air Quality Intelligence for {city_label}**\n\n"
-                    f"• **Air Quality Index**: **{aqi}** ({cat_label}) [{aq_data.get('aqi_scale', 'European AQI (CAMS)')}]\n"
-                    f"• **Main Pollutant of Concern**: {primary}\n"
-                    f"• **Key Pollutants**: PM2.5: **{pm25} μg/m³** | PM10: **{pm10} μg/m³**\n\n"
-                    f"👉 **Outdoor Activity**: {outdoor_adv}\n"
-                    f"👉 **Sensitive Groups**: {sensitive_adv}\n"
+                    f"Air Quality Analysis for {city_label}\n\n"
+                    f"- Current AQI Index: {aqi} ({cat_label}) [{aq_data.get('aqi_scale', 'European AQI (CAMS)')}]\n"
+                    f"- Main Pollutant of Concern: {primary}\n"
+                    f"- Particulate Levels: PM2.5: {pm25} ug/m3 | PM10: {pm10} ug/m3\n\n"
+                    f"Health & Activity Guidance:\n"
+                    f"- Outdoor Activity: {outdoor_adv}\n"
+                    f"- Sensitive Groups: {sensitive_adv}\n"
                 )
                 if comb_note:
-                    raw_content += f"\n🌦️ **Weather Synergy**: {comb_note}\n"
+                    raw_content += f"\n- Weather Impact: {comb_note}\n"
                 if trend_desc:
-                    raw_content += f"\n📈 **Trend**: {trend_desc}\n"
+                    raw_content += f"\n- Trend Outlook: {trend_desc}\n"
 
-                raw_content += f"\n*Source: {aq_res.get('source', 'Open-Meteo / CAMS')} — Model-based telemetry.*"
+                raw_content += f"\nSource: {aq_res.get('source', 'Open-Meteo / CAMS')} (Model telemetry)."
 
             if target_lang != "en":
                 final_content = await language_service.translate_response(
@@ -413,8 +414,8 @@ class OrchestratorAgent(BaseAgent):
                 ],
                 "official_warning": aq_data.get("category") in ["POOR", "VERY_POOR", "EXTREMELY_POOR"],
                 "action_buttons": [
-                    {"id": "view_aqi", "label": "🌬️ View Air Quality Card", "action": "navigate_advisories"},
-                    {"id": "ask_pollutant", "label": "🔬 What is PM2.5?", "action": "What is PM2.5 and how does it affect health?"},
+                    {"id": "view_aqi", "label": "View Air Quality Card", "action": "navigate_advisories"},
+                    {"id": "ask_pollutant", "label": "What is PM2.5?", "action": "What is PM2.5 and how does it affect health?"},
                 ],
                 "metadata": {
                     "intent": "AIR_QUALITY",
@@ -511,27 +512,27 @@ class OrchestratorAgent(BaseAgent):
         action_buttons: List[Dict[str, str]] = []
         if canonical_role in ["farmer", "agriculture", "farm", "krishi"]:
             action_buttons = [
-                {"id": "view_farm", "label": "🌾 Open My Farm Dashboard", "action": "navigate_farmer"},
-                {"id": "spray_risk", "label": "🧪 Check Spraying Window", "action": "Should I spray pesticide tomorrow morning?"},
-                {"id": "irrigation", "label": "💧 Irrigation Need", "action": "Is irrigation recommended today for my field?"},
+                {"id": "view_farm", "label": "Open Farm Dashboard", "action": "navigate_farmer"},
+                {"id": "spray_risk", "label": "Check Spraying Window", "action": "Should I spray pesticide tomorrow morning?"},
+                {"id": "irrigation", "label": "Irrigation Need", "action": "Is irrigation recommended today for my field?"},
             ]
         elif canonical_role in ["fisher", "fisherman", "marine", "sea"]:
             action_buttons = [
-                {"id": "view_sea", "label": "🎣 Open My Sea Dashboard", "action": "navigate_fisher"},
-                {"id": "return_time", "label": "⏱️ Check Return Deadline", "action": "When must I return back to harbor?"},
-                {"id": "tide_curve", "label": "🌊 Tide & Sea State", "action": "What are the tide timings and wave heights today?"},
+                {"id": "view_sea", "label": "Open Marine Dashboard", "action": "navigate_fisher"},
+                {"id": "return_time", "label": "Check Return Deadline", "action": "When must I return back to harbor?"},
+                {"id": "tide_curve", "label": "Tide & Sea State", "action": "What are the tide timings and wave heights today?"},
             ]
         elif canonical_role in ["aviation", "pilot", "flight", "dispatcher"]:
             action_buttons = [
-                {"id": "view_aviation", "label": "✈️ Open Flight Ops Dashboard", "action": "navigate_aviation"},
-                {"id": "crosswind", "label": "💨 Runway Crosswind", "action": f"Calculate crosswind for active runway at {target_city or 'airport'}"},
-                {"id": "metar_taf", "label": "📑 Decode METAR/TAF", "action": f"Decode METAR for {intent_res.icao_query or 'current airport'}"},
+                {"id": "view_aviation", "label": "Open Flight Ops Dashboard", "action": "navigate_aviation"},
+                {"id": "crosswind", "label": "Runway Crosswind", "action": f"Calculate crosswind for active runway at {target_city or 'airport'}"},
+                {"id": "metar_taf", "label": "Decode METAR/TAF", "action": f"Decode METAR for {intent_res.icao_query or 'current airport'}"},
             ]
         else:
             action_buttons = [
-                {"id": "hourly", "label": "⏱️ Hourly Forecast", "action": f"What is the hourly forecast for {intelligence.location.city}?"},
-                {"id": "air_quality", "label": "🌬️ Check Air Quality", "action": f"How is the air quality in {intelligence.location.city}?"},
-                {"id": "travel", "label": "🚗 Route Weather", "action": f"Drive from {intelligence.location.city} to Pune"},
+                {"id": "hourly", "label": "Hourly Forecast", "action": f"What is the hourly forecast for {intelligence.location.city}?"},
+                {"id": "air_quality", "label": "Check Air Quality", "action": f"How is the air quality in {intelligence.location.city}?"},
+                {"id": "travel", "label": "Route Weather", "action": f"Drive from {intelligence.location.city} to Pune"},
             ]
 
         # 9. Assemble Comprehensive Metadata

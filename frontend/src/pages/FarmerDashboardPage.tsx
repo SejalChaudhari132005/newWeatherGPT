@@ -1,41 +1,40 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Sprout,
+  ArrowLeft,
   MapPin,
+  ChevronDown,
   RefreshCw,
   MessageSquare,
   Sparkles,
-  ArrowLeft,
-  Wind,
-  Droplets,
-  Thermometer,
-  CloudRain,
   Send,
-  Volume2,
-  VolumeX,
   Loader2,
   Bot,
   User,
   ExternalLink,
 } from 'lucide-react';
-import { useWeather } from '../context/WeatherContext';
+import { useWeather } from '../hooks/useWeather';
 import { useUI } from '../context/UIContext';
 import { useAuthContext } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useVoice } from '../hooks/useVoice';
+import { useLocation } from '../hooks/useLocation';
 import { farmerIntelligenceService } from '../services/farmerIntelligenceService';
 import { chatService } from '../services/chatService';
+import { farmService } from '../services/farmService';
+import { FarmProfile } from '../types/farm';
 import { FarmerDecisionData } from '../types/farmerIntelligence';
 
-import { CropStageSelector } from '../components/roles/farmer/CropStageSelector';
-import { SprayingRiskCard } from '../components/roles/farmer/SprayingRiskCard';
-import { FarmingWindowsTimeline } from '../components/roles/farmer/FarmingWindowsTimeline';
-import { SoilMoistureGauge } from '../components/roles/farmer/SoilMoistureGauge';
-import { PestDiseaseRiskCard } from '../components/roles/farmer/PestDiseaseRiskCard';
-import { VernacularVoiceButton } from '../components/roles/farmer/VernacularVoiceButton';
-import { RoleDashboardSwitcher } from '../components/roles/RoleDashboardSwitcher';
-import { DemoBadge } from '../components/common/DemoBadge';
+import { FarmMapCard } from '../components/roles/farmer/FarmMapCard';
+import { FarmOverviewCard } from '../components/roles/farmer/FarmOverviewCard';
+import { CropGrowthTimelineCard } from '../components/roles/farmer/CropGrowthTimelineCard';
+import { SoilMoistureLossCard } from '../components/roles/farmer/SoilMoistureLossCard';
+import { CurrentFarmAdvisoryCard } from '../components/roles/farmer/CurrentFarmAdvisoryCard';
+import { CropRisksAlertsCard } from '../components/roles/farmer/CropRisksAlertsCard';
+import { BestFarmingWindowsCard } from '../components/roles/farmer/BestFarmingWindowsCard';
+import { ChemicalSprayDecisionCard } from '../components/roles/farmer/ChemicalSprayDecisionCard';
+import { SatelliteCropHealthCard } from '../components/roles/farmer/SatelliteCropHealthCard';
+import { ManageFarmModal } from '../components/roles/farmer/ManageFarmModal';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
+import { translatePhrase, translateCrop } from '../utils/dashboardTranslator';
 
 interface AgriQAMessage {
   id: string;
@@ -53,16 +52,21 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
   onOpenChatWithPrompt,
   onBack,
 }) => {
-  const { userLocation } = useWeather();
+  const { weather: liveWeather, loading: weatherLoading } = useWeather();
   const { setActiveTab } = useUI();
   const { profile } = useAuthContext();
   const { language } = useLanguage();
-  const { speakText, isSpeaking, stopSpeech } = useVoice();
+  const { location, openSelector } = useLocation();
 
-  const [selectedCrop, setSelectedCrop] = useState('soybean');
-  const [selectedStage, setSelectedStage] = useState('flowering');
-  const [decisionData, setDecisionData] = useState<FarmerDecisionData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Farm Profile State
+  const [farm, setFarm] = useState<FarmProfile | null>(null);
+  const [isManageFarmOpen, setIsManageFarmOpen] = useState(false);
+
+  // Decision Intelligence State
+  const [decisionData, setDecisionData] = useState<FarmerDecisionData>(() =>
+    farmerIntelligenceService.getFallbackDecisionData()
+  );
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Agri Q&A Chat State
@@ -71,57 +75,94 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
   const [qaMessages, setQaMessages] = useState<AgriQAMessage[]>([]);
   const qaEndRef = useRef<HTMLDivElement | null>(null);
 
-  const latitude = userLocation?.latitude || 19.076;
-  const longitude = userLocation?.longitude || 72.8777;
-  const locationName = userLocation?.city || 'Farming Field Zone';
-  const userId = profile?.user_id || 'farmer_user';
+  const userId = profile?.user_id || profile?.id || 'farmer_user';
 
-  const loadFarmerData = useCallback(async () => {
+  // Determine exact coordinates
+  const latitude = farm?.latitude || location?.latitude || 19.2437;
+  const longitude = farm?.longitude || location?.longitude || 73.1355;
+
+  const displayLocation =
+    (farm?.village ? `${farm.village}, ` : '') +
+    (farm?.district ? `${farm.district}, ` : '') +
+    (farm?.state || '') ||
+    location?.city ||
+    'Kalyan, Maharashtra';
+
+  // 1. Load Farm Profile from Supabase / localStorage
+  const loadFarmProfile = useCallback(async () => {
+    try {
+      let f = await farmService.getFarm(userId);
+      if (!f) {
+        // Seed initial farm profile based on active location and Rice / Paddy
+        f = await farmService.upsertFarm({
+          user_id: userId,
+          farm_name: 'My Farm',
+          latitude: location?.latitude || 19.2437,
+          longitude: location?.longitude || 73.1355,
+          village: location?.city || 'Kolam',
+          district: location?.district || 'Thane',
+          state: location?.state || 'Maharashtra',
+          primary_crop: 'rice',
+          crop_variety: 'Kolam',
+          growth_stage: 'pod_filling',
+          farm_size: 2.5,
+          farm_size_unit: 'acres',
+          irrigation_type: 'field_irrigation',
+          soil_type: 'alluvial',
+        });
+      }
+      setFarm(f);
+    } catch (e) {
+      console.warn('[FarmerDashboardPage] Failed to load farm profile:', e);
+    }
+  }, [userId, location?.latitude, location?.longitude, location?.city, location?.district, location?.state]);
+
+  useEffect(() => {
+    loadFarmProfile();
+  }, [loadFarmProfile]);
+
+  // 2. Load Real-Time Agri Telemetry & Decision Intelligence
+  const loadFarmerDecisions = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await farmerIntelligenceService.getFarmerDecisions({
         latitude,
         longitude,
-        crop: selectedCrop,
-        stage: selectedStage,
-        plannedSprayHour: 8,
+        crop: farm?.primary_crop || 'rice',
+        stage: farm?.growth_stage || 'pod_filling',
       });
       setDecisionData(data);
     } catch (err: any) {
       console.error('[FarmerDashboardPage] Failed to load farmer decisions:', err);
-      setError('Could not load live agricultural telemetry.');
+      setError('Unable to load real-time farm intelligence. Showing cached guidance.');
     } finally {
       setLoading(false);
     }
-  }, [latitude, longitude, selectedCrop, selectedStage]);
+  }, [latitude, longitude, farm?.primary_crop, farm?.growth_stage]);
 
   useEffect(() => {
-    loadFarmerData();
-  }, [loadFarmerData]);
+    loadFarmerDecisions();
+  }, [loadFarmerDecisions]);
 
-  // Initial greeting in Q&A box
-  useEffect(() => {
-    if (decisionData && qaMessages.length === 0) {
-      setQaMessages([
-        {
-          id: 'init-agri',
-          sender: 'assistant',
-          text: `नमस्कार शेतकरी मित्रांनो! मी WeatherGPT Agri Assistant आहे. ${decisionData.crop} (${decisionData.phenological_stage}) पिकाबद्दल फवारणी, सिंचन, खते किंवा रोग नियंत्रणासंबंधी कोणताही प्रश्न विचारा.`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+  // Handle stage change directly from timeline
+  const handleStageSelect = (stageId: string) => {
+    if (farm) {
+      const updated = { ...farm, growth_stage: stageId };
+      setFarm(updated);
+      farmService.upsertFarm(updated);
     }
-  }, [decisionData, qaMessages.length]);
+  };
 
-  const handleSendQuery = async (queryText: string) => {
-    const textToSend = queryText.trim();
-    if (!textToSend || isAsking) return;
+  // 3. Handle Agri Q&A Chat
+  const handleAskQuestion = async (queryText?: string) => {
+    const q = (queryText || inputQuery).trim();
+    if (!q || isAsking) return;
 
     const userMsg: AgriQAMessage = {
-      id: `u_${Date.now()}`,
+      id: `u-${Date.now()}`,
       sender: 'user',
-      text: textToSend,
+      text: q,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -130,379 +171,296 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
     setIsAsking(true);
 
     try {
-      // Grounded agricultural context
-      const contextualPrompt = decisionData
-        ? `[Crop: ${decisionData.crop}, Stage: ${decisionData.phenological_stage}, Field Temp: ${decisionData.current_temp_c}°C, Humidity: ${decisionData.current_humidity_pct}%, Rain Prob: ${decisionData.current_rain_prob_pct}%, Spray Risk: ${decisionData.spraying_suitability.overall_risk}, Soil: ${decisionData.soil_state.moisture_status}] ${textToSend}`
-        : textToSend;
-
-      const res = await chatService.sendMessage(
-        undefined,
-        userId,
-        contextualPrompt,
-        'farmer',
-        {
+      const res = await chatService.sendMessage({
+        message: q,
+        conversationId: 'agri-assistant',
+        role: 'farmer',
+        location: {
           latitude,
           longitude,
-          city: locationName,
+          city: farm?.village || location?.city || 'Kolam',
+          district: farm?.district || location?.district || 'Thane',
+          state: farm?.state || location?.state || 'Maharashtra',
         },
-        language
-      );
+        language,
+      });
 
-      const aiMsg: AgriQAMessage = {
-        id: `a_${Date.now()}`,
+      const assistantMsg: AgriQAMessage = {
+        id: `a-${Date.now()}`,
         sender: 'assistant',
-        text: res.assistantMessage.text,
+        text: res.message,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      setQaMessages((prev) => [...prev, aiMsg]);
-    } catch (err: any) {
+      setQaMessages((prev) => [...prev, assistantMsg]);
+    } catch (err) {
       console.error('[FarmerDashboardPage] Q&A request failed:', err);
-      // Fallback local grounded answer
-      const fallbackAnswer = decisionData
-        ? `सध्या ${decisionData.crop} पिकासाठी फवारणी जोखीम ${decisionData.spraying_suitability.overall_risk} आहे. फवारणीसाठी योग्य वेळ: ${decisionData.spraying_suitability.optimal_window || 'सकाळी 07:00 ते 10:00'}. जमिनीतील ओलावा: ${decisionData.soil_state.moisture_status}.`
-        : `तापमान आणि हवामानाच्या अंदाजानुसार शेतीची कामे नियोजित करा.`;
-
-      setQaMessages((prev) => [
-        ...prev,
-        {
-          id: `a_fallback_${Date.now()}`,
-          sender: 'assistant',
-          text: fallbackAnswer,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      const fallbackMsg: AgriQAMessage = {
+        id: `a-${Date.now()}`,
+        sender: 'assistant',
+        text:
+          language === 'mr'
+            ? 'माफ करा, कृषी सहाय्यक सेवा सध्या व्यस्त आहे. कृपया थोड्या वेळाने प्रयत्न करा.'
+            : language === 'hi'
+            ? 'क्षमा करें, कृषि सहायक सेवा वर्तमान में व्यस्त है। कृपया थोड़ी देर बाद पुनः प्रयास करें।'
+            : 'Sorry, the Agri Assistant service is currently busy. Please try again in a moment.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setQaMessages((prev) => [...prev, fallbackMsg]);
     } finally {
       setIsAsking(false);
-      setTimeout(() => {
-        qaEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
     }
   };
 
-  const handleOpenFullChat = (promptText?: string) => {
-    const text = promptText || `Give me an agricultural weather briefing for ${decisionData?.crop || selectedCrop} in ${locationName}`;
+  useEffect(() => {
+    qaEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [qaMessages]);
+
+  const handleOpenFullChat = (prefillPrompt?: string) => {
     if (onOpenChatWithPrompt) {
-      onOpenChatWithPrompt(text);
+      onOpenChatWithPrompt(
+        prefillPrompt ||
+          (language === 'mr'
+            ? `${displayLocation} मधील माझ्या ${farm?.primary_crop || 'भात'} पिकासाठी सविस्तर कृषी हवामान सल्ला द्या`
+            : language === 'hi'
+            ? `${displayLocation} में मेरी ${farm?.primary_crop || 'धान'} फसल के लिए विस्तृत कृषि मौसम सलाह दें`
+            : `Give me detailed agricultural weather advice for my ${farm?.primary_crop || 'rice'} crop in ${displayLocation}`)
+      );
     } else {
       setActiveTab('ask');
     }
   };
 
   return (
-    <div className="w-full pb-6 pt-2 px-3 space-y-4 animate-fadeIn font-['Arimo']">
-      {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
+    <div className="min-h-screen bg-[#F5F7F9] pb-24 font-['Arimo',sans-serif]">
+      {/* 1. Official Government Header / Breadcrumb Strip */}
+      <div className="bg-[#17365D] text-white border-b-2 border-[#006B3C] px-3.5 sm:px-6 py-3">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
             {onBack && (
               <button
+                type="button"
                 onClick={onBack}
-                className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer shrink-0"
-                title="Go Back to Home Dashboard"
+                className="p-1.5 rounded-xs bg-[#0F233D] hover:bg-[#081525] text-white border border-[#2A4D7A] transition-colors cursor-pointer"
+                title="Back"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-
-            <div className="p-2.5 bg-emerald-600 text-white rounded-2xl shadow-sm shrink-0">
-              <Sprout className="w-6 h-6" />
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                  🌾 MY FARM
-                </h1>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-wider">
-                  Crop Intelligence
-                </span>
-                <DemoBadge label="AGRI LIVE" variant="green" />
+            <div>
+              <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+                {language === 'mr' ? 'राष्ट्रीय कृषी हवामान सेवा' : language === 'hi' ? 'राष्ट्रीय कृषि मौसम सेवा' : 'NATIONAL AGROMET ADVISORY SYSTEM'}
               </div>
-              <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1 mt-0.5">
-                <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
-                <span className="truncate">{locationName}</span>
-              </p>
+              <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                {language === 'mr' ? 'माझे शेत — कृषी देखरेख आणि निर्णय प्रणाली' : language === 'hi' ? 'मेरा खेत — कृषि निगरानी व निर्णय प्रणाली' : 'MY FARM — AGRICULTURAL MONITORING & DECISION PORTAL'}
+              </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Location Selector */}
+          <button
+            type="button"
+            onClick={openSelector}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0F233D] hover:bg-[#081525] border border-[#2A4D7A] text-white text-xs font-bold rounded-xs transition-colors cursor-pointer"
+            title="Change Location"
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="max-w-[150px] sm:max-w-[200px] truncate">
+              {displayLocation}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-white/70 shrink-0" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Dashboard Content Container */}
+      <div className="max-w-6xl mx-auto px-3.5 sm:px-6 pt-4 space-y-4">
+        {/* 2. Section: Farm Map & Farm Overview (2 Columns on Desktop, Stacked on Mobile) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div className="lg:col-span-7 h-full min-h-[300px]">
+            <FarmMapCard
+              latitude={latitude}
+              longitude={longitude}
+              farmName={farm?.farm_name || 'My Farm'}
+              cropName={translateCrop(farm?.primary_crop || 'rice', language)}
+              farmSize={farm?.farm_size ?? 2.5}
+              farmSizeUnit={farm?.farm_size_unit || 'Acres'}
+              boundaryGeoJson={farm?.boundary_geojson}
+            />
+          </div>
+          <div className="lg:col-span-5 h-full">
+            <FarmOverviewCard
+              farm={farm}
+              onOpenManageFarm={() => setIsManageFarmOpen(true)}
+            />
+          </div>
+        </div>
+
+        {/* 4. Section: Crop & Growth Status + Soil Moisture & Water Loss */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <CropGrowthTimelineCard
+            cropId={farm?.primary_crop || 'rice'}
+            currentStageId={farm?.growth_stage || 'pod_filling'}
+            onSelectStage={handleStageSelect}
+          />
+          <SoilMoistureLossCard
+            soilState={decisionData.soil_state}
+          />
+        </div>
+
+        {/* 5. Section: Current Farm Advisory + Crop Risks & Alerts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <CurrentFarmAdvisoryCard
+            soilState={decisionData.soil_state}
+            rainProbability={decisionData.current_rain_prob_pct}
+            expectedRainfallMm={liveWeather?.current?.precipitation ?? 0}
+            onOpenDetails={() => handleOpenFullChat()}
+          />
+          <CropRisksAlertsCard
+            cropName={farm?.primary_crop || 'rice'}
+            growthStage={farm?.growth_stage || 'pod_filling'}
+            temperature={liveWeather?.current?.temperature ?? 27.4}
+            windSpeed={liveWeather?.current?.wind_speed ?? 6.2}
+            rainProbability={decisionData.current_rain_prob_pct ?? 15}
+          />
+        </div>
+
+        {/* 6. Section: Best Farming Windows */}
+        <BestFarmingWindowsCard
+          windows={decisionData.best_farming_windows}
+        />
+
+        {/* 7. Section: Chemical Spray Decision + Satellite NDVI Crop Health */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <ChemicalSprayDecisionCard
+            windSpeed={liveWeather?.current?.wind_speed ?? 6.2}
+            rainProbability={decisionData.current_rain_prob_pct ?? 15}
+            humidity={liveWeather?.current?.humidity ?? 68}
+            temperature={liveWeather?.current?.temperature ?? 27.4}
+          />
+          <SatelliteCropHealthCard
+            ndviValue={0.72}
+            healthStatus="Good"
+            trend="Improving"
+          />
+        </div>
+
+        {/* 8. Interactive Agri Assistant Desk */}
+        <div className="gov-panel space-y-3">
+          <div className="gov-panel-header flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-[#006B3C]" />
+              <span>
+                {language === 'mr' ? 'कृषी सल्ला व शंका निवारण कक्ष' : language === 'hi' ? 'कृषि परामर्श एवं सहायता केंद्र' : 'OFFICIAL AGROMET QUERY & ADVISORY DESK'}
+              </span>
+            </div>
+
             <button
-              onClick={() => (onBack ? onBack() : setActiveTab('home'))}
-              className="text-[10px] text-emerald-800 font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
-              title="Switch to Live Weather Dashboard"
+              type="button"
+              onClick={() => handleOpenFullChat()}
+              className="text-[11px] font-bold text-[#006B3C] hover:underline flex items-center gap-1 cursor-pointer uppercase tracking-wider"
             >
-              🏠 Home
+              <span>{language === 'mr' ? 'सविस्तर चर्चा' : language === 'hi' ? 'विस्तृत चर्चा' : 'OPEN FULL CHAT'}</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={loadFarmerData}
-              disabled={loading}
-              className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl text-slate-700 transition-all cursor-pointer disabled:opacity-50 shadow-2xs shrink-0"
-              title="Refresh Field Telemetry"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
-            </button>
+          </div>
+
+          <div className="p-3 space-y-3">
+            {/* Standard Quick Query Buttons */}
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {[
+                language === 'mr' ? 'आज शेतात काय काम करावे?' : language === 'hi' ? 'आज खेत में क्या काम करें?' : 'What to do on my farm today?',
+                language === 'mr' ? 'फवारणी कधी करावी?' : language === 'hi' ? 'छिड़काव कब करें?' : 'When is safe to spray?',
+                language === 'mr' ? 'पावसाचा धोका आहे का?' : language === 'hi' ? 'क्या बारिश का खतरा है?' : 'Is there a rain risk?',
+              ].map((prompt, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleAskQuestion(prompt)}
+                  className="px-3 py-1 bg-[#F8FAFC] hover:bg-[#EBF5EE] text-[#17365D] hover:text-[#006B3C] text-xs font-semibold rounded-xs border border-[#D6DCE1] transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  [ {prompt} ]
+                </button>
+              ))}
+            </div>
+
+            {/* Structured Message Stream */}
+            {qaMessages.length > 0 && (
+              <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-xs bg-[#F8FAFC] border border-[#D6DCE1]">
+                {qaMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                  >
+                    <span className="text-[10px] font-bold text-[#5B6770] mb-0.5 uppercase tracking-wider">
+                      {msg.sender === 'user' ? 'Farmer / Citizen' : 'WeatherGPT Officer'} • {msg.timestamp}
+                    </span>
+                    <div
+                      className={`max-w-[90%] rounded-xs p-2.5 text-xs font-medium border leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-[#17365D] text-white border-[#17365D]'
+                          : 'bg-white text-[#1F2933] border-[#D6DCE1]'
+                      }`}
+                    >
+                      {msg.sender === 'assistant' ? (
+                        <MarkdownRenderer content={msg.text} />
+                      ) : (
+                        <span>{msg.text}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div ref={qaEndRef} />
+              </div>
+            )}
+
+            {/* Input Row */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputQuery}
+                onChange={(e) => setInputQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAskQuestion()}
+                placeholder={
+                  language === 'mr'
+                    ? 'उदा. आज खत टाकावे का? पाणी कधी द्यावे?'
+                    : language === 'hi'
+                    ? 'उदा. क्या आज खाद डालें? पानी कब दें?'
+                    : 'Type official query (e.g., Sowing schedule, spray safety, rain forecast)...'
+                }
+                className="flex-1 px-3 py-2 rounded-xs border border-[#D6DCE1] focus:outline-none focus:border-[#006B3C] text-xs text-[#1F2933] placeholder-[#5B6770] bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => handleAskQuestion()}
+                disabled={isAsking || !inputQuery.trim()}
+                className="px-4 py-2 rounded-xs bg-[#006B3C] hover:bg-[#00522E] text-white font-bold text-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+              >
+                {isAsking ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>{language === 'mr' ? 'विचारा' : language === 'hi' ? 'पूछें' : 'SUBMIT'}</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Global Role Dashboard Switcher */}
-      <RoleDashboardSwitcher
-        currentDashboard="farmer"
-        onNavigate={(tab) => {
-          if (tab === 'home' && onBack) {
-            onBack();
-          } else {
-            setActiveTab(tab);
-          }
+      {/* Manage Farm Modal */}
+      <ManageFarmModal
+        isOpen={isManageFarmOpen}
+        onClose={() => setIsManageFarmOpen(false)}
+        farm={farm}
+        userId={userId}
+        onFarmUpdated={(updatedFarm) => {
+          setFarm(updatedFarm);
+          loadFarmerDecisions();
         }}
       />
-
-      {/* Interactive Crop & Stage Picker */}
-      <CropStageSelector
-        selectedCrop={selectedCrop}
-        selectedStage={selectedStage}
-        onCropChange={(crop) => setSelectedCrop(crop)}
-        onStageChange={(stage) => setSelectedStage(stage)}
-      />
-
-      {loading && !decisionData ? (
-        <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm flex flex-col items-center justify-center gap-2.5 text-center">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-          <div className="text-sm font-bold text-slate-800">Calculating Crop Weather Intelligence...</div>
-          <p className="text-xs text-slate-400">Evaluating soil moisture, FAO-56 ET0, wash-off, and drift windows.</p>
-        </div>
-      ) : decisionData ? (
-        <>
-          {/* Live Telemetry Summary 2x2 Grid */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 flex items-center gap-2.5 shadow-2xs">
-              <div className="p-2 bg-orange-50 text-orange-600 rounded-xl shrink-0">
-                <Thermometer className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider truncate">Field Temp</div>
-                <div className="text-sm sm:text-base font-black text-slate-900 whitespace-nowrap">{decisionData.current_temp_c}°C</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 flex items-center gap-2.5 shadow-2xs">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl shrink-0">
-                <Droplets className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider truncate">Air Humidity</div>
-                <div className="text-sm sm:text-base font-black text-slate-900 whitespace-nowrap">{decisionData.current_humidity_pct}%</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 flex items-center gap-2.5 shadow-2xs">
-              <div className="p-2 bg-sky-50 text-sky-600 rounded-xl shrink-0">
-                <CloudRain className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider truncate">Rain Chance</div>
-                <div className="text-sm sm:text-base font-black text-slate-900 whitespace-nowrap">{decisionData.current_rain_prob_pct}%</div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 flex items-center gap-2.5 shadow-2xs">
-              <div className="p-2 bg-teal-50 text-teal-600 rounded-xl shrink-0">
-                <Wind className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider truncate">Wind Speed</div>
-                <div className="text-sm sm:text-base font-black text-slate-900 whitespace-nowrap">{decisionData.spraying_suitability.wind_speed_kmh} km/h</div>
-              </div>
-            </div>
-          </div>
-
-          {/* 1-Tap Vernacular Regional Voice Audio */}
-          <VernacularVoiceButton
-            marathiText={decisionData.regional_advisory_text}
-            englishText={decisionData.executive_summary}
-          />
-
-          {/* Hero Card: Chemical Spraying Risk */}
-          <SprayingRiskCard
-            assessment={decisionData.spraying_suitability}
-            cropName={decisionData.crop}
-          />
-
-          {/* Best Farming Windows Timeline */}
-          <FarmingWindowsTimeline
-            windows={decisionData.best_farming_windows}
-          />
-
-          {/* Soil Moisture & ET0 Gauges */}
-          <SoilMoistureGauge
-            soilState={decisionData.soil_state}
-          />
-
-          {/* Pest & Disease Alerts */}
-          <PestDiseaseRiskCard
-            risks={decisionData.pest_disease_risks}
-            cropName={decisionData.crop}
-          />
-
-          {/* Interactive Agri Bot Q&A Card with Live Question/Answer Field */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-emerald-200/80 shadow-md space-y-3.5">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="p-2 bg-emerald-100 text-emerald-800 rounded-2xl shrink-0">
-                  <Bot className="w-5 h-5 text-emerald-700" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-1.5 truncate">
-                    <span>Agri Assistant (कृषी सल्लागार)</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium truncate">
-                    Ask about {decisionData.crop}, spraying, or soil moisture
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => handleOpenFullChat()}
-                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60 shrink-0"
-              >
-                <span>Chat View</span>
-                <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Q&A Conversation Stream */}
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {qaMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.sender === 'assistant' && (
-                    <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                  )}
-
-                  <div
-                    className={`p-3.5 rounded-2xl max-w-[85%] text-xs font-medium leading-relaxed ${
-                      msg.sender === 'user'
-                        ? 'bg-emerald-600 text-white rounded-br-none shadow-xs'
-                        : 'bg-emerald-50/70 border border-emerald-100 text-slate-800 rounded-bl-none shadow-xs'
-                    }`}
-                  >
-                    <MarkdownRenderer content={msg.text} isUser={msg.sender === 'user'} />
-                    <div
-                      className={`flex items-center justify-between gap-2 mt-1 text-[10px] ${
-                        msg.sender === 'user' ? 'text-emerald-200' : 'text-slate-400'
-                      }`}
-                    >
-                      <span>{msg.timestamp}</span>
-                      {msg.sender === 'assistant' && (
-                        <button
-                          onClick={() => (isSpeaking ? stopSpeech() : speakText(msg.text, language === 'mr' ? 'mr-IN' : 'en-IN'))}
-                          className="text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer font-bold"
-                          title="Listen in Voice"
-                        >
-                          {isSpeaking ? <VolumeX className="w-3 h-3 text-rose-500" /> : <Volume2 className="w-3 h-3" />}
-                          <span>{isSpeaking ? 'Stop' : 'Listen'}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {msg.sender === 'user' && (
-                    <div className="w-7 h-7 rounded-xl bg-slate-800 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                      <User className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isAsking && (
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/80 w-fit animate-pulse">
-                  <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                  <span>कृषी सल्लागार विश्लेषण करत आहे... (Analyzing field weather)...</span>
-                </div>
-              )}
-
-              <div ref={qaEndRef} />
-            </div>
-
-            {/* Quick Clickable Suggestions */}
-            <div className="space-y-1.5 pt-1 border-t border-slate-100">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Quick Questions (पटकन विचारा):
-              </span>
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                <button
-                  onClick={() => handleSendQuery(`उद्या सकाळी ${decisionData.crop} पिकावर फवारणी करणे सुरक्षित आहे का?`)}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-200 whitespace-nowrap cursor-pointer transition-all shrink-0"
-                >
-                  🧪 उद्या फवारणी करावी का?
-                </button>
-                <button
-                  onClick={() => handleSendQuery(`आजच्या जमिनीतील ओलाव्यानुसार मी कधी पाणी (सिंचन) दिले पाहिजे?`)}
-                  className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold border border-blue-200 whitespace-nowrap cursor-pointer transition-all shrink-0"
-                >
-                  💧 पाणी (सिंचन) कधी करावे?
-                </button>
-                <button
-                  onClick={() => handleSendQuery(`${decisionData.crop} पिकासाठी कीड आणि बुरशीपासून बचावासाठी काय उपाययोजना करावी?`)}
-                  className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-bold border border-rose-200 whitespace-nowrap cursor-pointer transition-all shrink-0"
-                >
-                  🐛 कीड व रोग नियंत्रण सल्ला
-                </button>
-              </div>
-            </div>
-
-            {/* Interactive Question Input Box */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendQuery(inputQuery);
-              }}
-              className="flex items-center gap-2 pt-1"
-            >
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={inputQuery}
-                  onChange={(e) => setInputQuery(e.target.value)}
-                  placeholder={`उदा. ${decisionData.crop} पिकाबद्दल प्रश्न विचारा... / Ask about your crop...`}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-medium py-3 pl-3.5 pr-10 rounded-2xl outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all shadow-2xs"
-                  disabled={isAsking}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={!inputQuery.trim() || isAsking}
-                className="p-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-2xl shadow-md transition-all flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-                title="Send Question"
-              >
-                {isAsking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </form>
-          </div>
-
-          {/* Provenance & Confidence Notice */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-[11px] text-slate-500 flex items-center justify-between">
-            <div>
-              <strong>Data Provenance: </strong>
-              <span>{decisionData.provenance.source} • Evaluated {new Date(decisionData.generated_at).toLocaleTimeString()}</span>
-            </div>
-            <div className="font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
-              Confidence: {decisionData.provenance.confidence_score}%
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="p-6 bg-rose-50 rounded-3xl border border-rose-200 text-rose-800 text-sm font-semibold">
-          {error || 'Unable to retrieve farm intelligence. Please check network connection.'}
-        </div>
-      )}
     </div>
   );
 };

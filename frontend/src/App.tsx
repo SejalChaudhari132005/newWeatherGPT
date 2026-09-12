@@ -1,4 +1,5 @@
 import React from 'react';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { LanguageProvider } from './context/LanguageContext';
 import { UIProvider, useUI } from './context/UIContext';
 import { WeatherProvider, useWeather } from './context/WeatherContext';
@@ -28,6 +29,7 @@ import { LocationConfirmationScreen } from './components/onboarding/LocationConf
 
 import { DashboardPage } from './pages/DashboardPage';
 import { FarmerDashboardPage } from './pages/FarmerDashboardPage';
+import { FarmerWeatherPage } from './pages/FarmerWeatherPage';
 import { FisherDashboardPage } from './pages/FisherDashboardPage';
 import { AviationDashboardPage } from './pages/AviationDashboardPage';
 import { AlertsPage } from './pages/AlertsPage';
@@ -36,6 +38,7 @@ import { ClimatePage } from './pages/ClimatePage';
 import { WhatIfPage } from './pages/WhatIfPage';
 import { TravelPage } from './pages/TravelPage';
 import { MapPage } from './pages/MapPage';
+import { FarmRoutePage } from './pages/FarmRoutePage';
 import { EmergencyPage } from './pages/EmergencyPage';
 import { Loader2 } from 'lucide-react';
 
@@ -97,6 +100,13 @@ const MainAppContent: React.FC = () => {
     switch (activeTab) {
       case 'home':
       case 'live':
+        if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+          return (
+            <FarmerWeatherPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            />
+          );
+        }
         return (
           <DashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}
@@ -106,15 +116,7 @@ const MainAppContent: React.FC = () => {
               else if (page === 'travel') setActiveTab('travel');
               else if (page === 'alerts') setActiveTab('alerts');
               else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') {
-                if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
-                  setActiveTab('farmer');
-                } else if (profile?.role?.toLowerCase() === 'fisher' || activeRole?.toLowerCase() === 'fisher') {
-                  setActiveTab('fisher');
-                } else if (profile?.role?.toLowerCase() === 'aviation' || activeRole?.toLowerCase() === 'aviation') {
-                  setActiveTab('aviation');
-                } else {
-                  setActiveTab('advisories');
-                }
+                setActiveTab('advisories');
               } else if (page === 'farmer') {
                 setActiveTab('farmer');
               } else if (page === 'fisher') {
@@ -124,7 +126,6 @@ const MainAppContent: React.FC = () => {
               }
             }}
           />
-
         );
       case 'ask':
       case 'chat':
@@ -141,6 +142,14 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'radar':
+        if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+          return (
+            <FarmRoutePage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
+            />
+          );
+        }
         return (
           <MapPage
             onBack={() => setActiveTab('home')}
@@ -200,7 +209,7 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'alerts':
-        return <AlertsPage />;
+        return <AlertsPage onOpenChatWithPrompt={handleOpenChatWithPrompt} />;
       case 'climate':
         return <ClimatePage />;
       case 'whatif':
@@ -228,6 +237,8 @@ const MainAppContent: React.FC = () => {
                 }
               } else if (page === 'farmer') {
                 setActiveTab('farmer');
+              } else if (page === 'farmroute' || page === 'plan' || page === 'planMyDay') {
+                setActiveTab('radar');
               } else if (page === 'fisher') {
                 setActiveTab('fisher');
               } else if (page === 'aviation') {
@@ -268,7 +279,7 @@ const MainAppContent: React.FC = () => {
         activeNavPage={activeTab === 'ask' || activeTab === 'chat' ? 'chat' : 'dashboard'}
         onNavigate={handleNavPage}
       />
-      <MobileAppShell>
+      <MobileAppShell onOpenSidebar={() => setIsSidebarOpen(true)}>
         <LocationSelectorModal />
         <VoiceModal />
         <ExplainableAIModal />
@@ -321,19 +332,21 @@ const RootRouter: React.FC = () => {
 
 export function App() {
   return (
-    <LanguageProvider>
-      <UIProvider>
-        <AuthProvider>
-          <UserProvider>
-            <LocationProvider>
-              <WeatherProvider>
-                <RootRouter />
-              </WeatherProvider>
-            </LocationProvider>
-          </UserProvider>
-        </AuthProvider>
-      </UIProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <UIProvider>
+          <AuthProvider>
+            <UserProvider>
+              <LocationProvider>
+                <WeatherProvider>
+                  <RootRouter />
+                </WeatherProvider>
+              </LocationProvider>
+            </UserProvider>
+          </AuthProvider>
+        </UIProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 

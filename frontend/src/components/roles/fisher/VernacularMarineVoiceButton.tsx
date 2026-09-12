@@ -11,13 +11,13 @@ export const VernacularMarineVoiceButton: React.FC<VernacularMarineVoiceButtonPr
   marathiText,
   englishText,
 }) => {
-  const { speakText, isSpeaking, stopSpeech } = useVoice();
+  const { speakText, isSpeaking, stopSpeaking } = useVoice();
   const [selectedLang, setSelectedLang] = useState<'mr-IN' | 'hi-IN' | 'ta-IN' | 'en-IN'>('mr-IN');
   const [showTranscript, setShowTranscript] = useState(false);
 
   const handlePlayVoice = () => {
     if (isSpeaking) {
-      stopSpeech();
+      stopSpeaking();
       return;
     }
 

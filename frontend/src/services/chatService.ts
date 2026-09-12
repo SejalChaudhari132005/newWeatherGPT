@@ -2,10 +2,27 @@ import { Conversation, ChatMessage, PromptSuggestion } from '../types/chat';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-export const getSuggestedPromptsByRole = (role: string): PromptSuggestion[] => {
+export const getSuggestedPromptsByRole = (role: string, language: string = 'en'): PromptSuggestion[] => {
   const normalizedRole = (role || 'citizen').toLowerCase();
+  const lang = (language || 'en').toLowerCase();
 
   if (normalizedRole.includes('farmer')) {
+    if (lang === 'mr') {
+      return [
+        { id: '1', icon: '🌾', text: "आज पिकाला पाणी (सिंचन) द्यावे का?", roleCategory: 'Farmer' },
+        { id: '2', icon: '🌧️', text: "या आठवड्यात पावसामुळे पिकांचे नुकसान होईल का?", roleCategory: 'Farmer' },
+        { id: '3', icon: '🌱', text: "उद्या कीटकनाशक फवारणीसाठी हवामान अनुकूल आहे का?", roleCategory: 'Farmer' },
+        { id: '4', icon: '🌡️', text: "आगामी दिवसांत तापमानाचा अंदाज काय आहे?", roleCategory: 'Farmer' },
+      ];
+    }
+    if (lang === 'hi') {
+      return [
+        { id: '1', icon: '🌾', text: "क्या आज खेत में सिंचाई करनी चाहिए?", roleCategory: 'Farmer' },
+        { id: '2', icon: '🌧️', text: "क्या इस सप्ताह बारिश से फसल पर असर पड़ेगा?", roleCategory: 'Farmer' },
+        { id: '3', icon: '🌱', text: "क्या कल कीटनाशक छिड़काव के लिए उपयुक्त समय है?", roleCategory: 'Farmer' },
+        { id: '4', icon: '🌡️', text: "आने वाले दिनों में तापमान का पूर्वानुमान क्या है?", roleCategory: 'Farmer' },
+      ];
+    }
     return [
       { id: '1', icon: '🌾', text: "Should I irrigate today?", roleCategory: 'Farmer' },
       { id: '2', icon: '🌧️', text: "Will rain affect my crop this week?", roleCategory: 'Farmer' },
@@ -15,6 +32,22 @@ export const getSuggestedPromptsByRole = (role: string): PromptSuggestion[] => {
   }
 
   if (normalizedRole.includes('fisher') || normalizedRole.includes('marine')) {
+    if (lang === 'mr') {
+      return [
+        { id: '1', icon: '🎣', text: "उद्या मासेमारीसाठी समुद्रात जाणे सुरक्षित आहे का?", roleCategory: 'Fisherfolk' },
+        { id: '2', icon: '🌊', text: "समुद्रातील लाटा आणि भरती-ओहोटीची स्थिती कशी आहे?", roleCategory: 'Fisherfolk' },
+        { id: '3', icon: '🌬️', text: "किनारपट्टीवर वाऱ्याचा वेग किती असेल?", roleCategory: 'Fisherfolk' },
+        { id: '4', icon: '⚡', text: "खोल समुद्रात वादळाचा काही धोका आहे का?", roleCategory: 'Fisherfolk' },
+      ];
+    }
+    if (lang === 'hi') {
+      return [
+        { id: '1', icon: '🎣', text: "क्या कल मछली पकड़ने के लिए समुद्र में जाना सुरक्षित है?", roleCategory: 'Fisherfolk' },
+        { id: '2', icon: '🌊', text: "समुद्र में लहरों और ज्वार-भाटे की स्थिति कैसी है?", roleCategory: 'Fisherfolk' },
+        { id: '3', icon: '🌬️', text: "तटीय हवा की गति कितनी रहेगी?", roleCategory: 'Fisherfolk' },
+        { id: '4', icon: '⚡', text: "क्या गहरे समुद्र में आंधी-तूफान का जोखिम है?", roleCategory: 'Fisherfolk' },
+      ];
+    }
     return [
       { id: '1', icon: '🎣', text: "Is it safe to go fishing tomorrow?", roleCategory: 'Fisherfolk' },
       { id: '2', icon: '🌊', text: "What are the wave & swell conditions?", roleCategory: 'Fisherfolk' },
@@ -23,20 +56,31 @@ export const getSuggestedPromptsByRole = (role: string): PromptSuggestion[] => {
     ];
   }
 
-  if (normalizedRole.includes('disaster') || normalizedRole.includes('emergency')) {
+  // Default Citizen prompts
+  if (lang === 'mr') {
     return [
-      { id: '1', icon: '🚨', text: "What areas are at severe weather risk?", roleCategory: 'Disaster Manager' },
-      { id: '2', icon: '🌊', text: "Where is heavy rainfall likely in my zone?", roleCategory: 'Disaster Manager' },
-      { id: '3', icon: '📍', text: "Show storm & wind advisories", roleCategory: 'Disaster Manager' },
-      { id: '4', icon: '⛈️', text: "Any official IMD warnings active?", roleCategory: 'Disaster Manager' },
+      { id: '1', icon: '🌧️', text: "आज माझ्या भागात पाऊस पडेल का?", roleCategory: 'Citizen' },
+      { id: '2', icon: '☔', text: "उद्या बाहेर पडताना छत्री सोबत ठेवावी का?", roleCategory: 'Citizen' },
+      { id: '3', icon: '🏃', text: "आज बाहेर व्यायाम किंवा धावणे सुरक्षित आहे का?", roleCategory: 'Citizen' },
+      { id: '4', icon: '🌡️', text: "आज कमाल तापमान किती राहील?", roleCategory: 'Citizen' },
+      { id: '5', icon: '🚨', text: "माझ्या भागात काही अधिकृत हवामान इशारा आहे का?", roleCategory: 'Citizen' },
     ];
   }
 
-  // Default Citizen prompts
+  if (lang === 'hi') {
+    return [
+      { id: '1', icon: '🌧️', text: "क्या आज मेरे इलाके में बारिश होगी?", roleCategory: 'Citizen' },
+      { id: '2', icon: '☔', text: "क्या कल बाहर जाते समय छाता साथ रखना चाहिए?", roleCategory: 'Citizen' },
+      { id: '3', icon: '🏃', text: "क्या आज बाहर व्यायाम या दौड़ना सुरक्षित है?", roleCategory: 'Citizen' },
+      { id: '4', icon: '🌡️', text: "आज अधिकतम तापमान कितना रहेगा?", roleCategory: 'Citizen' },
+      { id: '5', icon: '🚨', text: "क्या मेरे क्षेत्र में कोई आधिकारिक मौसम चेतावनी है?", roleCategory: 'Citizen' },
+    ];
+  }
+
   return [
     { id: '1', icon: '🌧️', text: "Will it rain today in my area?", roleCategory: 'Citizen' },
     { id: '2', icon: '☔', text: "Should I carry an umbrella tomorrow?", roleCategory: 'Citizen' },
-    { id: '3', icon: '🚗', text: "Is it safe to travel tomorrow morning?", roleCategory: 'Citizen' },
+    { id: '3', icon: '🏃', text: "Is it safe to exercise outdoors today?", roleCategory: 'Citizen' },
     { id: '4', icon: '🌡️', text: "How hot will it be today?", roleCategory: 'Citizen' },
     { id: '5', icon: '🚨', text: "Is there any official weather warning near me?", roleCategory: 'Citizen' },
   ];

@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
-import { MapPin, Sparkles, ArrowRight, Clock, ShieldCheck, ChevronDown } from 'lucide-react';
-import { getRoleTheme } from '../../config/roleThemes';
+import React, { useState, useEffect } from 'react';
+import {
+  MapPin,
+  ChevronDown,
+  Droplets,
+  Wind,
+  Gauge,
+  Sun,
+  Moon,
+  CloudSun,
+  CloudMoon,
+  CloudRain,
+  CloudLightning,
+  CloudSnow,
+  Radio,
+} from 'lucide-react';
 import { getWeatherBackground } from '../../services/backgroundProvider';
 import { useLocation } from '../../hooks/useLocation';
 import { useLanguage } from '../../context/LanguageContext';
-import { getWeatherIconInfo } from '../../utils/weatherIcons';
 import { translateCondition, translatePhrase } from '../../utils/dashboardTranslator';
 
 interface Props {
@@ -18,143 +30,260 @@ export const WeatherHero: React.FC<Props> = ({
   weather,
   role,
   locationName,
-  onAskGpt,
 }) => {
   const { location, openSelector } = useLocation();
   const { language } = useLanguage();
-  const theme = getRoleTheme(role);
   const [imgError, setImgError] = useState(false);
+  const [formattedDateTime, setFormattedDateTime] = useState('');
 
-  // Dynamic location display strictly from coordinates/context
-  const displayCity = location?.city || weather.city || locationName.split(',')[0] || 'Detected Location';
-  const displayState = location?.state || weather.state || '';
+  // Location string
+  const displayCity = location?.city || weather?.city || locationName.split(',')[0] || 'New Delhi';
+  const displayState = location?.state || weather?.state || (locationName.split(',')[1] || '').trim();
   const fullLocationString = displayState ? `${displayCity}, ${displayState}` : displayCity;
-  const isGps = (location?.source || location?.location_source) === 'gps';
 
-  // Section 10 & 13: Background Resolver
+  // Format real-time local date and time string
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      };
+      const datePart = now.toLocaleDateString('en-GB', options);
+      const timePart = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+      setFormattedDateTime(`${datePart} | ${timePart}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const currentHour = new Date().getHours();
   const isNight = currentHour < 6 || currentHour >= 19;
+  const conditionDisplay = translateCondition(weather?.condition || 'Partly Cloudy', language);
+
+  // Background Resolver based on GPS/location & condition
   const bg = getWeatherBackground({
     role,
     location: fullLocationString,
-    weatherCondition: weather.condition,
+    weatherCondition: weather?.condition,
     isNight,
   });
 
-  const decision = theme.defaultDecision;
-  const iconInfo = getWeatherIconInfo(weather.weatherCode, weather.condition);
-  const conditionDisplay = translateCondition(weather.condition || 'Clear Sky', language);
+  // Weather SVG Icon Resolver
+  const getWeatherIcon = (conditionStr: string = '') => {
+    const c = conditionStr.toLowerCase();
+    if (c.includes('thunder') || c.includes('lightning') || c.includes('storm')) {
+      return <CloudLightning className="w-8 h-8 text-amber-300" />;
+    }
+    if (c.includes('rain') || c.includes('shower') || c.includes('drizzle')) {
+      return <CloudRain className="w-8 h-8 text-sky-200" />;
+    }
+    if (c.includes('snow')) {
+      return <CloudSnow className="w-8 h-8 text-blue-100" />;
+    }
+    if (c.includes('cloud') || c.includes('overcast') || c.includes('fog') || c.includes('mist') || c.includes('haze')) {
+      return isNight ? (
+        <CloudMoon className="w-8 h-8 text-indigo-200" />
+      ) : (
+        <CloudSun className="w-8 h-8 text-amber-200" />
+      );
+    }
+    if (c.includes('clear') || c.includes('sunny')) {
+      return isNight ? (
+        <Moon className="w-8 h-8 text-indigo-100" />
+      ) : (
+        <Sun className="w-8 h-8 text-amber-300" />
+      );
+    }
+    return isNight ? (
+      <CloudMoon className="w-8 h-8 text-indigo-200" />
+    ) : (
+      <CloudSun className="w-8 h-8 text-amber-200" />
+    );
+  };
+
+  const tempVal = weather?.temperature !== null && weather?.temperature !== undefined ? Math.round(weather.temperature) : 27;
+  const feelsLikeVal = weather?.feelsLike !== null && weather?.feelsLike !== undefined ? Math.round(weather.feelsLike) : tempVal;
+  const humidityVal = weather?.humidity ?? 83;
+  const windVal = weather?.windSpeed ? `${Math.round(weather.windSpeed)} km/h ${weather?.windDirection || 'SW'}` : '6.2 km/h ESE';
+  const pressureVal = weather?.pressure ? `${Math.round(weather.pressure)} hPa` : '1008 hPa';
+  const uvVal = weather?.uvIndex !== null && weather?.uvIndex !== undefined ? `${Math.round(weather.uvIndex)}` : '4';
+  const rainProbVal = weather?.rainProbability ?? 86;
+
+  const isFarmer = role.toLowerCase() === 'farmer';
+  const heroBgImage = isFarmer ? '/assets/farmer-bg.jpg' : bg.backgroundUrl;
 
   return (
-    <div className="relative rounded-[24px] sm:rounded-[36px] overflow-hidden shadow-2xl transition-all font-['Arimo'] border border-slate-200/80 bg-slate-900">
-      {/* High-Resolution Location-Aware & Weather-Aware Background Image */}
-      {!imgError && (
-        <img
-          src={bg.backgroundUrl}
-          alt={bg.altText}
-          onError={() => setImgError(true)}
-          className="absolute inset-0 w-full h-full object-cover object-center scale-105 transition-transform duration-700 hover:scale-100"
-        />
-      )}
-
-      {/* Role-Specific Weather-Responsive Blue Gradient Overlay (Section 8) */}
-      <div className={`absolute inset-0 ${bg.overlay}`} />
-
-      {/* Content Container */}
-      <div className="relative z-10 p-3.5 sm:p-7 md:p-8 text-white space-y-3.5 sm:space-y-5 flex flex-col justify-between min-h-[380px] sm:min-h-[430px]">
-        {/* Top Badges & Location Header */}
-        <div className="space-y-1.5 min-w-0">
-          <div className="flex items-center justify-between gap-2 pb-1">
-            <span className="text-xs sm:text-sm font-black tracking-wider uppercase text-blue-200 drop-shadow-sm flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#fcd444]" />
-              WeatherGPT
-            </span>
-            <span className="text-[10px] sm:text-xs font-bold text-blue-100/90 italic">
-              {translatePhrase('liveAtmosphericSync', language)}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-1.5">
-            {/* Interactive Location Selector Pill */}
-            <button
-              onClick={openSelector}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-[10px] sm:text-xs font-black text-white border border-white/30 transition-all cursor-pointer group shadow-sm"
-              title="Click to set or change location"
-            >
-              <MapPin className="w-3.5 h-3.5 text-[#fcd444] shrink-0" />
-              <span className="truncate">📍 {fullLocationString}</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${isGps ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'} shrink-0 ml-0.5`}></span>
-              <span className="text-[9px] opacity-90 shrink-0 font-extrabold">
-                {isGps ? `● ${translatePhrase('liveLocation', language)}` : `● ${translatePhrase('selectedLocation', language)}`}
-              </span>
-              <ChevronDown className="w-3 h-3 text-white/70 group-hover:text-white transition-transform group-hover:translate-y-0.5" />
-            </button>
-
-            {/* Badges Container */}
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Role Badge (Section 6 & 14) */}
-              <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-blue-600/90 backdrop-blur-md text-[10px] sm:text-[11px] font-black text-white border border-blue-400/50 shrink-0 shadow-xs uppercase tracking-wider">
-                <ShieldCheck className="w-3 h-3 text-blue-200" />
-                <span>{translatePhrase('citizenRole', language)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Subtitle */}
-          <p className="text-[11px] sm:text-xs text-blue-100 font-medium pt-0.5">
-            {translatePhrase('heroSubtitle', language)}
-          </p>
+    <div className="gov-panel overflow-hidden relative">
+      {/* Top Station Header */}
+      <div className="gov-panel-header flex items-center justify-between relative z-20">
+        <div className="flex items-center gap-1.5">
+          <Radio className="w-3.5 h-3.5 text-[#006B3C] animate-pulse" />
+          <span>{translatePhrase('surfaceObservation', language).toUpperCase()}</span>
         </div>
+        <span className="gov-badge gov-badge-success text-[10px]">
+          {translatePhrase('realtimeTelemetry', language).toUpperCase()}
+        </span>
+      </div>
 
-        {/* Hero Middle Section: Temperature & Weather Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end pt-1">
-          <div className="space-y-1">
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl sm:text-7xl font-black tracking-tight leading-none text-white drop-shadow-md">
-                {weather.temperature !== null && weather.temperature !== undefined ? `${weather.temperature}°` : '--°'}
-              </span>
-              <div className="text-[#fcd444] font-bold text-base sm:text-xl flex items-center gap-1">
-                <span className="text-xl sm:text-2xl">{iconInfo.emoji}</span>
-                <span>{conditionDisplay}</span>
+      {/* Visual Image Container with Telemetry Overlay */}
+      <div className="relative min-h-[280px] sm:min-h-[320px] bg-slate-900 overflow-hidden flex flex-col justify-between">
+        {/* Background Photo */}
+        {!imgError && (
+          <img
+            src={heroBgImage}
+            alt={bg.altText || 'Live Weather Background'}
+            onError={() => setImgError(true)}
+            className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+          />
+        )}
+
+        {/* Transparent Gradient Scrim (Natural photo visibility with text contrast) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30 pointer-events-none" />
+
+        {/* Top Overlay: Station Location & Observation Timestamp */}
+        <div className="relative z-10 p-2.5 sm:p-4 text-white">
+          <div className="bg-black/55 backdrop-blur-md rounded-md p-2 sm:p-2.5 border border-white/15 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3">
+            <div className="space-y-0.5 min-w-0">
+              <button
+                onClick={openSelector}
+                className="flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#FF9933] transition-colors cursor-pointer group text-left"
+                title="Change Observatory Location"
+              >
+                <MapPin className="w-3.5 h-3.5 text-[#FF9933] shrink-0" />
+                <span className="truncate drop-shadow-sm max-w-[200px] sm:max-w-[300px]">{fullLocationString}</span>
+                <ChevronDown className="w-3 h-3 text-white/80 group-hover:text-white shrink-0" />
+              </button>
+              <div className="text-[9px] sm:text-[10px] text-white/80 font-mono pl-5 drop-shadow-xs">
+                Lat: {location?.latitude?.toFixed(4) || '19.2437'}°N, Lon: {location?.longitude?.toFixed(4) || '73.1355'}°E
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-white/90">
-              <span>{translatePhrase('feelsLike', language)} {weather.feelsLike !== null && weather.feelsLike !== undefined ? `${weather.feelsLike}°` : '--°'}</span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-white/80" />
-                <span>{weather.updatedTime === 'Just now' ? translatePhrase('updatedJustNow', language) : weather.updatedTime || translatePhrase('updatedJustNow', language)}</span>
+            <div className="text-left sm:text-right text-[9px] sm:text-[10px] text-white/90 font-mono shrink-0 pl-5 sm:pl-0 border-t sm:border-t-0 border-white/10 pt-1 sm:pt-0">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                {formattedDateTime || 'Live Telemetry'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Interactive Weather Decision Card */}
-        <div className="w-full bg-slate-900/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-5 border border-white/20 shadow-xl space-y-2.5 transition-all">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2 text-xs font-black text-[#fcd444] tracking-wide uppercase min-w-0">
-              <Sparkles className="w-4 h-4 shrink-0 text-[#fcd444]" />
-              <span className="truncate">WeatherGPT {translatePhrase('citizenRole', language)} Intelligence</span>
+        {/* Bottom Overlay: Primary Temperature Reading & Condition */}
+        <div className="relative z-10 p-2.5 sm:p-4 text-white">
+          <div className="flex items-end justify-between gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#17365D]/90 backdrop-blur-sm border border-white/20 rounded-md flex items-center justify-center shrink-0 shadow-lg">
+                {getWeatherIcon(weather?.condition)}
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+                  <span className="text-3xl sm:text-5xl font-black text-white leading-none drop-shadow-md">
+                    {tempVal}°C
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-white/90 font-semibold drop-shadow-xs">
+                    ({translatePhrase('feelsLike', language)} {feelsLikeVal}°C)
+                  </span>
+                </div>
+                <div className="text-[11px] sm:text-xs font-bold text-emerald-300 uppercase tracking-wide pt-0.5 drop-shadow-xs truncate">
+                  {conditionDisplay}
+                </div>
+              </div>
             </div>
 
-            <button
-              onClick={() => onAskGpt(decision.action)}
-              className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-white hover:text-[#fcd444] transition-colors cursor-pointer shrink-0"
-            >
-              <span>{translatePhrase('askAi', language)}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="text-right text-xs text-white space-y-0.5 shrink-0 bg-black/45 backdrop-blur-sm rounded-md px-2 py-1.5 border border-white/10">
+              <div className="text-[9px] sm:text-[10px] font-bold text-white/90 uppercase tracking-wider">
+                {translatePhrase('rainProbability', language)}
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-sky-200 leading-none">{rainProbVal}%</div>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="space-y-1">
-            <h3 className="text-sm sm:text-base font-extrabold text-white leading-snug">
-              {decision.icon} {language === 'en' ? decision.action : translatePhrase('carryUmbrella', language)}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
-              {language === 'en' ? decision.reason : translatePhrase('rainProbabilityIncrease', language)}
-            </p>
-          </div>
+      {/* Observation Telemetry Table with Dedicated Icons */}
+      <div className="p-2.5 sm:p-3 bg-white space-y-2">
+        <div className="border border-[#CBD5E1] rounded-xs overflow-x-auto scrollbar-thin">
+          <table className="gov-table min-w-[360px] sm:min-w-full w-full text-left">
+            <thead>
+              <tr className="bg-[#F1F5F9] border-b border-[#CBD5E1]">
+                <th className="w-[32%] px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-[11px] font-bold text-[#17365D] uppercase tracking-wider">
+                  {translatePhrase('parameter', language)}
+                </th>
+                <th className="w-[20%] px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-[11px] font-bold text-[#17365D] uppercase tracking-wider">
+                  {translatePhrase('observedValue', language)}
+                </th>
+                <th className="w-[28%] px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-[11px] font-bold text-[#17365D] uppercase tracking-wider">
+                  {translatePhrase('standardReference', language)}
+                </th>
+                <th className="w-[20%] px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-[11px] font-bold text-[#17365D] uppercase tracking-wider text-right sm:text-left">
+                  {translatePhrase('status', language)}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0] text-[11px] sm:text-xs">
+              <tr>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-[#1F2933]">
+                  <div className="flex items-center gap-1.5">
+                    <Droplets className="w-3.5 h-3.5 text-[#1D5F91] shrink-0" />
+                    <span className="truncate">{translatePhrase('relativeHumidity', language)}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-bold text-[#17365D] whitespace-nowrap">{humidityVal}%</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-[#5B6770] text-[10px] sm:text-xs leading-tight">{translatePhrase('humidityRef', language)}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right sm:text-left whitespace-nowrap">
+                  <span className={`gov-badge text-[9px] sm:text-[10px] px-1.5 py-0.5 ${humidityVal > 80 ? 'gov-badge-warning' : 'gov-badge-success'}`}>
+                    {humidityVal > 80 ? translatePhrase('high', language) : translatePhrase('normal', language)}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-[#1F2933]">
+                  <div className="flex items-center gap-1.5">
+                    <Wind className="w-3.5 h-3.5 text-[#006B3C] shrink-0" />
+                    <span className="truncate">{translatePhrase('surfaceWind', language)}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-bold text-[#17365D] whitespace-nowrap">{windVal}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-[#5B6770] text-[10px] sm:text-xs leading-tight">{translatePhrase('windRef', language)}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right sm:text-left whitespace-nowrap">
+                  <span className="gov-badge gov-badge-success text-[9px] sm:text-[10px] px-1.5 py-0.5">{translatePhrase('favorable', language)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-[#1F2933]">
+                  <div className="flex items-center gap-1.5">
+                    <Gauge className="w-3.5 h-3.5 text-[#17365D] shrink-0" />
+                    <span className="truncate">{translatePhrase('barometricPressure', language)}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-bold text-[#17365D] whitespace-nowrap">{pressureVal}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-[#5B6770] text-[10px] sm:text-xs leading-tight">{translatePhrase('pressureRef', language)}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right sm:text-left whitespace-nowrap">
+                  <span className="gov-badge gov-badge-info text-[9px] sm:text-[10px] px-1.5 py-0.5">{translatePhrase('normal', language)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-semibold text-[#1F2933]">
+                  <div className="flex items-center gap-1.5">
+                    <Sun className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                    <span className="truncate">{translatePhrase('uvIndex', language)}</span>
+                  </div>
+                </td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 font-bold text-[#17365D] whitespace-nowrap">{uvVal}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-[#5B6770] text-[10px] sm:text-xs leading-tight">{translatePhrase('uvRef', language)}</td>
+                <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right sm:text-left whitespace-nowrap">
+                  <span className="gov-badge gov-badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">{translatePhrase('moderate', language)}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

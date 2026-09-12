@@ -104,7 +104,7 @@ export const ChatInput: React.FC<Props> = ({
   };
 
   return (
-    <div className="sticky bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-white via-white/95 to-transparent pt-2 pb-3 px-3 sm:px-4 font-['Arimo']">
+    <div className="shrink-0 bg-white/95 sm:bg-white backdrop-blur-md border-t border-slate-200/80 pt-2 pb-16 sm:pb-4 px-3 sm:px-4 font-['Arimo'] z-30">
       <div className="max-w-3xl mx-auto space-y-1.5">
         {/* Loading stage or Voice stage badge */}
         {isLoading && (
@@ -136,10 +136,10 @@ export const ChatInput: React.FC<Props> = ({
 
         <form
           onSubmit={handleSubmit}
-          className={`flex items-center gap-2 p-1.5 pl-3.5 bg-white border rounded-full shadow-lg transition-all ${
+          className={`flex items-center gap-2 p-1.5 pl-3.5 bg-white border rounded-full shadow-md transition-all ${
             isInlineRecording
               ? 'border-rose-400 ring-2 ring-rose-200'
-              : 'border-slate-300 focus-within:border-[#38b6ff] focus-within:ring-2 focus-within:ring-[#38b6ff]/20'
+              : 'border-slate-300 focus-within:border-[#004aad] focus-within:ring-2 focus-within:ring-[#004aad]/20'
           }`}
         >
           {/* Voice Input Microphone Button */}

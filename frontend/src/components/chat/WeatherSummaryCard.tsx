@@ -1,7 +1,8 @@
 import React from 'react';
-import { CloudRain, Wind, Droplets, Eye, Gauge, Sun } from 'lucide-react';
+import { CloudRain, Wind, Droplets, Eye, Gauge, Sun, CloudSun, MapPin } from 'lucide-react';
 import { WeatherContextPayload } from '../../types/chat';
-import { getWeatherIconInfo } from '../../utils/weatherIcons';
+import { useLanguage } from '../../context/LanguageContext';
+import { translateCondition } from '../../utils/dashboardTranslator';
 
 interface Props {
   weather: WeatherContextPayload['current_weather'];
@@ -10,84 +11,98 @@ interface Props {
 }
 
 export const WeatherSummaryCard: React.FC<Props> = ({ weather, locationName, compact }) => {
+  const { language } = useLanguage();
+
   if (!weather || weather.temperature === undefined || weather.temperature === null) return null;
 
-  const iconInfo = getWeatherIconInfo(undefined, weather.condition);
+  const conditionText = translateCondition(weather.condition || 'Clear Sky', language);
+  const feelsLikeText = language === 'mr' ? 'जाणवणारे तापमान' : language === 'hi' ? 'महसूस हो रहा है' : 'Feels like';
+  const rainLabel = language === 'mr' ? 'पाऊस' : language === 'hi' ? 'बारिश' : 'Rain';
+  const humidityLabel = language === 'mr' ? 'आर्द्रता' : language === 'hi' ? 'आर्द्रता' : 'Humidity';
+  const windLabel = language === 'mr' ? 'वारा' : language === 'hi' ? 'हवा' : 'Wind';
+  const visibilityLabel = language === 'mr' ? 'दृश्यता' : language === 'hi' ? 'दृश्यता' : 'Visibility';
+  const uvLabel = language === 'mr' ? 'यूव्ही' : language === 'hi' ? 'यूवी' : 'UV Index';
+  const pressureLabel = language === 'mr' ? 'दाब' : language === 'hi' ? 'दबाव' : 'Pressure';
 
   return (
-    <div className={`my-2.5 p-3 sm:p-4 rounded-2xl bg-gradient-to-br from-sky-50/90 to-blue-50/50 border border-sky-200/80 shadow-2xs font-['Arimo'] ${compact ? 'max-w-xs' : ''}`}>
-      <div className={`flex items-center justify-between ${!compact ? 'pb-2 border-b border-sky-100/80' : ''}`}>
+    <div className={`my-2 gov-panel p-3 space-y-2.5 ${compact ? 'max-w-xs' : ''}`}>
+      <div className={`flex items-center justify-between ${!compact ? 'pb-2 border-b border-[#D6DCE1]' : ''}`}>
         <div className="flex items-center gap-2">
-          <span className="text-xl sm:text-2xl">{iconInfo.emoji}</span>
+          <div className="w-8 h-8 bg-[#F8FAFC] text-[#006B3C] border border-[#D6DCE1] flex items-center justify-center shrink-0">
+            <CloudSun className="w-4 h-4" />
+          </div>
           <div>
-            <div className="text-xs font-black text-slate-900">{weather.condition}</div>
+            <div className="text-xs font-bold text-[#17365D] uppercase tracking-wide">{conditionText}</div>
             {locationName && (
-              <div className="text-[10px] font-bold text-slate-500">📍 {locationName}</div>
+              <div className="text-[10px] text-[#5B6770] flex items-center gap-0.5">
+                <MapPin className="w-3 h-3 text-[#006B3C]" />
+                <span>{locationName}</span>
+              </div>
             )}
           </div>
         </div>
 
         <div className="text-right">
-          <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <div className="text-xl font-black text-[#17365D]">
             {weather.temperature}°C
           </div>
-          <div className="text-[10px] font-semibold text-slate-500">
-            Feels like {weather.feels_like}°C
+          <div className="text-[10px] text-[#5B6770]">
+            {feelsLikeText} {weather.feels_like}°C
           </div>
         </div>
       </div>
 
-      {/* Grid of Key Meteorological Metrics - only in full overview mode */}
+      {/* Grid of Key Meteorological Metrics */}
       {!compact && (
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2.5 text-center">
-        {weather.rain_probability !== undefined && (
-          <div className="p-1.5 rounded-xl bg-white/80 border border-sky-100 flex flex-col items-center justify-center">
-            <CloudRain className="w-3.5 h-3.5 text-[#004aad] mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase">Rain</span>
-            <span className="text-xs font-black text-slate-800">{weather.rain_probability}%</span>
-          </div>
-        )}
+        <div className="grid grid-cols-3 sm:grid-cols-6 divide-x divide-y sm:divide-y-0 divide-[#D6DCE1] border border-[#D6DCE1] bg-[#F8FAFC] text-center">
+          {weather.rain_probability !== undefined && (
+            <div className="p-1.5 flex flex-col items-center justify-center">
+              <CloudRain className="w-3.5 h-3.5 text-[#1D5F91] mb-0.5" />
+              <span className="text-[9px] font-bold text-[#5B6770] uppercase">{rainLabel}</span>
+              <span className="text-xs font-bold text-[#1F2933]">{weather.rain_probability}%</span>
+            </div>
+          )}
 
-        {weather.humidity !== undefined && (
-          <div className="p-1.5 rounded-xl bg-white/80 border border-sky-100 flex flex-col items-center justify-center">
-            <Droplets className="w-3.5 h-3.5 text-cyan-600 mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase">Humidity</span>
-            <span className="text-xs font-black text-slate-800">{weather.humidity}%</span>
-          </div>
-        )}
+          {weather.humidity !== undefined && (
+            <div className="p-1.5 flex flex-col items-center justify-center">
+              <Droplets className="w-3.5 h-3.5 text-[#006B3C] mb-0.5" />
+              <span className="text-[9px] font-bold text-[#5B6770] uppercase">{humidityLabel}</span>
+              <span className="text-xs font-bold text-[#1F2933]">{weather.humidity}%</span>
+            </div>
+          )}
 
-        {weather.wind_speed !== undefined && (
-          <div className="p-1.5 rounded-xl bg-white/80 border border-sky-100 flex flex-col items-center justify-center">
-            <Wind className="w-3.5 h-3.5 text-teal-600 mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase">Wind</span>
-            <span className="text-xs font-black text-slate-800">{weather.wind_speed} km/h</span>
-          </div>
-        )}
+          {weather.wind_speed !== undefined && (
+            <div className="p-1.5 flex flex-col items-center justify-center">
+              <Wind className="w-3.5 h-3.5 text-[#17365D] mb-0.5" />
+              <span className="text-[9px] font-bold text-[#5B6770] uppercase">{windLabel}</span>
+              <span className="text-xs font-bold text-[#1F2933]">{weather.wind_speed} km/h</span>
+            </div>
+          )}
 
-        {weather.visibility !== undefined && (
-          <div className="p-1.5 rounded-xl bg-white/80 border border-sky-100 flex flex-col items-center justify-center">
-            <Eye className="w-3.5 h-3.5 text-indigo-600 mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase">Visibility</span>
-            <span className="text-xs font-black text-slate-800">{weather.visibility} km</span>
-          </div>
-        )}
+          {weather.visibility !== undefined && (
+            <div className="p-1.5 flex flex-col items-center justify-center">
+              <Eye className="w-3.5 h-3.5 text-[#17365D] mb-0.5" />
+              <span className="text-[9px] font-bold text-[#5B6770] uppercase">{visibilityLabel}</span>
+              <span className="text-xs font-bold text-[#1F2933]">{weather.visibility} km</span>
+            </div>
+          )}
 
-        {weather.uv_index !== undefined && (
-          <div className="p-1.5 rounded-xl bg-white/80 border border-sky-100 flex flex-col items-center justify-center">
-            <Sun className="w-3.5 h-3.5 text-amber-500 mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase">UV Index</span>
-            <span className="text-xs font-black text-slate-800">{weather.uv_index}</span>
-          </div>
-        )}
+          {weather.uv_index !== undefined && (
+            <div className="p-1.5 flex flex-col items-center justify-center">
+              <Sun className="w-3.5 h-3.5 text-[#B7791F] mb-0.5" />
+              <span className="text-[9px] font-bold text-[#5B6770] uppercase">{uvLabel}</span>
+              <span className="text-xs font-bold text-[#1F2933]">{weather.uv_index}</span>
+            </div>
+          )}
 
-        {weather.pressure !== undefined && (
-          <div className="p-1.5 rounded-xl bg-white/80 border border-sky-100 flex flex-col items-center justify-center">
-            <Gauge className="w-3.5 h-3.5 text-purple-600 mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-400 uppercase">Pressure</span>
-            <span className="text-xs font-black text-slate-800">{weather.pressure} hPa</span>
-          </div>
-        )}
-      </div>
+          {weather.pressure !== undefined && (
+            <div className="p-1.5 flex flex-col items-center justify-center">
+              <Gauge className="w-3.5 h-3.5 text-[#1D5F91] mb-0.5" />
+              <span className="text-[9px] font-bold text-[#5B6770] uppercase">{pressureLabel}</span>
+              <span className="text-xs font-bold text-[#1F2933]">{weather.pressure} hPa</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

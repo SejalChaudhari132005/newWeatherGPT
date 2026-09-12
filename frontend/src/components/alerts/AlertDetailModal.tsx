@@ -10,7 +10,6 @@ import {
   MapPin,
   CheckCircle2,
   XCircle,
-  ExternalLink,
   ShieldCheck,
   Volume2,
 } from 'lucide-react';
@@ -39,40 +38,46 @@ export const AlertDetailModal: React.FC<Props> = ({
     switch (severity) {
       case 'EMERGENCY':
         return {
-          bg: 'bg-red-600 text-white border-red-700',
+          headerBg: 'bg-[#B42318]',
+          badgeClass: 'gov-badge-danger',
           icon: ShieldAlert,
-          label: '🚨 EMERGENCY ALERT',
+          label: 'EMERGENCY WARNING BULLETIN',
         };
       case 'SEVERE':
         return {
-          bg: 'bg-rose-100 text-rose-800 border-rose-300',
+          headerBg: 'bg-[#B42318]',
+          badgeClass: 'gov-badge-danger',
           icon: ShieldAlert,
-          label: '⚠️ SEVERE WARNING',
+          label: 'SEVERE WEATHER BULLETIN',
         };
       case 'WARNING':
         return {
-          bg: 'bg-orange-100 text-orange-800 border-orange-300',
+          headerBg: 'bg-[#B7791F]',
+          badgeClass: 'gov-badge-warning',
           icon: AlertTriangle,
-          label: '⚠️ WEATHER WARNING',
+          label: 'WEATHER WARNING',
         };
       case 'WATCH':
         return {
-          bg: 'bg-amber-100 text-amber-800 border-amber-300',
+          headerBg: 'bg-[#B7791F]',
+          badgeClass: 'gov-badge-warning',
           icon: AlertTriangle,
-          label: '👁 WEATHER WATCH',
+          label: 'WEATHER WATCH',
         };
       case 'ADVISORY':
         return {
-          bg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+          headerBg: 'bg-[#006B3C]',
+          badgeClass: 'gov-badge-success',
           icon: AlertCircle,
-          label: '🌧 WEATHER ADVISORY',
+          label: 'AGROMET ADVISORY BULLETIN',
         };
       case 'INFO':
       default:
         return {
-          bg: 'bg-sky-100 text-sky-800 border-sky-300',
+          headerBg: 'bg-[#17365D]',
+          badgeClass: 'gov-badge-info',
           icon: Info,
-          label: 'ℹ WEATHER NOTICE',
+          label: 'WEATHER INFORMATION NOTICE',
         };
     }
   };
@@ -96,7 +101,7 @@ export const AlertDetailModal: React.FC<Props> = ({
       setIsPlayingAudio(false);
       return;
     }
-    const speechContent = `${alert.title}. ${alert.description}. Recommended actions: ${alert.recommended_actions.join('. ')}`;
+    const speechContent = `${alert.title}. ${alert.description}. Recommended actions: ${alert.recommended_actions?.join('. ') || ''}`;
     setIsPlayingAudio(true);
     bhashiniVoiceService.speakText(
       speechContent,
@@ -109,22 +114,22 @@ export const AlertDetailModal: React.FC<Props> = ({
 
   const labels = {
     validUntil: language === 'mr' ? 'वैधता:' : language === 'hi' ? 'वैधता:' : 'Valid until:',
-    whatShouldDo: language === 'mr' ? 'तुम्ही काय करावे' : language === 'hi' ? 'आपको क्या करना चाहिए' : 'What You Should Do',
-    whatToAvoid: language === 'mr' ? 'काय टाळावे' : language === 'hi' ? 'किन बातों से बचें' : 'What To Avoid',
-    source: language === 'mr' ? 'स्रोत:' : language === 'hi' ? 'स्रोत:' : 'Source:',
-    confidence: language === 'mr' ? 'विश्वसनीयता:' : language === 'hi' ? 'विश्वसनीयता:' : 'Confidence:',
+    whatShouldDo: language === 'mr' ? 'काय करावे (कृती योजना)' : language === 'hi' ? 'क्या करें (कार्य योजना)' : 'Recommended Actions (Action Plan)',
+    whatToAvoid: language === 'mr' ? 'काय टाळावे (खबरदारी)' : language === 'hi' ? 'क्या न करें (सावधानी)' : 'Precautionary Measures (What to Avoid)',
+    source: language === 'mr' ? 'स्रोत:' : language === 'hi' ? 'स्रोत:' : 'Issuing Authority:',
+    confidence: language === 'mr' ? 'विश्वसनीयता:' : language === 'hi' ? 'विश्वसनीयता:' : 'Confidence Metric:',
     acknowledge: language === 'mr' ? 'समजले आणि बंद करा' : language === 'hi' ? 'स्वीकारें और बंद करें' : 'Acknowledge & Close',
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 font-['Arimo'] animate-fadeIn">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Modal Top Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+    <div className="fixed inset-0 z-50 bg-[#17365D]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 font-sans animate-fadeIn">
+      <div className="w-full max-w-xl bg-white border border-[#D6DCE1] max-h-[90vh] flex flex-col overflow-hidden shadow-lg">
+        {/* Modal Top Government Bar */}
+        <div className={`p-3.5 ${badge.headerBg} text-white flex items-center justify-between border-b border-[#D6DCE1]`}>
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${badge.bg}`}>
-              <BadgeIcon className="w-3.5 h-3.5" />
-              <span>{badge.label}</span>
+            <BadgeIcon className="w-4 h-4 text-white shrink-0" />
+            <span className="text-xs font-bold uppercase tracking-wider text-white">
+              {badge.label}
             </span>
           </div>
 
@@ -132,17 +137,18 @@ export const AlertDetailModal: React.FC<Props> = ({
             <button
               onClick={handleSpeak}
               title="Listen with BHASHINI Voice"
-              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              className={`px-2 py-1 border text-[11px] font-bold uppercase transition-colors cursor-pointer flex items-center gap-1 ${
                 isPlayingAudio
-                  ? 'bg-sky-500 text-white border-sky-600 animate-pulse'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-white text-[#B42318] border-white'
+                  : 'bg-white/15 text-white border-white/30 hover:bg-white/25'
               }`}
             >
-              <Volume2 className="w-4 h-4" />
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>Voice</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1 text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -150,90 +156,77 @@ export const AlertDetailModal: React.FC<Props> = ({
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
-          {/* Title & Location */}
-          <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* Title & Metadata Panel */}
+          <div className="border-b border-[#D6DCE1] pb-3 space-y-1.5">
+            <h2 className="text-base sm:text-lg font-bold text-[#17365D] leading-snug">
               {alert.title}
             </h2>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-600">
-              <span className="inline-flex items-center gap-1 text-[#004aad]">
-                <MapPin className="w-3.5 h-3.5" />
+            <div className="flex flex-wrap items-center gap-3 text-xs text-[#5B6770]">
+              <span className="inline-flex items-center gap-1 text-[#1F2933] font-semibold">
+                <MapPin className="w-3.5 h-3.5 text-[#006B3C]" />
                 <span>{alert.location_name}{alert.state ? `, ${alert.state}` : ''}</span>
               </span>
 
-              <span className="inline-flex items-center gap-1 text-slate-500">
-                <Clock className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-[#5B6770]" />
                 <span>{labels.validUntil} {formatTime(alert.valid_until)}</span>
               </span>
             </div>
           </div>
 
           {/* Detailed Narrative Description */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm leading-relaxed text-slate-800 font-medium">
+          <div className="p-3 bg-[#F8FAFC] border border-[#D6DCE1] text-xs leading-relaxed text-[#1F2933]">
             {alert.description}
           </div>
 
-          {/* What You Should Do */}
+          {/* Recommended Actions */}
           {alert.recommended_actions && alert.recommended_actions.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="space-y-1.5">
+              <h3 className="text-xs font-bold uppercase text-[#006B3C] tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#006B3C]" />
                 <span>{labels.whatShouldDo}</span>
               </h3>
-              <ul className="space-y-2">
+              <div className="border border-[#D6DCE1] divide-y divide-[#D6DCE1]">
                 {alert.recommended_actions.map((act, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-xs font-bold text-emerald-950">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0 mt-1.5" />
+                  <div key={idx} className="p-2.5 bg-white text-xs text-[#1F2933] flex items-start gap-2">
+                    <span className="font-bold text-[#006B3C] shrink-0">{idx + 1}.</span>
                     <span>{act}</span>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
           {/* What to Avoid */}
           {alert.what_to_avoid && alert.what_to_avoid.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-black uppercase text-rose-800 tracking-wider flex items-center gap-1.5">
-                <XCircle className="w-4 h-4 text-rose-600" />
+            <div className="space-y-1.5">
+              <h3 className="text-xs font-bold uppercase text-[#B42318] tracking-wider flex items-center gap-1.5">
+                <XCircle className="w-4 h-4 text-[#B42318]" />
                 <span>{labels.whatToAvoid}</span>
               </h3>
-              <ul className="space-y-2">
+              <div className="border border-[#D6DCE1] divide-y divide-[#D6DCE1]">
                 {alert.what_to_avoid.map((avoid, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 text-xs font-bold text-rose-950">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0 mt-1.5" />
+                  <div key={idx} className="p-2.5 bg-red-50/50 text-xs text-[#1F2933] flex items-start gap-2">
+                    <span className="font-bold text-[#B42318] shrink-0">!</span>
                     <span>{avoid}</span>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 
-          {/* Transparent Source & Confidence Attribution */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-semibold">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-sky-600" />
-              <span>{labels.source} <strong className="text-slate-800">{alert.source}</strong></span>
-            </div>
-
-            {alert.confidence && (
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold">
-                {labels.confidence} {Math.round(alert.confidence * 100)}%
-              </span>
-            )}
-          </div>
         </div>
 
         {/* Modal Bottom Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
+        <div className="p-3 border-t border-[#D6DCE1] bg-[#F8FAFC] flex items-center justify-end gap-2">
           <button
             onClick={() => {
               if (onMarkRead) onMarkRead(alert.id);
               onClose();
             }}
-            className="flex-1 py-3 px-4 rounded-2xl bg-[#004aad] hover:bg-[#003882] text-white text-xs font-extrabold shadow-md cursor-pointer transition-all text-center"
+            className="gov-btn-primary px-4 py-2 text-xs uppercase font-bold cursor-pointer"
           >
             {labels.acknowledge}
           </button>

@@ -132,19 +132,19 @@ export class AirQualityService {
   public getCategoryBadgeStyle(category?: string): { bg: string; text: string; border: string } {
     switch (category?.toUpperCase()) {
       case 'GOOD':
-        return { bg: 'rgba(16, 185, 129, 0.15)', text: '#10B981', border: 'rgba(16, 185, 129, 0.3)' };
+        return { bg: '#10B981', text: '#FFFFFF', border: '#059669' };
       case 'FAIR':
-        return { bg: 'rgba(132, 204, 22, 0.15)', text: '#84CC16', border: 'rgba(132, 204, 22, 0.3)' };
+        return { bg: '#84CC16', text: '#FFFFFF', border: '#65A30D' };
       case 'MODERATE':
-        return { bg: 'rgba(245, 158, 11, 0.15)', text: '#F59E0B', border: 'rgba(245, 158, 11, 0.3)' };
+        return { bg: '#F59E0B', text: '#FFFFFF', border: '#D97706' };
       case 'POOR':
-        return { bg: 'rgba(249, 115, 22, 0.15)', text: '#F97316', border: 'rgba(249, 115, 22, 0.3)' };
+        return { bg: '#F97316', text: '#FFFFFF', border: '#EA580C' };
       case 'VERY_POOR':
-        return { bg: 'rgba(239, 68, 68, 0.15)', text: '#EF4444', border: 'rgba(239, 68, 68, 0.3)' };
+        return { bg: '#EF4444', text: '#FFFFFF', border: '#DC2626' };
       case 'EXTREMELY_POOR':
-        return { bg: 'rgba(124, 58, 237, 0.15)', text: '#A78BFA', border: 'rgba(124, 58, 237, 0.3)' };
+        return { bg: '#7C3AED', text: '#FFFFFF', border: '#6D28D9' };
       default:
-        return { bg: 'rgba(107, 114, 128, 0.15)', text: '#9CA3AF', border: 'rgba(107, 114, 128, 0.3)' };
+        return { bg: '#64748B', text: '#FFFFFF', border: '#475569' };
     }
   }
 }

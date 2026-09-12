@@ -126,17 +126,36 @@ class WeatherChatAgent(BaseAgent):
             time_range=time_range
         )
 
-        lang_instruction = ""
+        lang_map = {
+            "mr": "Marathi (मराठी)",
+            "hi": "Hindi (हिन्दी)",
+            "ta": "Tamil (தமிழ்)",
+            "te": "Telugu (తెలుగు)",
+            "kn": "Kannada (ಕನ್ನಡ)",
+            "ml": "Malayalam (മലയാളം)",
+            "bn": "Bengali (বাংলা)",
+            "gu": "Gujarati (ગુજરાતી)",
+            "pa": "Punjabi (ਪੰਜਾਬੀ)",
+            "or": "Odia (ଓଡ଼ିଆ)",
+            "en": "English",
+        }
+        target_lang_str = lang_map.get((language or "").lower(), language or "English")
+
         if language and language.lower() not in ["en", "english"]:
-            lang_instruction = f"\nUSER PREFERRED LANGUAGE: {language}. Please reply naturally in {language} while keeping all verified numbers accurate."
+            lang_instruction = (
+                f"\nCRITICAL LANGUAGE DIRECTIVE: The user's active language is {target_lang_str}. "
+                f"You MUST write your entire answer in {target_lang_str} ONLY. "
+                f"Do NOT answer in English. Ensure all meteorological data and numbers are accurate."
+            )
         else:
-            lang_instruction = "\nIf the user query is written in Hindi, Marathi, or another regional Indian language, please answer naturally in that same language while keeping all verified numbers accurate."
+            lang_instruction = "\nIf the user query is written in Hindi, Marathi, or another Indian language, please answer naturally in that exact same language while keeping all verified numbers accurate."
 
         style_instruction = (
             "\nSTYLE GUIDELINES:\n"
-            "- Answer conversationally and directly like ChatGPT.\n"
+            "- Answer conversationally, clearly, and directly like ChatGPT.\n"
             "- Answer the actual question first (e.g. if asked about rain or umbrella, answer that immediately).\n"
-            "- Do NOT unnecessarily list all weather parameters (do not dump humidity, pressure, UV, wind, visibility unless asked or directly relevant).\n"
+            "- Do NOT use emojis, asterisks (* *), or markdown hashes (###) in your response.\n"
+            "- Do NOT unnecessarily list all weather parameters unless asked or directly relevant.\n"
             "- For temperature queries, mention the current temperature and feels-like temperature naturally."
         )
 

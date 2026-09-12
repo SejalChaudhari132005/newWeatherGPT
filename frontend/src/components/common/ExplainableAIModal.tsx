@@ -11,83 +11,58 @@ export const ExplainableAIModal: React.FC = () => {
   const { sources, confidenceScore, resolution, updatedAt, rationale } = activeExplainableMsg.explainable;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#17365D]/60 backdrop-blur-xs font-sans animate-fadeIn">
+      <div className="bg-white border border-[#D6DCE1] p-4 sm:p-5 max-w-lg w-full shadow-lg relative">
         <button
           onClick={() => setActiveExplainableMsg(null)}
-          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          className="absolute top-3 right-3 p-1.5 text-[#5B6770] hover:text-[#17365D] hover:bg-[#F5F7F9] transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 bg-sky-50 rounded-2xl text-sky-600 border border-sky-100">
-            <Cpu className="w-6 h-6" />
+        <div className="flex items-center gap-2.5 mb-3 border-b border-[#D6DCE1] pb-2.5">
+          <div className="p-1.5 bg-[#F5F7F9] border border-[#D6DCE1] text-[#17365D]">
+            <Cpu className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-slate-900">Explainable AI Transparency</h3>
-              <DemoBadge label="DEMO METRICS" variant="blue" />
-            </div>
-            <p className="text-xs text-slate-500">Why WeatherGPT generated this decision output</p>
+            <h3 className="text-sm sm:text-base font-bold text-[#17365D]">Meteorological Rationale & Verification</h3>
+            <p className="text-[11px] text-[#5B6770]">Numerical ensemble reasoning breakdown</p>
           </div>
         </div>
 
-        <div className="space-y-4 mb-6">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              Decision Rationale & Physical Model Consensus
+        <div className="space-y-3 mb-4">
+          <div className="p-3 bg-[#F8FAFC] border border-[#D6DCE1]">
+            <div className="text-[10px] font-bold text-[#5B6770] uppercase tracking-wider mb-1">
+              Consensus Rationale
             </div>
-            <p className="text-sm text-slate-700 font-medium leading-relaxed">{rationale}</p>
+            <p className="text-xs text-[#1F2933] font-medium leading-relaxed">{rationale}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                <Database className="w-3.5 h-3.5 text-sky-600" />
-                <span>Primary Data Sources</span>
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="p-2.5 bg-white border border-[#D6DCE1]">
+              <div className="flex items-center gap-1 text-[11px] text-[#5B6770] mb-1 font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#006B3C]" />
+                <span>Confidence Level</span>
               </div>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {sources.map((s, i) => (
-                  <span key={i} className="text-xs bg-white text-slate-700 px-2 py-0.5 rounded-md font-semibold border border-slate-200 shadow-2xs">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Model Confidence</span>
-              </div>
-              <p className="text-xl font-black text-slate-900">
-                {confidenceScore}% <span className="text-xs font-medium text-emerald-600">(High)</span>
+              <p className="text-lg font-bold text-[#17365D]">
+                {confidenceScore}% <span className="text-xs font-normal text-[#006B3C]">(High)</span>
               </p>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Spatial Grid Resolution</span>
+            <div className="p-2.5 bg-white border border-[#D6DCE1]">
+              <div className="flex items-center gap-1 text-[11px] text-[#5B6770] mb-1 font-semibold">
+                <Layers className="w-3.5 h-3.5 text-[#1D5F91]" />
+                <span>Spatial Resolution</span>
               </div>
-              <p className="text-sm font-bold text-slate-800">{resolution}</p>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin" />
-                <span>Model Sync Time</span>
-              </div>
-              <p className="text-sm font-bold text-slate-800">{updatedAt}</p>
+              <p className="text-xs font-bold text-[#1F2933] mt-1">{resolution}</p>
             </div>
           </div>
         </div>
 
-        <div className="p-3 bg-sky-50/60 rounded-2xl border border-sky-100/80 flex items-start gap-2.5">
-          <HelpCircle className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-sky-800 leading-snug">
-            WeatherGPT synthesizes Doppler radar, ECMWF/GFS weather numerical outputs, and hyperlocal topography data to eliminate hallucinated weather predictions.
+        <div className="p-2.5 bg-[#F8FAFC] border border-[#D6DCE1] flex items-start gap-2 text-xs text-[#5B6770]">
+          <HelpCircle className="w-4 h-4 text-[#1D5F91] shrink-0 mt-0.5" />
+          <p className="leading-snug">
+            Automated weather intelligence advisory synthesized via observational telemetry and synoptic forecasting.
           </p>
         </div>
       </div>

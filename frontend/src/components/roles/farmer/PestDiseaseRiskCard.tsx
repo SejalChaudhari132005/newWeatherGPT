@@ -1,6 +1,8 @@
 import React from 'react';
 import { ShieldAlert, Bug, Activity, CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { PestDiseaseRisk } from '../../../types/farmerIntelligence';
+import { useLanguage } from '../../../context/LanguageContext';
+import { translateCrop, translatePhrase } from '../../../utils/dashboardTranslator';
 
 interface PestDiseaseRiskCardProps {
   risks: PestDiseaseRisk[];
@@ -8,6 +10,8 @@ interface PestDiseaseRiskCardProps {
 }
 
 export const PestDiseaseRiskCard: React.FC<PestDiseaseRiskCardProps> = ({ risks, cropName }) => {
+  const { language } = useLanguage();
+
   if (!risks || risks.length === 0) {
     return null;
   }
@@ -15,12 +19,24 @@ export const PestDiseaseRiskCard: React.FC<PestDiseaseRiskCardProps> = ({ risks,
   const getRiskBadge = (level: string) => {
     switch (level.toLowerCase()) {
       case 'high':
-        return <span className="px-2 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black uppercase">HIGH RISK</span>;
+        return (
+          <span className="px-2 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black uppercase">
+            {translatePhrase('high', language)}
+          </span>
+        );
       case 'moderate':
-        return <span className="px-2 py-0.5 rounded bg-amber-500 text-white text-[10px] font-black uppercase">MODERATE</span>;
+        return (
+          <span className="px-2 py-0.5 rounded bg-amber-500 text-white text-[10px] font-black uppercase">
+            {translatePhrase('moderate', language)}
+          </span>
+        );
       case 'low':
       default:
-        return <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-black uppercase">LOW</span>;
+        return (
+          <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-black uppercase">
+            {translatePhrase('low', language)}
+          </span>
+        );
     }
   };
 
@@ -32,12 +48,16 @@ export const PestDiseaseRiskCard: React.FC<PestDiseaseRiskCardProps> = ({ risks,
             <Bug className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-extrabold text-slate-900">Crop Pest & Disease Risk</h3>
-            <p className="text-[11px] text-slate-500">Weather-triggered alerts & IPM remedies</p>
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+              {translatePhrase('pestDiseaseRisk', language)}
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              {language === 'mr' ? 'हवामानावर आधारित कीड-रोग धोके व उपाय' : language === 'hi' ? 'मौसम आधारित कीट-रोग जोखिम और उपाय' : 'Weather-triggered alerts & IPM remedies'}
+            </p>
           </div>
         </div>
         <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap">
-          {cropName}
+          {translateCrop(cropName, language)}
         </span>
       </div>
 
@@ -74,7 +94,9 @@ export const PestDiseaseRiskCard: React.FC<PestDiseaseRiskCardProps> = ({ risks,
 
               <div className="space-y-2 text-xs">
                 <div className="text-slate-600 leading-relaxed text-[11px]">
-                  <strong className="text-slate-800 font-semibold">Trigger: </strong>
+                  <strong className="text-slate-800 font-semibold">
+                    {language === 'mr' ? 'कारण / परिस्थिती: ' : language === 'hi' ? 'कारण / अनुकूल स्थिति: ' : 'Trigger: '}
+                  </strong>
                   {risk.favorable_conditions}
                 </div>
               </div>
@@ -83,7 +105,9 @@ export const PestDiseaseRiskCard: React.FC<PestDiseaseRiskCardProps> = ({ risks,
             <div className="mt-2.5 p-2.5 rounded-xl bg-white/90 border border-slate-200/80 text-slate-800 font-medium leading-relaxed text-xs">
               <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-0.5 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                <span>Action / Remedy (उपाययोजना):</span>
+                <span>
+                  {language === 'mr' ? 'उपाययोजना (Action / Remedy):' : language === 'hi' ? 'रोकथाम उपाय (Action / Remedy):' : 'Action / Remedy:'}
+                </span>
               </div>
               <span className="text-[11px] leading-relaxed block">{risk.preventive_action}</span>
             </div>
@@ -93,3 +117,4 @@ export const PestDiseaseRiskCard: React.FC<PestDiseaseRiskCardProps> = ({ risks,
     </div>
   );
 };
+

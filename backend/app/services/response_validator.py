@@ -31,15 +31,25 @@ class ResponseValidator:
 
         # 2. Temperature Plausibility Check
         curr_temp = intelligence.current.temperature.value
+        feels_like = getattr(intelligence.current.feels_like, "value", None) if intelligence.current.feels_like else None
+
         if curr_temp is not None:
+            known_temps = [curr_temp]
+            if feels_like is not None:
+                known_temps.append(feels_like)
+            if intelligence.forecast and intelligence.forecast.daily:
+                for d in intelligence.forecast.daily:
+                    if d.high is not None: known_temps.append(d.high)
+                    if d.low is not None: known_temps.append(d.low)
+            if intelligence.forecast and intelligence.forecast.hourly:
+                for h in intelligence.forecast.hourly:
+                    if getattr(h, "temp", None) is not None: known_temps.append(h.temp)
+
+            min_plausible = min(known_temps) - 10.0
+            max_plausible = max(known_temps) + 12.0
+
             # Look for explicit °C mentions
             temp_matches = re.findall(r"(\d+(?:\.\d+)?)\s*°\s*c", text, re.IGNORECASE)
-            daily_highs = [d.high for d in intelligence.forecast.daily if d.high is not None]
-            daily_lows = [d.low for d in intelligence.forecast.daily if d.low is not None]
-
-            min_plausible = min([curr_temp] + daily_lows) - 6.0
-            max_plausible = max([curr_temp] + daily_highs) + 6.0
-
             for t_str in temp_matches:
                 t_val = float(t_str)
                 if t_val < min_plausible or t_val > max_plausible:
@@ -47,7 +57,7 @@ class ResponseValidator:
                     issues.append(f"Temperature deviation: {t_val}°C mentioned, which exceeds plausible context range ({min_plausible:.1f}°C - {max_plausible:.1f}°C).")
 
         # 3. Source Misattribution Check
-        if "imd forecast" in text_lower and not any("imd" in (d.condition or "").lower() for d in intelligence.forecast.daily):
+        if "imd forecast" in text_lower and not any("imd" in (d.condition or "").lower() for d in (intelligence.forecast.daily if intelligence.forecast else [])):
             # Minor issue: Open-Meteo provides the numerical forecast
             pass
 

@@ -37,64 +37,82 @@ class CitizenAdvisoryAgent:
             if norm_sev in [AlertSeverity.SEVERE.value, AlertSeverity.EMERGENCY.value, AlertSeverity.WARNING.value]:
                 if lang == "mr":
                     recommended_actions = [
-                        "मजबूत छत्री किंवा रेनकोट सोबत ठेवा.",
-                        "रस्त्यांवर पाणी साचण्याची शक्यता असल्याने प्रवासासाठी जास्तीचा वेळ ठेवा.",
-                        "मुसळधार पावसाच्या वेळी शक्यतो घरातच राहा.",
-                        "स्थानिक प्रशासनाच्या मार्गदर्शक सूचनांचे पालन करा.",
+                        "शेतातील अतिरिक्त पाण्याचा निचरा करण्यासाठी चर मोकळे ठेवा.",
+                        "पिकांवरील रासायनिक कीटकनाशक व खत फवारणी तात्काळ थांबवा.",
+                        "कापणी केलेले पीक सुरक्षित कोरड्या जागी किंवा ताडपत्री खाली झाकून ठेवा.",
+                        "स्थानिक कृषी व हवामान विभागाच्या सूचनांचे पालन करा.",
                     ]
                     what_to_avoid = [
-                        "पाणी साचलेल्या पुलांवरून किंवा रस्त्यांवरून वाहन चालवणे टाळा.",
-                        "जुनी झाडे किंवा कमकुवत इमारतींखाली उभे राहू नका.",
-                        "विजेचे खांब किंवा पडलेल्या तारांना स्पर्श करू नका.",
+                        "मुसळधार पावसात शेतात खते किंवा कीटकनाशके फवारणे टाळा.",
+                        "सखल भागातील शेतात पाणी साचू देऊ नका.",
+                        "विजेच्या तारा किंवा ट्रान्सफॉर्मरजवळ शेतीची अवजारे ठेवू नका.",
                     ]
                 elif lang == "hi":
                     recommended_actions = [
-                        "मजबूत छाता या रेनकोट साथ रखें।",
-                        "सड़कों पर जलभराव की संभावना को देखते हुए यात्रा के लिए अतिरिक्त समय लें।",
-                        "भारी बारिश के दौरान घर के अंदर ही रहें।",
-                        "स्थानीय प्रशासन के अलर्ट और निर्देशों का पालन करें।",
+                        "खेतों में जल निकासी की उचित व्यवस्था करें ताकि जलभराव न हो।",
+                        "फसलों पर कीटनाशक और उर्वरक छिड़काव तुरंत स्थगित करें।",
+                        "कटी हुई फसल को तिरपाल से ढककर सुरक्षित स्थान पर रखें।",
+                        "मौसम एवं कृषि विज्ञान केंद्र की सलाह का पालन करें।",
                     ]
                     what_to_avoid = [
-                        "जलभराव वाले रास्तों या अंडरपास से वाहन न निकालें।",
-                        "पुराने पेड़ों या कमजोर ढांचों के नीचे वाहन पार्क न करें।",
-                        "बिजली के खंभों या लटकते तारों से दूर रहें।",
+                        "भारी बारिश के दौरान खेतों में किसी भी प्रकार का रासायनिक छिड़काव न करें।",
+                        "निचले खेतों में अनावश्यक पानी जमा न होने दें।",
+                    ]
+                elif lang == "gu":
+                    recommended_actions = [
+                        "ખેતરમાંથી વધારાના પાણીના નિકાલ માટે યોગ્ય વ્યવસ્થા કરો.",
+                        "જંતુનાશક અને ખાતરનો છંટકાવ તાત્કાલિક મુલતવી રાખો.",
+                        "લણેલા પાકને તાડપત્રીથી ઢાંકીને સુરક્ષિત જગ્યાએ રાખો.",
+                    ]
+                    what_to_avoid = [
+                        "વરસાદ દરમિયાન પાક પર કોઈ પણ દવા છાંટવાનું ટાળો.",
                     ]
                 else:
                     recommended_actions = [
-                        "Carry sturdy rain gear and an umbrella.",
-                        "Allow extra travel time as water accumulation is likely on roads.",
-                        "Stay indoors during periods of peak rainfall intensity.",
-                        "Monitor local municipal updates for localized waterlogging.",
+                        "Ensure field drainage channels are open to prevent crop waterlogging.",
+                        "Halt chemical spraying and fertilizer broadcast to prevent wash-off loss.",
+                        "Cover harvested produce with tarpaulins in safe sheltered storage.",
+                        "Follow local agromet and weather department guidance.",
                     ]
                     what_to_avoid = [
-                        "Avoid driving through submerged or waterlogged underpasses.",
-                        "Do not park vehicles under old trees or unstable structures.",
-                        "Avoid touching electrical poles or fallen power lines.",
+                        "Do not apply foliar fertilizers or expensive pesticides before heavy downpours.",
+                        "Avoid stagnation of runoff water around standing crop root zones.",
                     ]
             else:
                 if lang == "mr":
                     recommended_actions = [
-                        "बाहेर पडताना छत्री सोबत ठेवा.",
-                        "दैनंदिन प्रवासासाठी पावसापासून संरक्षणाची तयारी ठेवा.",
+                        "पावसाची शक्यता लक्षात घेऊन फवारणी व शेती कामांचे नियोजन करा.",
+                        "पावसाच्या काळात महागड्या औषधांची फवारणी टाळावी.",
+                        "बाहेर पडताना छत्री किंवा रेनकोट जवळ ठेवा.",
                     ]
                     what_to_avoid = [
-                        "ओल्या रस्त्यांवर अचानक ब्रेक लावणे टाळा.",
+                        "पानांवर दव किंवा पाणी असताना फवारणी करणे टाळा.",
                     ]
                 elif lang == "hi":
                     recommended_actions = [
-                        "घर से बाहर निकलते समय छाता साथ रखें।",
-                        "दैनिक यात्रा के लिए हल्की बारिश से बचाव की तैयारी रखें।",
+                        "बारिश के अनुमान को ध्यान में रखते हुए छिड़काव और कृषि कार्यों की योजना बनाएं।",
+                        "दवा का व्यय रोकने के लिए बारिश से पूर्व छिड़काव से बचें।",
+                        "बाहर जाते समय छाता साथ रखें।",
                     ]
                     what_to_avoid = [
-                        "गीली सड़कों पर अचानक ब्रेक लगाने से बचें।",
+                        "गीली पत्तियों पर कीटनाशक का छिड़काव करने से बचें।",
+                    ]
+                elif lang == "gu":
+                    recommended_actions = [
+                        "વરસાદની આગાહીને ધ્યાનમાં રાખીને ખેતી કાર્યોનું આયોજન કરો.",
+                        "છંટકાવ કામગીરી વરસાદ રોકાયા બાદ જ કરો.",
+                    ]
+                    what_to_avoid = [
+                        "ભેજવાળા પાંદડા પર જંતુનાશક છાંટવાનું ટાળો.",
                     ]
                 else:
                     recommended_actions = [
-                        "Carry an umbrella when going outdoors.",
-                        "Keep light rain protection ready for daily commute.",
+                        "Plan field operations & pesticide spraying considering rain window.",
+                        "Postpone foliar applications until canopy is dry to ensure absorption.",
+                        "Carry rain protection when stepping outdoors.",
                     ]
                     what_to_avoid = [
-                        "Avoid sudden braking on wet road surfaces.",
+                        "Avoid spraying on wet or dew-covered foliage.",
                     ]
 
         elif norm_type in [AlertType.THUNDERSTORM.value, AlertType.LIGHTNING.value]:
