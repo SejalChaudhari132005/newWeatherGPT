@@ -192,61 +192,19 @@ export const FisherDashboardPage: React.FC<FisherDashboardPageProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F7F9] pb-24 font-['Arimo',sans-serif]">
-      {/* 1. Official Government Header / Breadcrumb Strip */}
-      <div className="bg-[#17365D] text-white border-b-2 border-[#006B3C] px-3.5 sm:px-6 py-3">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button
-                type="button"
-                onClick={onBack}
-                className="p-1.5 rounded-xs bg-[#0F233D] hover:bg-[#081525] text-white border border-[#2A4D7A] transition-colors cursor-pointer"
-                title="Back"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-            )}
-            <div>
-              <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-                NATIONAL MARITIME & COASTAL ADVISORY SYSTEM
-              </div>
-              <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                {language === 'mr' ? 'माझा समुद्र — सागरी हवामान व सुरक्षितता प्रणाली' : language === 'hi' ? 'मेरा समुद्र — समुद्री मौसम व सुरक्षा प्रणाली' : 'MY SEA — MARINE HYDRODYNAMICS & SAILING SAFETY'}
-              </h1>
-            </div>
-          </div>
-
-          {/* Quick Refresh Button */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={loadMarineData}
-              disabled={loading}
-              className="px-3 py-1.5 bg-[#FF9933] hover:bg-[#F97316] text-slate-950 font-bold text-xs rounded-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Refresh Marine Telemetry"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>{loading ? 'SYNCING...' : 'REFRESH'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-4 space-y-4">
-        {/* Hero Card with User-Provided Fishing Boats Photo */}
-        <FishermanHeroCard
-          harbor={selectedHarbor}
-          harborsList={INDIAN_HARBORS}
-          onSelectHarbor={setSelectedHarbor}
-          departureTime={selectedDeparture}
-          departureTimesList={DEPARTURE_TIMES}
-          onSelectDeparture={setSelectedDeparture}
-          clearance={decisionData?.sailing_clearance}
-          seaState={decisionData?.sea_state}
-          onRefresh={loadMarineData}
-        />
+    <div className="w-full px-3.5 sm:px-4 pt-3 pb-24 space-y-3.5 font-['Arimo',sans-serif]">
+      {/* 1. Hero Card with User-Provided Fishing Boats Photo */}
+      <FishermanHeroCard
+        harbor={selectedHarbor}
+        harborsList={INDIAN_HARBORS}
+        onSelectHarbor={setSelectedHarbor}
+        departureTime={selectedDeparture}
+        departureTimesList={DEPARTURE_TIMES}
+        onSelectDeparture={setSelectedDeparture}
+        clearance={decisionData?.sailing_clearance}
+        seaState={decisionData?.sea_state}
+        onRefresh={loadMarineData}
+      />
 
         {/* Main Loading / Error States */}
         {loading && !decisionData ? (
@@ -406,11 +364,9 @@ export const FisherDashboardPage: React.FC<FisherDashboardPageProps> = ({
                     )}
                   </button>
                 </form>
-              </div>
             </div>
           </div>
         ) : null}
-      </div>
     </div>
   );
 };

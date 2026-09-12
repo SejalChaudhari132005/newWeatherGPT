@@ -111,10 +111,12 @@ export const FishermanHeroCard: React.FC<FishermanHeroCardProps> = ({
   return (
     <div className="gov-panel overflow-hidden relative shadow-xs">
       {/* Top Station Header */}
-      <div className="gov-panel-header flex items-center justify-between relative z-20">
-        <div className="flex items-center gap-1.5">
-          <Radio className="w-3.5 h-3.5 text-[#006B3C] animate-pulse" />
-          <span>MARINE HYDRODYNAMICS & COASTAL TELEMETRY</span>
+      <div className="gov-panel-header flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-xs bg-[#006B3C]" />
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#17365D]">
+            {language === 'mr' ? 'सागरी हवामान आणि मत्स्यव्यवसाय प्रेक्षण' : language === 'hi' ? 'समुद्री मौसम और मत्स्य पालन प्रेक्षण' : 'Marine Weather & Fisheries Observation'}
+          </h2>
         </div>
         <span className="gov-badge gov-badge-success text-[10px]">
           REAL-TIME TELEMETRY
