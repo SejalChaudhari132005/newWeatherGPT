@@ -62,6 +62,8 @@ export function getWeatherBackground(query: BackgroundQuery): WeatherBackgroundR
   const role = (query.role || 'citizen').toLowerCase().trim();
   const rawLoc = (query.location || '').trim();
   const normalizedCondition = normalizeWeatherCondition(query.weatherCondition, query.isNight);
+  const displayLocation = rawLoc ? rawLoc.split(',')[0].trim() : 'New Delhi';
+  const overlayClasses = CITIZEN_OVERLAYS[normalizedCondition] || CITIZEN_OVERLAYS.default;
 
   if (role === 'fisher' || role === 'fisherman') {
     return {
@@ -77,8 +79,6 @@ export function getWeatherBackground(query: BackgroundQuery): WeatherBackgroundR
   }
 
   const landmarkInfo = getLandmarkForLocation(rawLoc);
-  const overlayClasses = CITIZEN_OVERLAYS[normalizedCondition] || CITIZEN_OVERLAYS.default;
-  const displayLocation = rawLoc ? rawLoc.split(',')[0].trim() : 'New Delhi';
 
   return {
     role,
