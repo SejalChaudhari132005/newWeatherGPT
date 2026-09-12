@@ -27,7 +27,9 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useWeather } from '../context/WeatherContext';
 import { translatePhrase } from '../utils/dashboardTranslator';
+import { MarineEmergencyCard } from '../components/roles/fisher/MarineEmergencyCard';
 
 interface AlertsPageProps {
   onOpenChatWithPrompt?: (prompt: string) => void;
@@ -37,6 +39,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onOpenChatWithPrompt }) 
   const { location } = useLocation();
   const { profile } = useAuthContext();
   const { language } = useLanguage();
+  const { activeRole } = useWeather();
 
   const [activeAlerts, setActiveAlerts] = useState<CitizenAlert[]>([]);
   const [historyAlerts, setHistoryAlerts] = useState<CitizenAlert[]>([]);
@@ -187,7 +190,8 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onOpenChatWithPrompt }) 
     }
   };
 
-  const isFarmer = (profile?.role || '').toLowerCase() === 'farmer';
+  const isFarmer = (profile?.role || activeRole || '').toLowerCase() === 'farmer';
+  const isFisher = (profile?.role || activeRole || '').toLowerCase() === 'fisher' || (profile?.role || activeRole || '').toLowerCase() === 'fisherman';
 
   const isAgriAlert = (a: CitizenAlert) => {
     const t = (a.type || '').toUpperCase();
@@ -224,6 +228,14 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onOpenChatWithPrompt }) 
 
   return (
     <div className="space-y-3.5 max-w-4xl mx-auto px-3 sm:px-4 py-2 font-sans pb-28">
+      {/* 0. Coastal Emergency Broadcast & SOS Hotlines (For Fisheries) */}
+      {isFisher && (
+        <MarineEmergencyCard
+          officialBulletin="IMD / INCOIS Coastal Warning: Regular seasonal sea conditions. Squally weather not prevailing."
+          sosContact="1554"
+        />
+      )}
+
       {/* 1. Official National Weather & Early Warning Bulletin Header */}
       <div className="gov-panel">
         <div className="h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#006B3C]" />
