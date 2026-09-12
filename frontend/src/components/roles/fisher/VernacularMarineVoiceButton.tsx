@@ -27,58 +27,58 @@ export const VernacularMarineVoiceButton: React.FC<VernacularMarineVoiceButtonPr
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-900 to-indigo-950 rounded-3xl p-4 sm:p-5 text-white shadow-lg space-y-3.5 border border-blue-800">
-      <div className="flex flex-col gap-3">
+    <div className="gov-panel overflow-hidden bg-gradient-to-br from-[#0B2545] to-[#134074] text-white shadow-sm border border-[#1D5F91]">
+      <div className="p-3.5 sm:p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="p-2.5 bg-white/10 rounded-2xl backdrop-blur-xs border border-white/20 shrink-0">
-              <Radio className="w-5 h-5 text-cyan-300" />
+            <div className="p-2 bg-[#FF9933]/20 text-[#FF9933] rounded-xs border border-[#FF9933]/30 shrink-0">
+              <Radio className="w-4 h-4 animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-extrabold flex items-center gap-1.5 flex-wrap">
-                <span>1-Tap Coastal Voice Advisory</span>
+              <h3 className="text-xs sm:text-sm font-extrabold flex items-center gap-1.5 flex-wrap text-white">
+                <span>1-Tap Coastal Vernacular Audio Briefing</span>
               </h3>
-              <p className="text-[11px] text-blue-200/80 truncate">
-                Listen in your local coastal language
+              <p className="text-[10px] sm:text-[11px] text-sky-200/80 truncate">
+                Official marine forecast in Marathi, Hindi & Tamil
               </p>
             </div>
           </div>
 
-          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-200 border border-cyan-400/30 shrink-0">
-            BHASHINI
+          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-xs bg-[#FF9933] text-slate-950 border border-[#FF9933] shrink-0">
+            BHASHINI AI
           </span>
         </div>
 
-        {/* Language Switcher & Play Button */}
+        {/* Language Switcher & Bright Orange Play Button */}
         <div className="flex items-center gap-2 pt-0.5">
           <select
             value={selectedLang}
             onChange={(e) => setSelectedLang(e.target.value as any)}
-            className="flex-1 bg-white/10 text-white text-xs font-bold px-3 py-2.5 rounded-2xl border border-white/20 backdrop-blur-xs outline-none cursor-pointer hover:bg-white/20 transition-all truncate"
+            className="flex-1 bg-white/10 text-white text-xs font-bold px-3 py-2 rounded-xs border border-white/25 backdrop-blur-xs outline-none cursor-pointer hover:bg-white/20 transition-all truncate"
           >
-            <option value="mr-IN" className="bg-slate-900 text-white">मराठी (Marathi)</option>
-            <option value="hi-IN" className="bg-slate-900 text-white">हिंदी (Hindi)</option>
-            <option value="ta-IN" className="bg-slate-900 text-white">தமிழ் (Tamil)</option>
-            <option value="en-IN" className="bg-slate-900 text-white">English</option>
+            <option value="mr-IN" className="bg-[#0B2545] text-white">मराठी (Marathi)</option>
+            <option value="hi-IN" className="bg-[#0B2545] text-white">हिंदी (Hindi)</option>
+            <option value="ta-IN" className="bg-[#0B2545] text-white">தமிழ் (Tamil)</option>
+            <option value="en-IN" className="bg-[#0B2545] text-white">English (Official)</option>
           </select>
 
           <button
             onClick={handlePlayVoice}
-            className={`px-4 py-2.5 rounded-2xl font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95 ${
+            className={`px-4 py-2 rounded-xs font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95 ${
               isSpeaking
-                ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse'
-                : 'bg-cyan-400 hover:bg-cyan-300 text-slate-950'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                : 'bg-[#FF9933] hover:bg-[#F97316] text-slate-950 hover:text-black font-extrabold'
             }`}
           >
             {isSpeaking ? (
               <>
                 <VolumeX className="w-4 h-4" />
-                <span>थांबवा</span>
+                <span>थांबवा STOP</span>
               </>
             ) : (
               <>
                 <Volume2 className="w-4 h-4" />
-                <span>🎙 ऐका Listen</span>
+                <span>🎙 ऐका LISTEN</span>
               </>
             )}
           </button>

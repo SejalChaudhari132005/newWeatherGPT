@@ -63,6 +63,19 @@ export function getWeatherBackground(query: BackgroundQuery): WeatherBackgroundR
   const rawLoc = (query.location || '').trim();
   const normalizedCondition = normalizeWeatherCondition(query.weatherCondition, query.isNight);
 
+  if (role === 'fisher' || role === 'fisherman') {
+    return {
+      role,
+      location: displayLocation,
+      landmark: 'Coastal Fishing Harbor',
+      condition: normalizedCondition,
+      theme: 'blue',
+      backgroundUrl: '/assets/fisherman-bg.jpg',
+      overlay: `bg-gradient-to-t ${overlayClasses}`,
+      altText: `Coastal Fishing Harbor for ${displayLocation}`,
+    };
+  }
+
   const landmarkInfo = getLandmarkForLocation(rawLoc);
   const overlayClasses = CITIZEN_OVERLAYS[normalizedCondition] || CITIZEN_OVERLAYS.default;
   const displayLocation = rawLoc ? rawLoc.split(',')[0].trim() : 'New Delhi';

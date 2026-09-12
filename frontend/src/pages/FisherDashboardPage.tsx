@@ -6,16 +6,13 @@ import {
   MessageSquare,
   Sparkles,
   ArrowLeft,
-  Wind,
-  Waves,
-  Clock,
-  Compass,
   Send,
   Loader2,
   Bot,
   User,
   ShieldAlert,
   LifeBuoy,
+  ExternalLink,
 } from 'lucide-react';
 import { useWeather } from '../context/WeatherContext';
 import { useUI } from '../context/UIContext';
@@ -25,6 +22,7 @@ import { fisherIntelligenceService } from '../services/fisherIntelligenceService
 import { chatService } from '../services/chatService';
 import { MarineDecisionData } from '../types/fisherIntelligence';
 
+import { FishermanHeroCard } from '../components/roles/fisher/FishermanHeroCard';
 import { SailingDecisionGauge } from '../components/roles/fisher/SailingDecisionGauge';
 import { ReturnTimeTimeline } from '../components/roles/fisher/ReturnTimeTimeline';
 import { SeaStateCard } from '../components/roles/fisher/SeaStateCard';
@@ -188,281 +186,244 @@ export const FisherDashboardPage: React.FC<FisherDashboardPageProps> = ({
   };
 
   const promptSuggestions = [
-    `Can I sail past 10 nautical miles from ${selectedHarbor.name} today?`,
-    `If I depart at ${selectedDeparture}, when must I return to harbor?`,
-    'What is the maximum wave height and swell period today?',
-    'Show me the high tide and low tide schedule for today.',
+    `Can I sail past 10 NM from ${selectedHarbor.name}?`,
+    `If I depart at ${selectedDeparture}, when to return?`,
+    'What is the wave height and swell period?',
+    'Show me the high and low tide schedule.',
   ];
 
   return (
-    <div className="w-full pb-6 pt-2 px-3 space-y-4 animate-fadeIn font-['Arimo']">
-      {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
+    <div className="min-h-screen bg-[#F5F7F9] pb-24 font-['Arimo',sans-serif]">
+      {/* 1. Official Government Header / Breadcrumb Strip */}
+      <div className="bg-[#17365D] text-white border-b-2 border-[#006B3C] px-3.5 sm:px-6 py-3">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
             {onBack && (
               <button
+                type="button"
                 onClick={onBack}
-                className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer shrink-0"
+                className="p-1.5 rounded-xs bg-[#0F233D] hover:bg-[#081525] text-white border border-[#2A4D7A] transition-colors cursor-pointer"
                 title="Back"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-
-            <div className="p-2.5 bg-blue-500/10 rounded-2xl text-blue-600 border border-blue-500/20 shrink-0">
-              <Fish className="w-6 h-6" />
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                  🎣 MY SEA
-                </h1>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
-                  Safe-to-Sail
-                </span>
-                <DemoBadge />
+            <div>
+              <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
+                NATIONAL MARITIME & COASTAL ADVISORY SYSTEM
               </div>
-              <p className="text-[11px] text-slate-500 font-medium truncate">
-                Marine hydrodynamics & departure safety
-              </p>
+              <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                {language === 'mr' ? 'माझा समुद्र — सागरी हवामान व सुरक्षितता प्रणाली' : language === 'hi' ? 'मेरा समुद्र — समुद्री मौसम व सुरक्षा प्रणाली' : 'MY SEA — MARINE HYDRODYNAMICS & SAILING SAFETY'}
+              </h1>
             </div>
           </div>
 
-          {/* Refresh Button */}
-          <button
-            onClick={loadMarineData}
-            disabled={loading}
-            className="p-2 rounded-2xl bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200/60 transition-all cursor-pointer disabled:opacity-50 shrink-0"
-            title="Refresh Marine Data"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-
-        {/* Harbor & Departure Selector Pills */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-          {/* Harbor Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-2 rounded-2xl border border-slate-200/80 text-xs font-bold text-slate-700 min-w-0">
-            <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <select
-              value={selectedHarbor.name}
-              onChange={(e) => {
-                const found = INDIAN_HARBORS.find((h) => h.name === e.target.value);
-                if (found) setSelectedHarbor(found);
-              }}
-              className="bg-transparent text-slate-900 font-black outline-none cursor-pointer w-full text-xs truncate"
-            >
-              {INDIAN_HARBORS.map((h) => (
-                <option key={h.name} value={h.name}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Departure Time Selector */}
-          <div className="flex items-center justify-between gap-1.5 bg-slate-50 px-3 py-2 rounded-2xl border border-slate-200/80 text-xs font-bold text-slate-700">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-              <span className="text-[10px] text-slate-400 uppercase font-extrabold whitespace-nowrap">Depart:</span>
-              <select
-                value={selectedDeparture}
-                onChange={(e) => setSelectedDeparture(e.target.value)}
-                className="bg-transparent text-slate-900 font-black outline-none cursor-pointer text-xs"
-              >
-                {DEPARTURE_TIMES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          {/* Quick Refresh Button */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => (onBack ? onBack() : setActiveTab('home'))}
-              className="text-[10px] text-blue-700 font-black bg-blue-50 px-2 py-1 rounded-xl hover:bg-blue-100 transition-colors shrink-0"
-              title="Switch to Live Dashboard"
+              type="button"
+              onClick={loadMarineData}
+              disabled={loading}
+              className="px-3 py-1.5 bg-[#FF9933] hover:bg-[#F97316] text-slate-950 font-bold text-xs rounded-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              title="Refresh Marine Telemetry"
             >
-              🏠 Home
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>{loading ? 'SYNCING...' : 'REFRESH'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Global Role Dashboard Switcher */}
-      <RoleDashboardSwitcher
-        currentDashboard="fisher"
-        onNavigate={(tab) => {
-          if (tab === 'home' && onBack) {
-            onBack();
-          } else {
-            setActiveTab(tab);
-          }
-        }}
-      />
+      {/* Main Container */}
+      <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-4 space-y-4">
+        {/* Global Role Dashboard Switcher */}
+        <RoleDashboardSwitcher
+          currentDashboard="fisher"
+          onNavigate={(tab) => {
+            if (tab === 'home' && onBack) {
+              onBack();
+            } else {
+              setActiveTab(tab);
+            }
+          }}
+        />
 
-      {/* Main Loading / Error States */}
-      {loading && !decisionData ? (
-        <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-xs space-y-3">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900">Fetching Hydrodynamic Sea Telemetry...</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Analyzing wave heights, swell period, tides, and return vector...</p>
+        {/* Hero Card with User-Provided Fishing Boats Photo */}
+        <FishermanHeroCard
+          harbor={selectedHarbor}
+          harborsList={INDIAN_HARBORS}
+          onSelectHarbor={setSelectedHarbor}
+          departureTime={selectedDeparture}
+          departureTimesList={DEPARTURE_TIMES}
+          onSelectDeparture={setSelectedDeparture}
+          clearance={decisionData?.sailing_clearance}
+          seaState={decisionData?.sea_state}
+          onRefresh={loadMarineData}
+        />
+
+        {/* Main Loading / Error States */}
+        {loading && !decisionData ? (
+          <div className="gov-panel p-8 text-center space-y-3">
+            <Loader2 className="w-8 h-8 text-[#006B3C] animate-spin mx-auto" />
+            <div>
+              <h3 className="text-sm font-bold text-[#17365D]">Fetching Hydrodynamic Sea Telemetry...</h3>
+              <p className="text-xs text-[#5B6770] mt-0.5">Analyzing wave heights, swell period, tides, and return vector...</p>
+            </div>
           </div>
-        </div>
-      ) : error && !decisionData ? (
-        <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-center space-y-3 text-rose-800">
-          <ShieldAlert className="w-7 h-7 text-rose-600 mx-auto" />
-          <h3 className="text-sm font-bold">{error}</h3>
-          <button
-            onClick={loadMarineData}
-            className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-rose-700 transition-all cursor-pointer"
-          >
-            Retry Connection
-          </button>
-        </div>
-      ) : decisionData ? (
-        <div className="space-y-4">
-          {/* 1-Tap Regional Voice Audio Briefing */}
-          <VernacularMarineVoiceButton
-            marathiText={decisionData.vernacular_advisory_text}
-            englishText={`Fishermen advisory for ${selectedHarbor.name}: Sailing status is ${decisionData.sailing_clearance.status.toUpperCase()}. Significant wave height is ${decisionData.sea_state.wave_height_m} meters with wind speed at ${decisionData.sailing_clearance.max_wind_speed_kts} knots. Departure at ${selectedDeparture} has a recommended return deadline of ${decisionData.return_time_intelligence.recommended_return_time}.`}
-          />
+        ) : error && !decisionData ? (
+          <div className="gov-panel p-6 text-center space-y-3 bg-[#FEF2F2] border-rose-300">
+            <ShieldAlert className="w-8 h-8 text-rose-600 mx-auto" />
+            <h3 className="text-sm font-bold text-rose-900">{error}</h3>
+            <button
+              onClick={loadMarineData}
+              className="px-4 py-2 bg-[#FF9933] hover:bg-[#F97316] text-slate-950 text-xs font-black rounded-xs shadow-xs transition-all cursor-pointer uppercase"
+            >
+              Retry Connection
+            </button>
+          </div>
+        ) : decisionData ? (
+          <div className="space-y-4">
+            {/* 1-Tap Regional Voice Audio Briefing (Vernacular Marathi / English) */}
+            <VernacularMarineVoiceButton
+              marathiText={decisionData.vernacular_advisory_text}
+              englishText={`Fishermen advisory for ${selectedHarbor.name}: Sailing status is ${decisionData.sailing_clearance.status.toUpperCase()}. Significant wave height is ${decisionData.sea_state.wave_height_m} meters with wind speed at ${decisionData.sailing_clearance.max_wind_speed_kts} knots. Departure at ${selectedDeparture} has a recommended return deadline of ${decisionData.return_time_intelligence.recommended_return_time}.`}
+            />
 
-          {/* Hero Sailing Decision Indicator */}
-          <SailingDecisionGauge clearance={decisionData.sailing_clearance} />
+            {/* Port Clearance Decision Indicator */}
+            <SailingDecisionGauge clearance={decisionData.sailing_clearance} />
 
-          {/* Return-Time Intelligence Timeline */}
-          <ReturnTimeTimeline
-            returnIntel={decisionData.return_time_intelligence}
-            temporalCurve={decisionData.temporal_curve}
-          />
+            {/* Return-Time Intelligence Timeline */}
+            <ReturnTimeTimeline
+              returnIntel={decisionData.return_time_intelligence}
+              temporalCurve={decisionData.temporal_curve}
+            />
 
-          {/* Hydrodynamic Sea State */}
-          <SeaStateCard seaState={decisionData.sea_state} />
+            {/* Hydrodynamic Sea State */}
+            <SeaStateCard seaState={decisionData.sea_state} />
 
-          {/* Tide Predictions */}
-          <TideScheduleCard tides={decisionData.tide_schedule} />
+            {/* Tide Predictions */}
+            <TideScheduleCard tides={decisionData.tide_schedule} />
 
-          {/* Fishing Zone Danger Matrix */}
-          <ZoneRiskCard zoneRisks={decisionData.zone_risks} />
+            {/* Fishing Zone Danger Matrix */}
+            <ZoneRiskCard zoneRisks={decisionData.zone_risks} />
 
-          {/* Emergency Marine Broadcast & Coast Guard SOS */}
-          <MarineEmergencyCard
-            officialBulletin={decisionData.official_bulletin}
-            sosContact={decisionData.sos_emergency_contact}
-          />
+            {/* Emergency Marine Broadcast & Coast Guard SOS */}
+            <MarineEmergencyCard
+              officialBulletin={decisionData.official_bulletin}
+              sosContact={decisionData.sos_emergency_contact}
+            />
 
-          {/* Interactive Marine Q&A Chat Card */}
-          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-sm space-y-3.5">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
-                  <MessageSquare className="w-5 h-5" />
+            {/* Official Marine Q&A AI Assistant Card */}
+            <div className="gov-panel">
+              <div className="gov-panel-header flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#006B3C]" />
+                  <span>MARITIME AI ASSISTANT (सागरी सल्लागार)</span>
                 </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 truncate">Sea Assistant</h3>
-                  <p className="text-[11px] text-slate-500 font-medium truncate">Ask about wave risks, tides & departure</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenChatWithPrompt) {
+                      onOpenChatWithPrompt(`Provide marine forecast and sailing safety advisory for ${selectedHarbor.name}`);
+                    } else {
+                      setActiveTab('ask');
+                    }
+                  }}
+                  className="text-[11px] font-bold text-[#006B3C] hover:underline flex items-center gap-1 cursor-pointer uppercase tracking-wider"
+                >
+                  <span>OPEN FULL CHAT</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                AI Agent
-              </span>
-            </div>
-
-            {/* Horizontal Scroll Prompt Suggestion Chips */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 snap-x -mx-1 px-1">
-              {promptSuggestions.map((prompt, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSendQuery(prompt)}
-                  disabled={isAsking}
-                  className="text-[11px] font-semibold bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 px-3 py-1.5 rounded-full border border-slate-200/80 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 snap-start shadow-2xs"
-                >
-                  <Sparkles className="w-3 h-3 text-blue-500 shrink-0" />
-                  <span>{prompt}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Messages Feed */}
-            <div className="space-y-2.5 max-h-72 overflow-y-auto p-3 rounded-2xl bg-slate-50 border border-slate-200/60 no-scrollbar">
-              {qaMessages.map((msg) => {
-                const isUser = msg.sender === 'user';
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex items-start gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
-                  >
-                    <div
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
-                        isUser
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
-                      }`}
+              <div className="p-3 sm:p-4 space-y-3">
+                {/* Horizontal Scroll Prompt Suggestion Chips */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {promptSuggestions.map((prompt, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSendQuery(prompt)}
+                      disabled={isAsking}
+                      className="px-3 py-1 bg-[#F8FAFC] hover:bg-[#FFF7ED] text-[#17365D] hover:text-[#EA580C] text-xs font-semibold rounded-xs border border-[#CBD5E1] transition-colors cursor-pointer whitespace-nowrap"
                     >
-                      {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
-                    </div>
-
-                    <div
-                      className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed shadow-2xs ${
-                        isUser
-                          ? 'bg-blue-600 text-white font-medium rounded-tr-xs'
-                          : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs'
-                      }`}
-                    >
-                      <MarkdownRenderer content={msg.text} isUser={isUser} />
-                      <div
-                        className={`text-[8px] mt-1 font-medium text-right ${
-                          isUser ? 'text-blue-100' : 'text-slate-400'
-                        }`}
-                      >
-                        {msg.timestamp}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {isAsking && (
-                <div className="flex items-center gap-2 text-xs text-slate-400 font-medium p-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                  <span>Analyzing wave telemetry & forecast...</span>
+                      [ {prompt} ]
+                    </button>
+                  ))}
                 </div>
-              )}
-              <div ref={qaEndRef} />
-            </div>
 
-            {/* Chat Input */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendQuery(inputQuery);
-              }}
-              className="flex items-center gap-2 pt-0.5"
-            >
-              <input
-                type="text"
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                placeholder="Ask about waves, tides, return cutoff..."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                disabled={isAsking}
-              />
-              <button
-                type="submit"
-                disabled={!inputQuery.trim() || isAsking}
-                className="p-2.5 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-all cursor-pointer shrink-0 shadow-xs active:scale-95"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
+                {/* Structured Message Stream */}
+                {qaMessages.length > 0 && (
+                  <div className="max-h-64 overflow-y-auto space-y-2 p-3 rounded-xs bg-[#F8FAFC] border border-[#CBD5E1]">
+                    {qaMessages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                      >
+                        <span className="text-[10px] font-bold text-[#5B6770] mb-0.5 uppercase tracking-wider">
+                          {msg.sender === 'user' ? 'Fisherman' : 'Marine Intelligence Officer'} • {msg.timestamp}
+                        </span>
+                        <div
+                          className={`max-w-[90%] rounded-xs p-2.5 text-xs font-medium border leading-relaxed ${
+                            msg.sender === 'user'
+                              ? 'bg-[#17365D] text-white border-[#17365D]'
+                              : 'bg-white text-[#1F2933] border-[#CBD5E1]'
+                          }`}
+                        >
+                          {msg.sender === 'assistant' ? (
+                            <MarkdownRenderer content={msg.text} />
+                          ) : (
+                            <span>{msg.text}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {isAsking && (
+                      <div className="flex items-center gap-2 text-xs text-[#5B6770] font-medium p-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF9933]" />
+                        <span>Analyzing marine hydrodynamic telemetry...</span>
+                      </div>
+                    )}
+                    <div ref={qaEndRef} />
+                  </div>
+                )}
+
+                {/* Input Row */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendQuery(inputQuery);
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={inputQuery}
+                    onChange={(e) => setInputQuery(e.target.value)}
+                    placeholder="Type marine query (e.g., wave height, swell, departure cutoff, tides)..."
+                    className="flex-1 px-3 py-2 rounded-xs border border-[#CBD5E1] focus:outline-none focus:border-[#006B3C] text-xs text-[#1F2933] placeholder-[#5B6770] bg-white"
+                    disabled={isAsking}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isAsking || !inputQuery.trim()}
+                    className="px-4 py-2 rounded-xs bg-[#FF9933] hover:bg-[#F97316] text-slate-950 font-black text-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer uppercase tracking-wider shadow-xs"
+                  >
+                    {isAsking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>SUBMIT</span>
+                        <Send className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 };
