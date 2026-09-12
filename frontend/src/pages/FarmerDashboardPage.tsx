@@ -232,49 +232,7 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7F9] pb-24 font-['Arimo',sans-serif]">
-      {/* 1. Official Government Header / Breadcrumb Strip */}
-      <div className="bg-[#17365D] text-white border-b-2 border-[#006B3C] px-3.5 sm:px-6 py-3">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button
-                type="button"
-                onClick={onBack}
-                className="p-1.5 rounded-xs bg-[#0F233D] hover:bg-[#081525] text-white border border-[#2A4D7A] transition-colors cursor-pointer"
-                title="Back"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-            )}
-            <div>
-              <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest">
-                {language === 'mr' ? 'राष्ट्रीय कृषी हवामान सेवा' : language === 'hi' ? 'राष्ट्रीय कृषि मौसम सेवा' : 'NATIONAL AGROMET ADVISORY SYSTEM'}
-              </div>
-              <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                {language === 'mr' ? 'माझे शेत — कृषी देखरेख आणि निर्णय प्रणाली' : language === 'hi' ? 'मेरा खेत — कृषि निगरानी व निर्णय प्रणाली' : 'MY FARM — AGRICULTURAL MONITORING & DECISION PORTAL'}
-              </h1>
-            </div>
-          </div>
-
-          {/* Location Selector */}
-          <button
-            type="button"
-            onClick={openSelector}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0F233D] hover:bg-[#081525] border border-[#2A4D7A] text-white text-xs font-bold rounded-xs transition-colors cursor-pointer"
-            title="Change Location"
-          >
-            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="max-w-[150px] sm:max-w-[200px] truncate">
-              {displayLocation}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5 text-white/70 shrink-0" />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Dashboard Content Container */}
-      <div className="max-w-6xl mx-auto px-3.5 sm:px-6 pt-4 space-y-4">
+    <div className="w-full px-3.5 sm:px-6 pt-3 pb-24 space-y-4 font-['Arimo',sans-serif]">
         {/* 2. Section: Farm Map & Farm Overview (2 Columns on Desktop, Stacked on Mobile) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           <div className="lg:col-span-7 h-full min-h-[300px]">
@@ -448,9 +406,8 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Manage Farm Modal */}
+        {/* Manage Farm Modal */}
       <ManageFarmModal
         isOpen={isManageFarmOpen}
         onClose={() => setIsManageFarmOpen(false)}

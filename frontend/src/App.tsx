@@ -193,9 +193,8 @@ const MainAppContent: React.FC = () => {
       case 'advisories':
         if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
           return (
-            <FarmerDashboardPage
+            <FarmerWeatherPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
-              onBack={() => setActiveTab('home')}
             />
           );
         } else if (profile?.role?.toLowerCase() === 'fisher' || activeRole?.toLowerCase() === 'fisher') {
