@@ -364,6 +364,7 @@ export const FisherDashboardPage: React.FC<FisherDashboardPageProps> = ({
                     )}
                   </button>
                 </form>
+              </div>
             </div>
           </div>
         ) : null}
