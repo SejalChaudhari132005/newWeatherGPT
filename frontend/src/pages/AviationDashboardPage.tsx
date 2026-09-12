@@ -28,7 +28,6 @@ import { RunwayCrosswindDial } from '../components/roles/aviation/RunwayCrosswin
 import { ConversationalBriefingCard } from '../components/roles/aviation/ConversationalBriefingCard';
 import { MetarTafDecoder } from '../components/roles/aviation/MetarTafDecoder';
 import { AirportComparisonModal } from '../components/roles/aviation/AirportComparisonModal';
-import { RoleDashboardSwitcher } from '../components/roles/RoleDashboardSwitcher';
 import { DemoBadge } from '../components/common/DemoBadge';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 
@@ -237,18 +236,6 @@ export const AviationDashboardPage: React.FC<AviationDashboardPageProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Global Role Dashboard Switcher */}
-      <RoleDashboardSwitcher
-        currentDashboard="aviation"
-        onNavigate={(tab) => {
-          if (tab === 'home' && onBack) {
-            onBack();
-          } else {
-            setActiveTab(tab);
-          }
-        }}
-      />
 
       {/* Main Content Loading / Error / Data */}
       {loading && !briefingData ? (

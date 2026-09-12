@@ -30,7 +30,6 @@ import { TideScheduleCard } from '../components/roles/fisher/TideScheduleCard';
 import { ZoneRiskCard } from '../components/roles/fisher/ZoneRiskCard';
 import { MarineEmergencyCard } from '../components/roles/fisher/MarineEmergencyCard';
 import { VernacularMarineVoiceButton } from '../components/roles/fisher/VernacularMarineVoiceButton';
-import { RoleDashboardSwitcher } from '../components/roles/RoleDashboardSwitcher';
 import { DemoBadge } from '../components/common/DemoBadge';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 
@@ -236,18 +235,6 @@ export const FisherDashboardPage: React.FC<FisherDashboardPageProps> = ({
 
       {/* Main Container */}
       <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-4 space-y-4">
-        {/* Global Role Dashboard Switcher */}
-        <RoleDashboardSwitcher
-          currentDashboard="fisher"
-          onNavigate={(tab) => {
-            if (tab === 'home' && onBack) {
-              onBack();
-            } else {
-              setActiveTab(tab);
-            }
-          }}
-        />
-
         {/* Hero Card with User-Provided Fishing Boats Photo */}
         <FishermanHeroCard
           harbor={selectedHarbor}

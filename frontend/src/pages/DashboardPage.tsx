@@ -17,7 +17,6 @@ import { CitizenLightMultiDayForecast } from '../components/dashboard/CitizenLig
 import { CitizenRadarSplitCard } from '../components/dashboard/CitizenRadarSplitCard';
 import { CitizenTravelSplitCard } from '../components/dashboard/CitizenTravelSplitCard';
 import { CitizenAskFloatingBar } from '../components/dashboard/CitizenAskFloatingBar';
-import { RoleDashboardSwitcher } from '../components/roles/RoleDashboardSwitcher';
 import { useWeather } from '../context/WeatherContext';
 import { useUI } from '../context/UIContext';
 
@@ -198,14 +197,6 @@ export const DashboardPage: React.FC<Props> = ({
 
   return (
     <div className="min-h-screen bg-[#F5F7F9] p-3 sm:p-4 max-w-4xl mx-auto space-y-3 pb-28 font-sans w-full">
-      {/* Global Role Dashboard Switcher Bar */}
-      <RoleDashboardSwitcher
-        currentDashboard="home"
-        onNavigate={(tab) => {
-          if (onNavigatePage) onNavigatePage(tab);
-        }}
-      />
-
       {/* Error Notice */}
       {error && (
         <div className="gov-panel p-3 border-l-4 border-l-[#B42318] bg-red-50/50 flex items-center justify-between gap-2 text-xs text-[#1F2933]">

@@ -99,11 +99,34 @@ const MainAppContent: React.FC = () => {
 
     switch (activeTab) {
       case 'home':
-      case 'live':
-        if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+      case 'live': {
+        const currentRole = (profile?.role || activeRole || 'citizen').toLowerCase().trim();
+        if (currentRole === 'farmer') {
           return (
             <FarmerWeatherPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            />
+          );
+        }
+        if (currentRole === 'fisher' || currentRole === 'fisherman') {
+          return (
+            <FisherDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => {
+                setActiveRole('Citizen' as any);
+                setActiveTab('home');
+              }}
+            />
+          );
+        }
+        if (currentRole === 'aviation' || currentRole === 'pilot' || currentRole === 'dispatcher') {
+          return (
+            <AviationDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => {
+                setActiveRole('Citizen' as any);
+                setActiveTab('home');
+              }}
             />
           );
         }
@@ -118,15 +141,19 @@ const MainAppContent: React.FC = () => {
               else if (page === 'advisories' || page === 'air_quality' || page === 'airQuality') {
                 setActiveTab('advisories');
               } else if (page === 'farmer') {
+                setActiveRole('Farmer' as any);
                 setActiveTab('farmer');
               } else if (page === 'fisher') {
+                setActiveRole('Fisher' as any);
                 setActiveTab('fisher');
               } else if (page === 'aviation') {
+                setActiveRole('Aviation' as any);
                 setActiveTab('aviation');
               }
             }}
           />
         );
+      }
       case 'ask':
       case 'chat':
         return (
