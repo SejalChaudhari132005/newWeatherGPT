@@ -155,7 +155,13 @@ class RoleRouter:
             "general": "citizen",
             "default": "citizen",
             "disaster_manager": "disaster_manager",
+            "disaster": "disaster_manager",
+            "emergency": "disaster_manager",
             "urban_planner": "urban_planner",
+            "urban": "urban_planner",
+            "planner": "urban_planner",
+            "infrastructure": "urban_planner",
+            "civil_engineer": "urban_planner",
             "researcher": "researcher",
         }
         self._initialized: bool = False
@@ -203,11 +209,28 @@ class RoleRouter:
             except Exception as e:
                 logger.warning(f"Could not load aviation agent: {e}")
 
-        # Stubs for remaining roadmap roles
+        # 5. Disaster Manager Agent
         if "disaster_manager" not in self._agents:
-            self.register("disaster_manager", StubRoleAgent("disaster_manager", "Emergency first-response and flood monitoring."))
+            try:
+                from backend.app.agents.disaster_agent import disaster_agent
+                self.register("disaster_manager", disaster_agent)
+                self.register("disaster", disaster_agent)
+                self.register("emergency", disaster_agent)
+            except Exception as e:
+                logger.warning(f"Could not load disaster agent: {e}")
+
+        # 6. Urban Planner Agent
         if "urban_planner" not in self._agents:
-            self.register("urban_planner", StubRoleAgent("urban_planner", "City drainage and heat island mitigation."))
+            try:
+                from backend.app.agents.urban_agent import urban_agent
+                self.register("urban_planner", urban_agent)
+                self.register("urban", urban_agent)
+                self.register("planner", urban_agent)
+                self.register("infrastructure", urban_agent)
+                self.register("civil_engineer", urban_agent)
+            except Exception as e:
+                logger.warning(f"Could not load urban agent: {e}")
+
         if "researcher" not in self._agents:
             self.register("researcher", StubRoleAgent("researcher", "Atmospheric physics and historical observation analysis."))
 
@@ -236,9 +259,10 @@ class RoleRouter:
             return False
         raw = role.lower().strip()
         canonical = self._aliases.get(raw, raw)
-        return canonical in ["farmer", "fisherman", "aviation", "citizen"]
+        return canonical in ["farmer", "fisherman", "aviation", "citizen", "disaster_manager", "urban_planner", "researcher"]
 
 
 # Global Router Singleton
 role_router = RoleRouter()
+
 

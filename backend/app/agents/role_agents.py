@@ -6,15 +6,13 @@ from backend.app.agents.farmer_agent import FarmerAgent, farmer_agent
 from backend.app.agents.fisherman_agent import FishermanAgent, fisherman_agent
 from backend.app.agents.aviation_agent import AviationAgent, aviation_agent
 
-class DisasterAgent(StubRoleAgent):
-    def __init__(self):
-        super().__init__("disaster_manager", "Provides actionable decision-support intelligence for disaster managers and first responders.")
+from backend.app.agents.disaster_agent import DisasterAgent, disaster_agent
+from backend.app.agents.urban_agent import UrbanAgent, urban_agent
 
 class ResearchAgent(StubRoleAgent):
     def __init__(self):
         super().__init__("researcher", "Performs historical weather analysis and climate trend assessments.")
 
-disaster_agent = DisasterAgent()
 research_agent = ResearchAgent()
 
 __all__ = [
@@ -30,6 +28,9 @@ __all__ = [
     "aviation_agent",
     "DisasterAgent",
     "disaster_agent",
+    "UrbanAgent",
+    "urban_agent",
     "ResearchAgent",
     "research_agent",
 ]
+
