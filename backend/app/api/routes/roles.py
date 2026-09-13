@@ -4,7 +4,10 @@ from fastapi import APIRouter, Query, HTTPException
 
 from backend.app.services.agri_weather_service import agri_weather_service
 from backend.app.services.marine_weather_service import marine_weather_service
+from backend.app.services.fish_finder_service import fish_finder_service
 from backend.app.services.aviation_weather_service import aviation_weather_service, INDIAN_AIRPORTS_CATALOG
+from backend.app.services.skyroute_service import skyroute_service
+from backend.app.schemas.skyroute import SkyRouteResponse
 from backend.app.schemas.role_intelligence import (
     FarmerDecisionResponse,
     MarineDecisionResponse,
@@ -76,6 +79,34 @@ async def get_marine_decisions(
         raise HTTPException(status_code=502, detail=f"Failed to generate marine decisions: {exc}")
 
 
+@router.get("/fisher/fishfinder")
+async def get_fishfinder_intelligence(
+    latitude: float = Query(..., ge=-90, le=90, description="Harbor / Coastal latitude"),
+    longitude: float = Query(..., ge=-180, le=180, description="Harbor / Coastal longitude"),
+    harbor_name: Optional[str] = Query(None, description="Optional Harbor / Port name"),
+    date_filter: str = Query("today", description="Date filter: today | tomorrow | 3days"),
+    hour_offset: int = Query(0, ge=0, le=72, description="Hourly timeline offset"),
+):
+    """
+    FishFinder Marine Opportunity & Fishing Intelligence Map Engine.
+    Returns geographic GeoJSON coastal opportunity zones, SST, Chlorophyll-a, ocean currents,
+    INCOIS PFZ status, wave heights, wind vectors, and independent marine safety ratings.
+    """
+    try:
+        data = await fish_finder_service.get_fishfinder_data(
+            latitude=latitude,
+            longitude=longitude,
+            harbor_name=harbor_name,
+            date_filter=date_filter,
+            hour_offset=hour_offset,
+        )
+        return data
+    except Exception as exc:
+        logger.error(f"Failed to generate fishfinder data: {exc}")
+        raise HTTPException(status_code=502, detail=f"Failed to generate fishfinder data: {exc}")
+
+
+
 @router.get("/aviation/briefing", response_model=AviationBriefingResponse)
 async def get_aviation_briefing(
     icao: str = Query("VABB", description="ICAO airport code (e.g. VABB, VIDP, VOBL, VOMM, VAPO, VOHS, VECC, VOCI)"),
@@ -121,3 +152,25 @@ async def compare_airports(
     except Exception as exc:
         logger.error(f"Failed to compare airports {icao1} vs {icao2}: {exc}")
         raise HTTPException(status_code=502, detail=f"Failed to compare airports {icao1} vs {icao2}: {exc}")
+
+
+@router.get("/aviation/skyroute", response_model=SkyRouteResponse)
+async def get_skyroute_corridor(
+    origin: str = Query("VABB", description="Departure airport ICAO or city (e.g. VABB, BOM, Mumbai)"),
+    destination: str = Query("VIDP", description="Arrival airport ICAO or city (e.g. VIDP, DEL, Delhi)"),
+) -> SkyRouteResponse:
+    """
+    SkyRoute — Weather-Aware Flight Route Intelligence Engine.
+    Generates geodesic flight corridor, detects hazard intersections, calculates Weather Risk Index,
+    and returns 3-stage flight breakdown with factual meteorological briefing.
+    """
+    try:
+        data = await skyroute_service.analyze_sky_route(
+            origin_query=origin,
+            dest_query=destination,
+        )
+        return SkyRouteResponse(success=True, data=data)
+    except Exception as exc:
+        logger.error(f"Failed to generate SkyRoute analysis: {exc}")
+        raise HTTPException(status_code=502, detail=f"Failed to generate SkyRoute analysis: {exc}")
+

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   CloudSun,
+  Anchor,
   Activity,
   MessageSquare,
   Radar,
@@ -11,6 +12,11 @@ import {
   Menu,
   CalendarCheck,
   Bell,
+  Waves,
+  Plane,
+  Navigation,
+  FlaskConical,
+  Layers,
 } from 'lucide-react';
 import { useUI, ActiveTab } from '../../context/UIContext';
 import { useWeather } from '../../context/WeatherContext';
@@ -18,6 +24,10 @@ import { useAuthContext } from '../../context/AuthContext';
 import { useLanguage, LANGUAGES, LanguageCode } from '../../context/LanguageContext';
 import { translatePhrase } from '../../utils/dashboardTranslator';
 import { ProfileModal } from '../profile/ProfileModal';
+import { useRealtimeWeather } from '../../hooks/useRealtimeWeather';
+import { RealtimeStatusIndicator } from '../realtime/RealtimeStatusIndicator';
+import { LiveEventNotification } from '../realtime/LiveEventNotification';
+import { RealtimeDemoControlModal } from '../realtime/RealtimeDemoControlModal';
 
 interface MobileAppShellProps {
   children: React.ReactNode;
@@ -31,9 +41,19 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
   const { language, setLanguage } = useLanguage();
   const [unreadAlertCount, setUnreadAlertCount] = React.useState<number>(0);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState<boolean>(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = React.useState<boolean>(false);
 
-  const roleKey = (profile?.role || activeRole || 'citizen').toLowerCase();
+  const roleKey = (activeRole || profile?.role || 'citizen').toLowerCase().trim();
   const isFarmer = roleKey === 'farmer';
+  const isFisher = roleKey === 'fisher' || roleKey === 'fisherman';
+  const isAviation = roleKey.includes('aviation') || roleKey === 'pilot' || roleKey === 'dispatcher';
+  const isResearcher = roleKey === 'researcher';
+
+  // Real-time WebSocket hook
+  const { status: realtimeStatus, latestEvent } = useRealtimeWeather({
+    role: roleKey,
+    autoConnect: true,
+  });
 
   // Poll for active unread alerts count
   React.useEffect(() => {
@@ -70,15 +90,31 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
     { id: 'home', label: translatePhrase('weather', language), icon: CloudSun },
     {
       id: 'advisories',
-      label: isFarmer ? translatePhrase('myFarm', language) : translatePhrase('airQuality', language),
-      icon: isFarmer ? Sprout : Activity,
+      label: isResearcher
+        ? 'WeatherLab'
+        : isAviation
+        ? (language === 'mr' ? 'उड्डाण सल्लागार' : language === 'hi' ? 'उड़ान सलाहकार' : 'Flight Advisory')
+        : isFisher
+        ? (translatePhrase('sailingAdvisory', language) || 'Sailing Advisory')
+        : isFarmer
+        ? translatePhrase('myFarm', language)
+        : translatePhrase('airQuality', language),
+      icon: isResearcher ? FlaskConical : isAviation ? Plane : isFisher ? Anchor : isFarmer ? Sprout : Activity,
     },
     { id: 'ask', label: 'WeatherGPT', icon: MessageSquare },
     { id: 'alerts', label: translatePhrase('alerts', language), icon: AlertTriangle },
     {
       id: 'radar',
-      label: isFarmer ? translatePhrase('planMyDay', language) : translatePhrase('mapRadar', language),
-      icon: isFarmer ? CalendarCheck : Radar,
+      label: isResearcher
+        ? 'Research Map'
+        : isAviation
+        ? 'SkyRoute'
+        : isFisher
+        ? 'FishFinder'
+        : isFarmer
+        ? translatePhrase('planMyDay', language)
+        : translatePhrase('mapRadar', language),
+      icon: isResearcher ? Layers : isAviation ? Navigation : isFisher ? Waves : isFarmer ? CalendarCheck : Radar,
     },
   ];
 
@@ -116,14 +152,30 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
                     </span>
                   </div>
                   <span className="text-[9px] font-bold text-[#5B6770] truncate">
-                    {isFarmer ? 'National Agro-Meteorological System' : 'National Weather Intelligence Service'}
+                    {isResearcher
+                      ? 'National Atmospheric Research & Climatology Center'
+                      : isAviation
+                      ? 'IMD / DGCA Aviation Meteorological Service'
+                      : isFisher
+                      ? 'National Coastal & Marine Weather Service'
+                      : isFarmer
+                      ? 'National Agro-Meteorological System'
+                      : 'National Weather Intelligence Service'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Language Selector & Profile */}
+            {/* Right: Realtime Status & Language Selector & Profile */}
             <div className="flex items-center gap-1.5 shrink-0">
+              {/* Realtime Status Indicator Badge */}
+              <RealtimeStatusIndicator
+                status={realtimeStatus}
+                onClick={() => setIsDemoModalOpen(true)}
+                showLabel={false}
+                className="py-1 px-1.5"
+              />
+
               {/* Language Selector */}
               <div className="relative">
                 <select
@@ -158,6 +210,21 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
         <ProfileModal
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
+        />
+
+        {/* Real-time Ingestion Demo Control & Monitor Modal */}
+        <RealtimeDemoControlModal
+          isOpen={isDemoModalOpen}
+          onClose={() => setIsDemoModalOpen(false)}
+          status={realtimeStatus}
+        />
+
+        {/* Real-time In-App Push Notification Banner */}
+        <LiveEventNotification
+          event={latestEvent}
+          onViewAlert={(ev) => {
+            setActiveTab('alerts');
+          }}
         />
 
         {/* Scrollable Main Content Body */}
@@ -198,7 +265,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
                 {isActive && (
                   <div
                     className={`absolute top-0 left-0 right-0 h-[3px] ${
-                      isAlertTab ? 'bg-[#B42318]' : isFarmer ? 'bg-[#006B3C]' : 'bg-[#17365D]'
+                      isAlertTab ? 'bg-[#B42318]' : isFarmer ? 'bg-[#006B3C]' : isFisher ? 'bg-[#17365D]' : 'bg-[#17365D]'
                     }`}
                   />
                 )}

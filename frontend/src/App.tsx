@@ -31,7 +31,9 @@ import { DashboardPage } from './pages/DashboardPage';
 import { FarmerDashboardPage } from './pages/FarmerDashboardPage';
 import { FarmerWeatherPage } from './pages/FarmerWeatherPage';
 import { FisherDashboardPage } from './pages/FisherDashboardPage';
+import { FishermanWeatherPage } from './pages/FishermanWeatherPage';
 import { AviationDashboardPage } from './pages/AviationDashboardPage';
+import { AviationWeatherPage } from './pages/AviationWeatherPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { AirQualityPage } from './pages/AirQualityPage';
 import { ClimatePage } from './pages/ClimatePage';
@@ -39,7 +41,10 @@ import { WhatIfPage } from './pages/WhatIfPage';
 import { TravelPage } from './pages/TravelPage';
 import { MapPage } from './pages/MapPage';
 import { FarmRoutePage } from './pages/FarmRoutePage';
+import { FishFinderPage } from './pages/FishFinderPage';
+import { SkyRoutePage } from './pages/SkyRoutePage';
 import { EmergencyPage } from './pages/EmergencyPage';
+import { WeatherLabPage } from './pages/WeatherLabPage';
 import { Loader2 } from 'lucide-react';
 
 import { ChatPage } from './pages/ChatPage';
@@ -97,36 +102,36 @@ const MainAppContent: React.FC = () => {
   const renderActivePage = () => {
     if (emergencyMode) return <EmergencyPage />;
 
+    const currentRole = (activeRole || profile?.role || 'citizen').toLowerCase().trim();
+    const isFarmer = currentRole === 'farmer';
+    const isFisher = currentRole === 'fisher' || currentRole === 'fisherman';
+    const isAviation = currentRole.includes('aviation') || currentRole === 'pilot' || currentRole === 'dispatcher';
+    const isResearcher = currentRole === 'researcher';
+
     switch (activeTab) {
       case 'home':
       case 'live': {
-        const currentRole = (profile?.role || activeRole || 'citizen').toLowerCase().trim();
-        if (currentRole === 'farmer') {
+        if (isResearcher) {
+          return <WeatherLabPage />;
+        }
+        if (isFarmer) {
           return (
             <FarmerWeatherPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
             />
           );
         }
-        if (currentRole === 'fisher' || currentRole === 'fisherman') {
+        if (isFisher) {
           return (
-            <FisherDashboardPage
+            <FishermanWeatherPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
-              onBack={() => {
-                setActiveRole('Citizen' as any);
-                setActiveTab('home');
-              }}
             />
           );
         }
-        if (currentRole === 'aviation' || currentRole === 'pilot' || currentRole === 'dispatcher') {
+        if (isAviation) {
           return (
-            <AviationDashboardPage
+            <AviationWeatherPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
-              onBack={() => {
-                setActiveRole('Citizen' as any);
-                setActiveTab('home');
-              }}
             />
           );
         }
@@ -149,6 +154,9 @@ const MainAppContent: React.FC = () => {
               } else if (page === 'aviation') {
                 setActiveRole('Aviation' as any);
                 setActiveTab('aviation');
+              } else if (page === 'researcher' || page === 'weatherlab') {
+                setActiveRole('researcher' as any);
+                setActiveTab('weatherlab');
               }
             }}
           />
@@ -169,16 +177,39 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'radar':
-        if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+        if (isResearcher) {
+          return <WeatherLabPage />;
+        } else if (isFarmer) {
           return (
             <FarmRoutePage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
               onBack={() => setActiveTab('home')}
             />
           );
+        } else if (isFisher) {
+          return (
+            <FishFinderPage
+              onBack={() => setActiveTab('home')}
+              onAskGpt={handleOpenChatWithPrompt}
+            />
+          );
+        } else if (isAviation) {
+          return (
+            <SkyRoutePage
+              onBack={() => setActiveTab('home')}
+              onAskGpt={handleOpenChatWithPrompt}
+            />
+          );
         }
         return (
           <MapPage
+            onBack={() => setActiveTab('home')}
+            onAskGpt={handleOpenChatWithPrompt}
+          />
+        );
+      case 'skyroute':
+        return (
+          <SkyRoutePage
             onBack={() => setActiveTab('home')}
             onAskGpt={handleOpenChatWithPrompt}
           />
@@ -191,20 +222,23 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'advisories':
-        if (profile?.role?.toLowerCase() === 'farmer' || activeRole?.toLowerCase() === 'farmer') {
+        if (isResearcher) {
+          return <WeatherLabPage />;
+        } else if (isFarmer) {
           return (
-            <FarmerWeatherPage
+            <FarmerDashboardPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
             />
           );
-        } else if (profile?.role?.toLowerCase() === 'fisher' || activeRole?.toLowerCase() === 'fisher') {
+        } else if (isFisher) {
           return (
             <FisherDashboardPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
               onBack={() => setActiveTab('home')}
             />
           );
-        } else if (profile?.role?.toLowerCase() === 'aviation' || activeRole?.toLowerCase() === 'aviation') {
+        } else if (isAviation) {
           return (
             <AviationDashboardPage
               onOpenChatWithPrompt={handleOpenChatWithPrompt}
@@ -213,6 +247,9 @@ const MainAppContent: React.FC = () => {
           );
         }
         return <AirQualityPage onOpenChatWithPrompt={handleOpenChatWithPrompt} />;
+      case 'weatherlab':
+      case 'researcher':
+        return <WeatherLabPage />;
       case 'farmer':
         return (
           <FarmerDashboardPage

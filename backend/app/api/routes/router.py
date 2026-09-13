@@ -15,6 +15,8 @@ from backend.app.api.routes import (
     radar,
     air_quality,
     roles,
+    researcher,
+    websocket,
 )
 
 api_router = APIRouter(prefix="/api")
@@ -35,6 +37,8 @@ api_router.include_router(imd_diagnostics.router, tags=["IMD Diagnostics"])
 api_router.include_router(radar.router, tags=["Precipitation Radar"])
 api_router.include_router(air_quality.router, tags=["Air Quality Intelligence"])
 api_router.include_router(roles.router, tags=["Role Decision Intelligence"])
+api_router.include_router(researcher.router, tags=["Researcher Intelligence / WeatherLab"])
+api_router.include_router(websocket.router, tags=["Real-Time WebSocket & Ingestion Pipeline"])
 
 
 

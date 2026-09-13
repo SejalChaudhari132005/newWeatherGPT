@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Check, User, Sprout, Anchor, ShieldAlert, Building2, Search, Plane } from 'lucide-react';
+import { Sparkles, ArrowRight, Check, User, Sprout, Anchor, ShieldAlert, Building2, Search, Plane, FlaskConical } from 'lucide-react';
 import { useAuthContext } from '../../context/AuthContext';
 import { UserRole } from '../../types/user';
 
@@ -44,8 +44,8 @@ export const ROLE_CARDS: RoleCard[] = [
   {
     id: 'researcher',
     title: 'Researcher',
-    description: 'Historical weather and climate analysis.',
-    icon: <Search className="w-5 h-5 text-purple-600" />,
+    description: 'WeatherLab: NWP comparison, climate anomalies & datasets.',
+    icon: <FlaskConical className="w-5 h-5 text-blue-600" />,
   },
   {
     id: 'aviation',

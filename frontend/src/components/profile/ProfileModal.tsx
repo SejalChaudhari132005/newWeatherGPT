@@ -7,6 +7,8 @@ import {
   Anchor,
   Plane,
   ShieldAlert,
+  FlaskConical,
+  Building2,
   Check,
   X,
   LogOut,
@@ -49,15 +51,22 @@ const ROLES: RoleItem[] = [
     id: 'fisherman',
     title: 'Fisherman',
     roleName: 'Fisher',
-    targetTab: 'advisories',
+    targetTab: 'home',
     icon: Anchor,
   },
   {
     id: 'aviation',
     title: 'Aviation',
     roleName: 'Aviation',
-    targetTab: 'advisories',
+    targetTab: 'home',
     icon: Plane,
+  },
+  {
+    id: 'researcher',
+    title: 'Researcher',
+    roleName: 'Researcher',
+    targetTab: 'home',
+    icon: FlaskConical,
   },
   {
     id: 'disaster_manager',
@@ -65,6 +74,13 @@ const ROLES: RoleItem[] = [
     roleName: 'Disaster Manager',
     targetTab: 'alerts',
     icon: ShieldAlert,
+  },
+  {
+    id: 'urban_planner',
+    title: 'Urban Planner',
+    roleName: 'Urban Planner',
+    targetTab: 'home',
+    icon: Building2,
   },
 ];
 

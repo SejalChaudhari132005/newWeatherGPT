@@ -8,6 +8,7 @@ export interface SailingClearance {
   max_wind_speed_kts: number;
   squall_risk: boolean;
   clearance_window: string | null;
+  wind_direction?: string | number;
 }
 
 export interface TemporalMarineSlot {
@@ -17,6 +18,7 @@ export interface TemporalMarineSlot {
   wave_height_m: number;
   wind_speed_kts: number;
   swell_period_s: number;
+  swell_period_sec?: number;
   wind_direction_deg?: number;
   notes: string;
 }
@@ -49,6 +51,7 @@ export interface SeaStateSummary {
   wave_direction_deg: number;
   swell_height_m: number;
   swell_period_s: number;
+  swell_period_sec?: number;
   ocean_current_knots?: number | null;
   sea_surface_temp_c?: number | null;
   beaufort_scale: number;
@@ -87,3 +90,5 @@ export interface MarineDecisionResponse {
   data?: MarineDecisionData;
   message?: string;
 }
+
+export type HydrodynamicSeaState = SeaStateSummary;

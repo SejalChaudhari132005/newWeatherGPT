@@ -71,7 +71,7 @@ export const RadarMap: React.FC = () => {
 
   const baseTileUrl = tileMode === 'satellite'
     ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-md border border-slate-200/80 space-y-4">

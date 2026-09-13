@@ -202,8 +202,8 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
           language === 'mr'
             ? 'माफ करा, कृषी सहाय्यक सेवा सध्या व्यस्त आहे. कृपया थोड्या वेळाने प्रयत्न करा.'
             : language === 'hi'
-            ? 'क्षमा करें, कृषि सहायक सेवा वर्तमान में व्यस्त है। कृपया थोड़ी देर बाद पुनः प्रयास करें।'
-            : 'Sorry, the Agri Assistant service is currently busy. Please try again in a moment.',
+              ? 'क्षमा करें, कृषि सहायक सेवा वर्तमान में व्यस्त है। कृपया थोड़ी देर बाद पुनः प्रयास करें।'
+              : 'Sorry, the Agri Assistant service is currently busy. Please try again in a moment.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setQaMessages((prev) => [...prev, fallbackMsg]);
@@ -220,9 +220,9 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
     if (onOpenChatWithPrompt) {
       onOpenChatWithPrompt(
         prefillPrompt ||
-          (language === 'mr'
-            ? `${displayLocation} मधील माझ्या ${farm?.primary_crop || 'भात'} पिकासाठी सविस्तर कृषी हवामान सल्ला द्या`
-            : language === 'hi'
+        (language === 'mr'
+          ? `${displayLocation} मधील माझ्या ${farm?.primary_crop || 'भात'} पिकासाठी सविस्तर कृषी हवामान सल्ला द्या`
+          : language === 'hi'
             ? `${displayLocation} में मेरी ${farm?.primary_crop || 'धान'} फसल के लिए विस्तृत कृषि मौसम सलाह दें`
             : `Give me detailed agricultural weather advice for my ${farm?.primary_crop || 'rice'} crop in ${displayLocation}`)
       );
@@ -233,181 +233,180 @@ export const FarmerDashboardPage: React.FC<FarmerDashboardPageProps> = ({
 
   return (
     <div className="w-full px-3.5 sm:px-6 pt-3 pb-24 space-y-4 font-['Arimo',sans-serif]">
-        {/* 2. Section: Farm Map & Farm Overview (2 Columns on Desktop, Stacked on Mobile) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          <div className="lg:col-span-7 h-full min-h-[300px]">
-            <FarmMapCard
-              latitude={latitude}
-              longitude={longitude}
-              farmName={farm?.farm_name || 'My Farm'}
-              cropName={translateCrop(farm?.primary_crop || 'rice', language)}
-              farmSize={farm?.farm_size ?? 2.5}
-              farmSizeUnit={farm?.farm_size_unit || 'Acres'}
-              boundaryGeoJson={farm?.boundary_geojson}
-            />
-          </div>
-          <div className="lg:col-span-5 h-full">
-            <FarmOverviewCard
-              farm={farm}
-              onOpenManageFarm={() => setIsManageFarmOpen(true)}
-            />
-          </div>
-        </div>
-
-        {/* 4. Section: Crop & Growth Status + Soil Moisture & Water Loss */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <CropGrowthTimelineCard
-            cropId={farm?.primary_crop || 'rice'}
-            currentStageId={farm?.growth_stage || 'pod_filling'}
-            onSelectStage={handleStageSelect}
-          />
-          <SoilMoistureLossCard
-            soilState={decisionData.soil_state}
+      {/* 2. Section: Farm Map & Farm Overview (2 Columns on Desktop, Stacked on Mobile) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <div className="lg:col-span-7 h-full min-h-[300px]">
+          <FarmMapCard
+            latitude={latitude}
+            longitude={longitude}
+            farmName={farm?.farm_name || 'My Farm'}
+            cropName={translateCrop(farm?.primary_crop || 'rice', language)}
+            farmSize={farm?.farm_size ?? 2.5}
+            farmSizeUnit={farm?.farm_size_unit || 'Acres'}
+            boundaryGeoJson={farm?.boundary_geojson}
           />
         </div>
-
-        {/* 5. Section: Current Farm Advisory + Crop Risks & Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <CurrentFarmAdvisoryCard
-            soilState={decisionData.soil_state}
-            rainProbability={decisionData.current_rain_prob_pct}
-            expectedRainfallMm={liveWeather?.current?.precipitation ?? 0}
-            onOpenDetails={() => handleOpenFullChat()}
-          />
-          <CropRisksAlertsCard
-            cropName={farm?.primary_crop || 'rice'}
-            growthStage={farm?.growth_stage || 'pod_filling'}
-            temperature={liveWeather?.current?.temperature ?? 27.4}
-            windSpeed={liveWeather?.current?.wind_speed ?? 6.2}
-            rainProbability={decisionData.current_rain_prob_pct ?? 15}
+        <div className="lg:col-span-5 h-full">
+          <FarmOverviewCard
+            farm={farm}
+            onOpenManageFarm={() => setIsManageFarmOpen(true)}
           />
         </div>
+      </div>
 
-        {/* 6. Section: Best Farming Windows */}
-        <BestFarmingWindowsCard
-          windows={decisionData.best_farming_windows}
+      {/* 4. Section: Crop & Growth Status + Soil Moisture & Water Loss */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <CropGrowthTimelineCard
+          cropId={farm?.primary_crop || 'rice'}
+          currentStageId={farm?.growth_stage || 'pod_filling'}
+          onSelectStage={handleStageSelect}
         />
+        <SoilMoistureLossCard
+          soilState={decisionData.soil_state}
+        />
+      </div>
 
-        {/* 7. Section: Chemical Spray Decision + Satellite NDVI Crop Health */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <ChemicalSprayDecisionCard
-            windSpeed={liveWeather?.current?.wind_speed ?? 6.2}
-            rainProbability={decisionData.current_rain_prob_pct ?? 15}
-            humidity={liveWeather?.current?.humidity ?? 68}
-            temperature={liveWeather?.current?.temperature ?? 27.4}
-          />
-          <SatelliteCropHealthCard
-            ndviValue={0.72}
-            healthStatus="Good"
-            trend="Improving"
-          />
-        </div>
+      {/* 5. Section: Current Farm Advisory + Crop Risks & Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <CurrentFarmAdvisoryCard
+          soilState={decisionData.soil_state}
+          rainProbability={decisionData.current_rain_prob_pct}
+          expectedRainfallMm={liveWeather?.current?.precipitation ?? 0}
+          onOpenDetails={() => handleOpenFullChat()}
+        />
+        <CropRisksAlertsCard
+          cropName={farm?.primary_crop || 'rice'}
+          growthStage={farm?.growth_stage || 'pod_filling'}
+          temperature={liveWeather?.current?.temperature ?? 27.4}
+          windSpeed={liveWeather?.current?.wind_speed ?? 6.2}
+          rainProbability={decisionData.current_rain_prob_pct ?? 15}
+        />
+      </div>
 
-        {/* 8. Interactive Agri Assistant Desk */}
-        <div className="gov-panel space-y-3">
-          <div className="gov-panel-header flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-[#006B3C]" />
-              <span>
-                {language === 'mr' ? 'कृषी सल्ला व शंका निवारण कक्ष' : language === 'hi' ? 'कृषि परामर्श एवं सहायता केंद्र' : 'OFFICIAL AGROMET QUERY & ADVISORY DESK'}
-              </span>
-            </div>
+      {/* 6. Section: Best Farming Windows */}
+      <BestFarmingWindowsCard
+        windows={decisionData.best_farming_windows}
+      />
 
-            <button
-              type="button"
-              onClick={() => handleOpenFullChat()}
-              className="text-[11px] font-bold text-[#006B3C] hover:underline flex items-center gap-1 cursor-pointer uppercase tracking-wider"
-            >
-              <span>{language === 'mr' ? 'सविस्तर चर्चा' : language === 'hi' ? 'विस्तृत चर्चा' : 'OPEN FULL CHAT'}</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </button>
+      {/* 7. Section: Chemical Spray Decision + Satellite NDVI Crop Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <ChemicalSprayDecisionCard
+          windSpeed={liveWeather?.current?.wind_speed ?? 6.2}
+          rainProbability={decisionData.current_rain_prob_pct ?? 15}
+          humidity={liveWeather?.current?.humidity ?? 68}
+          temperature={liveWeather?.current?.temperature ?? 27.4}
+        />
+        <SatelliteCropHealthCard
+          ndviValue={0.72}
+          healthStatus="Good"
+          trend="Improving"
+        />
+      </div>
+
+      {/* 8. Interactive Agri Assistant Desk */}
+      <div className="gov-panel space-y-3">
+        <div className="gov-panel-header flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="w-4 h-4 text-[#006B3C]" />
+            <span>
+              {language === 'mr' ? 'कृषी सल्ला व शंका निवारण कक्ष' : language === 'hi' ? 'कृषि परामर्श एवं सहायता केंद्र' : 'OFFICIAL AGROMET QUERY & ADVISORY DESK'}
+            </span>
           </div>
 
-          <div className="p-3 space-y-3">
-            {/* Standard Quick Query Buttons */}
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {[
-                language === 'mr' ? 'आज शेतात काय काम करावे?' : language === 'hi' ? 'आज खेत में क्या काम करें?' : 'What to do on my farm today?',
-                language === 'mr' ? 'फवारणी कधी करावी?' : language === 'hi' ? 'छिड़काव कब करें?' : 'When is safe to spray?',
-                language === 'mr' ? 'पावसाचा धोका आहे का?' : language === 'hi' ? 'क्या बारिश का खतरा है?' : 'Is there a rain risk?',
-              ].map((prompt, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleAskQuestion(prompt)}
-                  className="px-3 py-1 bg-[#F8FAFC] hover:bg-[#EBF5EE] text-[#17365D] hover:text-[#006B3C] text-xs font-semibold rounded-xs border border-[#D6DCE1] transition-colors cursor-pointer whitespace-nowrap"
+          <button
+            type="button"
+            onClick={() => handleOpenFullChat()}
+            className="text-[11px] font-bold text-[#006B3C] hover:underline flex items-center gap-1 cursor-pointer uppercase tracking-wider"
+          >
+            <span>{language === 'mr' ? 'सविस्तर चर्चा' : language === 'hi' ? 'विस्तृत चर्चा' : 'OPEN FULL CHAT'}</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="p-3 space-y-3">
+          {/* Standard Quick Query Buttons */}
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {[
+              language === 'mr' ? 'आज शेतात काय काम करावे?' : language === 'hi' ? 'आज खेत में क्या काम करें?' : 'What to do on my farm today?',
+              language === 'mr' ? 'फवारणी कधी करावी?' : language === 'hi' ? 'छिड़काव कब करें?' : 'When is safe to spray?',
+              language === 'mr' ? 'पावसाचा धोका आहे का?' : language === 'hi' ? 'क्या बारिश का खतरा है?' : 'Is there a rain risk?',
+            ].map((prompt, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleAskQuestion(prompt)}
+                className="px-3 py-1 bg-[#F8FAFC] hover:bg-[#EBF5EE] text-[#17365D] hover:text-[#006B3C] text-xs font-semibold rounded-xs border border-[#D6DCE1] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                [ {prompt} ]
+              </button>
+            ))}
+          </div>
+
+          {/* Structured Message Stream */}
+          {qaMessages.length > 0 && (
+            <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-xs bg-[#F8FAFC] border border-[#D6DCE1]">
+              {qaMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                 >
-                  [ {prompt} ]
-                </button>
-              ))}
-            </div>
-
-            {/* Structured Message Stream */}
-            {qaMessages.length > 0 && (
-              <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-xs bg-[#F8FAFC] border border-[#D6DCE1]">
-                {qaMessages.map((msg) => (
+                  <span className="text-[10px] font-bold text-[#5B6770] mb-0.5 uppercase tracking-wider">
+                    {msg.sender === 'user' ? 'Farmer / Citizen' : 'WeatherGPT Officer'} • {msg.timestamp}
+                  </span>
                   <div
-                    key={msg.id}
-                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-                  >
-                    <span className="text-[10px] font-bold text-[#5B6770] mb-0.5 uppercase tracking-wider">
-                      {msg.sender === 'user' ? 'Farmer / Citizen' : 'WeatherGPT Officer'} • {msg.timestamp}
-                    </span>
-                    <div
-                      className={`max-w-[90%] rounded-xs p-2.5 text-xs font-medium border leading-relaxed ${
-                        msg.sender === 'user'
-                          ? 'bg-[#17365D] text-white border-[#17365D]'
-                          : 'bg-white text-[#1F2933] border-[#D6DCE1]'
+                    className={`max-w-[90%] rounded-xs p-2.5 text-xs font-medium border leading-relaxed ${msg.sender === 'user'
+                        ? 'bg-[#17365D] text-white border-[#17365D]'
+                        : 'bg-white text-[#1F2933] border-[#D6DCE1]'
                       }`}
-                    >
-                      {msg.sender === 'assistant' ? (
-                        <MarkdownRenderer content={msg.text} />
-                      ) : (
-                        <span>{msg.text}</span>
-                      )}
-                    </div>
+                  >
+                    {msg.sender === 'assistant' ? (
+                      <MarkdownRenderer content={msg.text} />
+                    ) : (
+                      <span>{msg.text}</span>
+                    )}
                   </div>
-                ))}
-                <div ref={qaEndRef} />
-              </div>
-            )}
+                </div>
+              ))}
+              <div ref={qaEndRef} />
+            </div>
+          )}
 
-            {/* Input Row */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAskQuestion()}
-                placeholder={
-                  language === 'mr'
-                    ? 'उदा. आज खत टाकावे का? पाणी कधी द्यावे?'
-                    : language === 'hi'
+          {/* Input Row */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAskQuestion()}
+              placeholder={
+                language === 'mr'
+                  ? 'उदा. आज खत टाकावे का? पाणी कधी द्यावे?'
+                  : language === 'hi'
                     ? 'उदा. क्या आज खाद डालें? पानी कब दें?'
                     : 'Type official query (e.g., Sowing schedule, spray safety, rain forecast)...'
-                }
-                className="flex-1 px-3 py-2 rounded-xs border border-[#D6DCE1] focus:outline-none focus:border-[#006B3C] text-xs text-[#1F2933] placeholder-[#5B6770] bg-white"
-              />
-              <button
-                type="button"
-                onClick={() => handleAskQuestion()}
-                disabled={isAsking || !inputQuery.trim()}
-                className="px-4 py-2 rounded-xs bg-[#006B3C] hover:bg-[#00522E] text-white font-bold text-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
-              >
-                {isAsking ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>{language === 'mr' ? 'विचारा' : language === 'hi' ? 'पूछें' : 'SUBMIT'}</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
-            </div>
+              }
+              className="flex-1 px-3 py-2 rounded-xs border border-[#D6DCE1] focus:outline-none focus:border-[#006B3C] text-xs text-[#1F2933] placeholder-[#5B6770] bg-white"
+            />
+            <button
+              type="button"
+              onClick={() => handleAskQuestion()}
+              disabled={isAsking || !inputQuery.trim()}
+              className="px-4 py-2 rounded-xs bg-[#006B3C] hover:bg-[#00522E] text-white font-bold text-xs disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer uppercase tracking-wider"
+            >
+              {isAsking ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <span>{language === 'mr' ? 'विचारा' : language === 'hi' ? 'पूछें' : 'SUBMIT'}</span>
+                  <Send className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Manage Farm Modal */}
+      {/* Manage Farm Modal */}
       <ManageFarmModal
         isOpen={isManageFarmOpen}
         onClose={() => setIsManageFarmOpen(false)}

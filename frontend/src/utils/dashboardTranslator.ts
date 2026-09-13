@@ -157,6 +157,8 @@ export const UI_PHRASES: Record<string, Partial<Record<LanguageCode, string>>> =
     pa: 'ਮੌਸਮ',
     or: 'ପାଣିପାଗ',
   },
+  sailingAdvisory: { en: 'Sailing Advisory', hi: 'नौवहन सलाह', mr: 'सफर सल्ला', ta: 'கடல் பயணம்', te: 'సముద్ర సలహా', kn: 'ಸಮುದ್ರ ಸಲಹೆ', ml: 'യാത്രാ അനുമതി', bn: 'সমুদ্র যাত্রা', gu: 'સફર સલાહ', pa: 'ਸਮੁੰਦਰੀ ਸਲਾਹ', or: 'ସମୁଦ୍ର ଯାତ୍ରା' },
+  seaClearance: { en: 'Port Clearance', hi: 'बंदरगाह क्लीयरेंस', mr: 'बंदर क्लिअरन्स', ta: 'துறைமுக அனுமதி', te: 'పోర్ట్ క్లియరెన్స్', kn: 'ಬಂದರು ಅನುಮತಿ', ml: 'പോർട്ട് ക്ലിയറൻസ്', bn: 'বন্দর ছাড়পত্র', gu: 'બંદર મંજૂરી', pa: 'ਪੋਰਟ ਕਲੀਅਰੈਂਸ', or: 'ବନ୍ଦର ଅନୁମୋଦନ' },
   airQuality: {
     en: 'Air Quality',
     mr: 'हवा गुणवत्ता',

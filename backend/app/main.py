@@ -60,6 +60,13 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 # Mount API router
 app.include_router(api_router)
 
+# Mount direct root WebSocket endpoint ws://localhost:8000/ws/live-alerts
+from fastapi import WebSocket
+from backend.app.api.routes.websocket import websocket_live_alerts
+@app.websocket("/ws/live-alerts")
+async def root_websocket_live_alerts(websocket: WebSocket, client_id: str = "web-client"):
+    await websocket_live_alerts(websocket, client_id=client_id)
+
 if __name__ == "__main__":
     uvicorn.run(
         "backend.app.main:app",

@@ -35,6 +35,7 @@ import {
   ChevronRight,
   X,
   Info,
+  Waves,
 } from 'lucide-react';
 import { useLocation } from '../hooks/useLocation';
 import { useLanguage, LanguageCode } from '../context/LanguageContext';
@@ -48,6 +49,9 @@ import { RoutePlanningCard } from '../components/route/RoutePlanningCard';
 import { RouteTimeline } from '../components/route/RouteTimeline';
 import { DepartureComparisonCard } from '../components/route/DepartureComparisonCard';
 import { RouteAlertModal } from '../components/route/RouteAlertModal';
+import { FishFinderPage } from './FishFinderPage';
+import { SkyRoutePage } from './SkyRoutePage';
+import { useWeather } from '../context/WeatherContext';
 
 interface Props {
   onBack: () => void;
@@ -197,9 +201,11 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
   const { location, openSelector, detectLocation } = useLocation();
   const { language } = useLanguage();
   const { profile } = useAuthContext();
+  const { activeRole } = useWeather();
   const { intelligence, refreshIntelligence } = useWeatherIntelligence();
 
   const [activeLayer, setActiveLayer] = useState<'radar' | 'rainfall' | 'temperature' | 'wind' | 'satellite' | 'alerts'>('radar');
+  const [mapViewMode, setMapViewMode] = useState<'weather' | 'fishfinder'>('weather');
   const [tileMode, setTileMode] = useState<'satellite' | 'voyager' | 'dark'>('satellite');
   const [radarData, setRadarData] = useState<RadarStation | null>(null);
   const [satelliteData, setSatelliteData] = useState<any>(null);
@@ -491,8 +497,8 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
 
   const tileUrls = {
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    voyager: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
   };
 
   // Construct active Doppler Radar and Satellite tile URLs from live frames
@@ -598,6 +604,22 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
         return `IMD Hazard Status: Green / Normal across Thane & Mumbai MMR`;
     }
   };
+
+  const currentRole = (activeRole || profile?.role || 'citizen').toLowerCase().trim();
+  const isAviation = currentRole.includes('aviation') || currentRole === 'pilot' || currentRole === 'dispatcher';
+
+  if (isAviation) {
+    return <SkyRoutePage onBack={onBack} onAskGpt={onAskGpt} />;
+  }
+
+  if (mapViewMode === 'fishfinder') {
+    return (
+      <FishFinderPage
+        onBack={() => setMapViewMode('weather')}
+        onAskGpt={onAskGpt}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F7F9] p-3 sm:p-4 max-w-4xl mx-auto space-y-3 pb-28 font-sans">
@@ -723,6 +745,14 @@ export const MapPage: React.FC<Props> = ({ onBack, onAskGpt }) => {
             </button>
           );
         })}
+
+        <button
+          onClick={() => setMapViewMode('fishfinder')}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer shrink-0 border bg-[#ECFDF5] text-[#006B3C] border-[#A7F3D0] hover:bg-[#D1FAE5]"
+        >
+          <Waves className="w-3.5 h-3.5 text-[#FF9933]" />
+          <span>🌊 FishFinder (PFZ)</span>
+        </button>
       </div>
 
       {/* 4. REAL-TIME METEOROLOGICAL INTENSITY MAP CONTAINER */}
