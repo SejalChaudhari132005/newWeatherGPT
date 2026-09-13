@@ -3857,6 +3857,71 @@ export const EXTRA_UI_PHRASES: Record<string, Partial<Record<LanguageCode, strin
   weatherSynergyTitle: { en: 'Weather Synergy', hi: 'मौसम का प्रभाव', mr: 'हवामान प्रभाव', ta: 'வானிலை தாக்கம்', te: 'వాతావరణ ప్రభావం', kn: 'ಹವಾಮಾನ ಪ್ರಭಾವ', ml: 'കാലാവസ്ഥ സ്വാധീനം', bn: 'আবহাওয়ার প্রভাব', gu: 'હવામાન અસર', pa: 'ਮੌਸਮ ਪ੍ਰਭਾਵ', or: 'ପାଣିପାଗ ପ୍ରଭାବ' },
   quickAirQualityQuestions: { en: 'Quick Air Quality Questions', hi: 'वायु गुणवत्ता प्रश्न', mr: 'हवा गुणवत्ता प्रश्न', ta: 'காற்றுத் தரம் பற்றிய கேள்விகள்', te: 'గాలి నాణ్యత ప్రశ్నలు', kn: 'ವಾಯು ಗುಣಮಟ್ಟ ಪ್ರಶ್ನೆಗಳು', ml: 'വായു സംബന്ധിച്ച ചോദ്യങ്ങൾ', bn: 'বায়ুর মান সংক্রান্ত প্রশ্ন', gu: 'હવાની ગુણવત્તાના પ્રશ્નો', pa: 'ਹਵਾ ਗੁਣਵੱਤਾ ਸਵਾਲ', or: 'ବାୟୁ ଗୁଣବତ୍ତା ପ୍ରଶ୍ନ' },
   cropStatus: { en: 'Crop Status', hi: 'फसल की स्थिति', mr: 'पिकाची स्थिती', ta: 'பயிர் நிலை', te: 'పంట పరిస్థితి', kn: 'ಬೆಳೆ ಸ್ಥಿತಿ', ml: 'വിള നിലവാരം', bn: 'ফসলের অবস্থা', gu: 'પાકની સ્થિતિ', pa: 'ਫ਼ਸਲ ਦੀ ਸਥਿਤੀ', or: 'ଫସଲ ସ୍ଥିତି' },
+  recommendedAction: {
+    en: 'Recommended Action',
+    hi: 'अनुशंसित कार्रवाई',
+    mr: 'शिफारस केलेली कृती',
+    ta: 'பரிந்துரைக்கப்பட்ட நடவடிக்கை',
+    te: 'సిఫార్సు చేయబడిన చర్య',
+    kn: 'ಶಿಫಾರಸು ಮಾಡಿದ ಕ್ರಮ',
+    ml: 'ശുപാർശ ചെയ്ത നടപടി',
+    bn: 'সুপারিশকৃত পদক্ষেপ',
+    gu: 'ભલામણ કરેલ પગલાં',
+    pa: 'ਸਿਫਾਰਸ਼ ਕੀਤੀ ਕਾਰਵਾਈ',
+    or: 'ପରାମର୍ଶିତ କାର୍ଯ୍ୟାନୁଷ୍ଠାନ',
+  },
+  viewFullBulletin: {
+    en: 'View Full Bulletin',
+    hi: 'पूरा बुलेटिन देखें',
+    mr: 'संपूर्ण माहिती पहा',
+    ta: 'முழு அறிக்கை பார்க்க',
+    te: 'పూర్తి బులెటిన్ చూడండి',
+    kn: 'ಸಂಪೂರ್ಣ ಬುಲೆಟಿನ್ ವೀಕ್ಷಿಸಿ',
+    ml: 'പൂർണ്ണ ബുള്ളറ്റിൻ കാണുക',
+    bn: 'সম্পূর্ণ বুলেটিন দেখুন',
+    gu: 'સંપૂર્ણ બુલેટિન જુઓ',
+    pa: 'ਪੂਰਾ ਬੁਲੇਟਿਨ ਦੇਖੋ',
+    or: 'ସମ୍ପୂର୍ଣ୍ଣ ବୁଲେଟିନ୍ ଦେଖନ୍ତୁ',
+  },
+  acknowledge: {
+    en: 'Acknowledge',
+    hi: 'स्वीकार करें',
+    mr: 'समजले / पावती',
+    ta: 'ஏற்றுக்கொள்',
+    te: 'ధృవీకరించండి',
+    kn: 'ಸ್ವೀಕರಿಸಿ',
+    ml: 'സ്ഥിരീകരിക്കുക',
+    bn: 'স্বীকার করুন',
+    gu: 'સ્વીકારો',
+    pa: 'ਪੁਸ਼ਟੀ ਕਰੋ',
+    or: 'ସ୍ୱୀକାର କରନ୍ତୁ',
+  },
+  archivedRecords: {
+    en: 'Archived Records',
+    hi: 'पुराने रिकॉर्ड',
+    mr: 'मागील नोंदी / इतिहास',
+    ta: 'காப்பகப் பதிவுகள்',
+    te: 'ఆర్కైవ్ రికార్డులు',
+    kn: 'ಹಳೆಯ ದಾಖಲೆಗಳು',
+    ml: 'പഴയ രേഖകൾ',
+    bn: 'আর্কাইভ রেকর্ড',
+    gu: 'જૂના રેકોર્ડ',
+    pa: 'ਪੁਰਾਣੇ ਰਿਕਾਰਡ',
+    or: 'ପୁରୁଣା ରେକର୍ଡ',
+  },
+  askAssistantAlert: {
+    en: 'Ask AI Assistant',
+    hi: 'AI सहायक से पूछें',
+    mr: 'AI सल्लागारास विचारा',
+    ta: 'AI உதவியாளரிடம் கேளுங்கள்',
+    te: 'AI సహాయకుడిని అడగండి',
+    kn: 'AI ಸಹಾಯಕರನ್ನು ಕೇಳಿ',
+    ml: 'AI സഹായിയോട് ചോദിക്കുക',
+    bn: 'AI সহকারীকে জিজ্ঞাসা করুন',
+    gu: 'AI સહાયકને પૂછો',
+    pa: 'AI ਸਹਾਇਕ ਨੂੰ ਪੁੱਛੋ',
+    or: 'AI ସହାୟକଙ୍କୁ ପଚାରନ୍ତୁ',
+  },
   rainRisk: { en: 'Rain Risk', hi: 'बारिश का जोखिम', mr: 'पावसाचा धोका', ta: 'மழை ஆபத்து', te: 'వర్షపు ప్రమాదం', kn: 'ಮಳೆ ಅಪಾಯ', ml: 'മഴ സാധ്യത', bn: 'বৃষ্টির ঝুঁকি', gu: 'વરસાદનું જોખમ', pa: 'ਮੀਂਹ ਦਾ ਖ਼ਤਰਾ', or: 'ବର୍ଷା ଆଶଙ୍କା' },
   heatRisk: { en: 'Heat Risk', hi: 'गर्मी का जोखिम', mr: 'उष्णतेचा धोका', ta: 'வெப்ப ஆபத்து', te: 'వేడి ప్రమాదం', kn: 'ಶಾಖದ ಅಪಾಯ', ml: 'ചൂട് സാധ്യത', bn: 'তাপপ্রবাহের ঝুঁকি', gu: 'ગરમીનું જોખમ', pa: 'ਗਰਮੀ ਦਾ ਖ਼ਤਰਾ', or: 'ତାତି ଆଶଙ୍କା' },
   windRisk: { en: 'Wind Risk', hi: 'हवा का जोखिम', mr: 'वाऱ्याचा धोका', ta: 'காற்று ஆபத்து', te: 'గాలి ప్రమాదం', kn: 'ಗಾಳಿ ಅಪಾಯ', ml: 'കാറ്റ് സാധ്യത', bn: 'বাতাসের ঝুঁকি', gu: 'પવનનું જોખમ', pa: 'ਹਵਾ ਦਾ ਖ਼ਤਰਾ', or: 'ପବନ ଆଶଙ୍କା' },
@@ -3867,7 +3932,7 @@ export const EXTRA_UI_PHRASES: Record<string, Partial<Record<LanguageCode, strin
  */
 export function translatePhrase(key: string, lang: LanguageCode): string {
   if (!key) return '';
-  const phrase = UI_PHRASES?.[key] || EXTRA_UI_PHRASES?.[key];
+  const phrase = UI_PHRASES?.[key];
   if (phrase) {
     if (phrase[lang]) {
       return phrase[lang]!;
@@ -3876,7 +3941,8 @@ export function translatePhrase(key: string, lang: LanguageCode): string {
       return phrase.en!;
     }
   }
-  return key;
+  // Convert camelCase or snake_case key to human readable words if not found
+  return key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase()).trim();
 }
 
 const LOCALE_MAP: Record<LanguageCode, string> = {

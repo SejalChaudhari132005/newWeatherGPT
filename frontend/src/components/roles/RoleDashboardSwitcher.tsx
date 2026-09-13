@@ -1,11 +1,11 @@
 import React from 'react';
-import { Home, Sprout, Fish, Plane } from 'lucide-react';
+import { Home, Sprout, Fish, Plane, ShieldAlert, Building2, FlaskConical } from 'lucide-react';
 import { useUI, ActiveTab } from '../../context/UIContext';
 import { useWeather } from '../../context/WeatherContext';
 import { useAuthContext } from '../../context/AuthContext';
 
 interface RoleDashboardSwitcherProps {
-  currentDashboard: 'home' | 'live' | 'farmer' | 'fisher' | 'aviation';
+  currentDashboard: 'home' | 'live' | 'farmer' | 'fisher' | 'aviation' | 'disaster' | 'urban';
   className?: string;
   variant?: 'banner' | 'pills' | 'cards';
   onNavigate?: (tab: ActiveTab) => void;
@@ -64,6 +64,20 @@ export const RoleDashboardSwitcher: React.FC<RoleDashboardSwitcherProps> = ({
       label: 'AVIATION & AIRPORTS',
       icon: Plane,
     },
+    {
+      id: 'disaster' as ActiveTab,
+      roleKey: 'disaster_manager',
+      roleName: 'Disaster Manager',
+      label: 'DISASTER OPS',
+      icon: ShieldAlert,
+    },
+    {
+      id: 'urban' as ActiveTab,
+      roleKey: 'urban_planner',
+      roleName: 'Urban Planner',
+      label: 'URBAN PLANNING',
+      icon: Building2,
+    },
   ];
 
   let filteredDashboards = allDashboards;
@@ -75,6 +89,10 @@ export const RoleDashboardSwitcher: React.FC<RoleDashboardSwitcherProps> = ({
       filteredDashboards = allDashboards.filter((d) => d.id === 'home' || d.id === 'fisher');
     } else if (rawRole === 'aviation' || rawRole === 'pilot' || rawRole === 'dispatcher') {
       filteredDashboards = allDashboards.filter((d) => d.id === 'home' || d.id === 'aviation');
+    } else if (rawRole === 'disaster_manager' || rawRole === 'disaster') {
+      filteredDashboards = allDashboards.filter((d) => d.id === 'home' || d.id === 'disaster');
+    } else if (rawRole === 'urban_planner' || rawRole === 'urban' || rawRole === 'planner') {
+      filteredDashboards = allDashboards.filter((d) => d.id === 'home' || d.id === 'urban');
     } else {
       filteredDashboards = allDashboards.filter((d) => d.id === 'home');
     }

@@ -682,18 +682,18 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onOpenChatWithPrompt, on
       <div className="gov-panel">
         <div className="h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#006B3C]" />
         <div className="p-3.5 sm:p-4 space-y-2">
-          <div className="flex items-center justify-between gap-2 border-b border-[#D6DCE1] pb-2">
-            <div className="flex items-center gap-2">
-              <span className="gov-badge gov-badge-danger flex items-center gap-1 text-[10px]">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D6DCE1] pb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="gov-badge gov-badge-danger flex items-center gap-1 text-[10px] shrink-0">
                 <ShieldAlert className="w-3 h-3" />
                 <span>{translatePhrase('liveEarlyWarning', language) || 'EARLY WARNING BULLETIN'}</span>
               </span>
-              <span className="text-[11px] text-[#5B6770] font-semibold hidden sm:inline">
+              <span className="text-[11px] text-[#5B6770] font-semibold hidden sm:inline truncate">
                 {isFisher ? 'Coastal Maritime Telemetry' : 'National Weather & Disaster Information'}
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 ml-auto">
               <RealtimeStatusIndicator
                 status={realtimeStatus}
                 onClick={onOpenRealtimeControl}
@@ -955,7 +955,17 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onOpenChatWithPrompt, on
                       title="Ask AI Assistant about this alert"
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-[#1D5F91]" />
-                      <span>{isFisher ? (language === 'mr' ? 'सागरी AI ला विचारा' : language === 'hi' ? 'समुद्री AI से पूछें' : 'Ask Marine AI') : translatePhrase('askAgriAI', language) || 'Agromet Query'}</span>
+                      <span>
+                        {isFisher
+                          ? (language === 'mr' ? 'सागरी AI ला विचारा' : language === 'hi' ? 'समुद्री AI से पूछें' : 'Ask Marine AI')
+                          : userRoleKey === 'disaster_manager' || userRoleKey === 'disaster'
+                          ? (language === 'mr' ? 'आपत्ती EOC ला विचारा' : language === 'hi' ? 'आपदा EOC से पूछें' : 'Ask Disaster EOC')
+                          : userRoleKey === 'urban_planner' || userRoleKey === 'urban'
+                          ? (language === 'mr' ? 'महानगर AI ला विचारा' : language === 'hi' ? 'नगर निगम AI से पूछें' : 'Ask Municipal AI')
+                          : isFarmer
+                          ? (translatePhrase('askAgriAI', language) || 'Agromet Query')
+                          : (translatePhrase('askAssistantAlert', language) || 'Ask Assistant')}
+                      </span>
                     </button>
 
                     <div className="flex items-center gap-2">

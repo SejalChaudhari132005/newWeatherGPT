@@ -27,13 +27,14 @@ export const RoleBasedAdvisoryCard: React.FC = () => {
         </div>
 
         <button
-          onClick={() => {
             if (activeRole.toLowerCase() === 'farmer') {
               setActiveTab('farmer');
             } else if (activeRole.toLowerCase() === 'fisher') {
               setActiveTab('fisher');
             } else if (activeRole.toLowerCase() === 'aviation') {
               setActiveTab('aviation');
+            } else if (activeRole.toLowerCase().includes('disaster')) {
+              setActiveTab('disaster');
             } else {
               setActiveTab('advisories');
             }
@@ -47,6 +48,8 @@ export const RoleBasedAdvisoryCard: React.FC = () => {
               ? '🎣 My Sea'
               : activeRole.toLowerCase() === 'aviation'
               ? '✈️ My Operations'
+              : activeRole.toLowerCase().includes('disaster')
+              ? '🚨 Disaster Ops'
               : 'All Advisories'}
           </span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -72,7 +75,7 @@ export const RoleBasedAdvisoryCard: React.FC = () => {
                 } else if (r.id === 'Citizen') {
                   setActiveTab('home');
                 } else if (r.id === 'Disaster Manager') {
-                  setActiveTab('advisories');
+                  setActiveTab('disaster');
                 }
               }}
               className={`min-w-[130px] sm:min-w-0 snap-center p-3 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer shrink-0 sm:shrink ${

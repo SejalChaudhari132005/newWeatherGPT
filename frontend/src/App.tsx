@@ -45,6 +45,10 @@ import { FishFinderPage } from './pages/FishFinderPage';
 import { SkyRoutePage } from './pages/SkyRoutePage';
 import { EmergencyPage } from './pages/EmergencyPage';
 import { WeatherLabPage } from './pages/WeatherLabPage';
+import { DisasterWeatherPage } from './pages/DisasterWeatherPage';
+import { DisasterDashboardPage } from './pages/DisasterDashboardPage';
+import { UrbanPlannerWeatherPage } from './pages/UrbanPlannerWeatherPage';
+import { UrbanPlannerDashboardPage } from './pages/UrbanPlannerDashboardPage';
 import { Loader2 } from 'lucide-react';
 
 import { ChatPage } from './pages/ChatPage';
@@ -107,10 +111,26 @@ const MainAppContent: React.FC = () => {
     const isFisher = currentRole === 'fisher' || currentRole === 'fisherman';
     const isAviation = currentRole.includes('aviation') || currentRole === 'pilot' || currentRole === 'dispatcher';
     const isResearcher = currentRole === 'researcher';
+    const isDisaster = currentRole.includes('disaster');
+    const isUrban = currentRole.includes('urban') || currentRole.includes('planner');
 
     switch (activeTab) {
       case 'home':
       case 'live': {
+        if (isDisaster) {
+          return (
+            <DisasterWeatherPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            />
+          );
+        }
+        if (isUrban) {
+          return (
+            <UrbanPlannerWeatherPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            />
+          );
+        }
         if (isResearcher) {
           return <WeatherLabPage />;
         }
@@ -157,6 +177,12 @@ const MainAppContent: React.FC = () => {
               } else if (page === 'researcher' || page === 'weatherlab') {
                 setActiveRole('researcher' as any);
                 setActiveTab('weatherlab');
+              } else if (page === 'disaster' || page === 'disaster_manager') {
+                setActiveRole('Disaster Manager' as any);
+                setActiveTab('disaster');
+              } else if (page === 'urban' || page === 'urban_planner') {
+                setActiveRole('Urban Planner' as any);
+                setActiveTab('urban');
               }
             }}
           />
@@ -222,7 +248,21 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'advisories':
-        if (isResearcher) {
+        if (isDisaster) {
+          return (
+            <DisasterDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
+            />
+          );
+        } else if (isUrban) {
+          return (
+            <UrbanPlannerDashboardPage
+              onOpenChatWithPrompt={handleOpenChatWithPrompt}
+              onBack={() => setActiveTab('home')}
+            />
+          );
+        } else if (isResearcher) {
           return <WeatherLabPage />;
         } else if (isFarmer) {
           return (
@@ -271,6 +311,22 @@ const MainAppContent: React.FC = () => {
             onBack={() => setActiveTab('home')}
           />
         );
+      case 'disaster':
+      case 'disaster_manager':
+        return (
+          <DisasterDashboardPage
+            onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            onBack={() => setActiveTab('home')}
+          />
+        );
+      case 'urban':
+      case 'urban_planner':
+        return (
+          <UrbanPlannerDashboardPage
+            onOpenChatWithPrompt={handleOpenChatWithPrompt}
+            onBack={() => setActiveTab('home')}
+          />
+        );
       case 'alerts':
         return <AlertsPage onOpenChatWithPrompt={handleOpenChatWithPrompt} />;
       case 'climate':
@@ -295,6 +351,10 @@ const MainAppContent: React.FC = () => {
                   setActiveTab('fisher');
                 } else if (profile?.role?.toLowerCase() === 'aviation' || activeRole?.toLowerCase() === 'aviation') {
                   setActiveTab('aviation');
+                } else if (profile?.role?.toLowerCase()?.includes('disaster') || activeRole?.toLowerCase()?.includes('disaster')) {
+                  setActiveTab('disaster');
+                } else if (profile?.role?.toLowerCase()?.includes('urban') || activeRole?.toLowerCase()?.includes('urban')) {
+                  setActiveTab('urban');
                 } else {
                   setActiveTab('advisories');
                 }
@@ -306,10 +366,13 @@ const MainAppContent: React.FC = () => {
                 setActiveTab('fisher');
               } else if (page === 'aviation') {
                 setActiveTab('aviation');
+              } else if (page === 'disaster' || page === 'disaster_manager') {
+                setActiveTab('disaster');
+              } else if (page === 'urban' || page === 'urban_planner') {
+                setActiveTab('urban');
               }
             }}
           />
-
         );
     }
   };

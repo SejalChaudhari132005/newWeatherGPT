@@ -17,7 +17,9 @@ export type ActiveTab =
   | 'aviation'
   | 'skyroute'
   | 'weatherlab'
-  | 'researcher';
+  | 'researcher'
+  | 'disaster'
+  | 'urban';
 
 interface UIContextType {
   activeTab: ActiveTab;

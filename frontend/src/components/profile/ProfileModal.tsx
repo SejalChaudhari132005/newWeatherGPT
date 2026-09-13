@@ -72,7 +72,7 @@ const ROLES: RoleItem[] = [
     id: 'disaster_manager',
     title: 'Disaster Manager',
     roleName: 'Disaster Manager',
-    targetTab: 'alerts',
+    targetTab: 'home',
     icon: ShieldAlert,
   },
   {

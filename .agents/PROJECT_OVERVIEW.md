@@ -3,22 +3,33 @@
 **Problem Statement ID:** 26068  
 **Title:** WeatherGPT: Conversational AI for Weather Forecasting, Alerts, and Climate Information  
 **Organization:** Ministry of Earth Sciences (MoES) — India Meteorological Department (IMD)  
-**Category:** Software | **Theme:** Disaster Management  
+**Category:** Software | **Theme:** Disaster Management & Role-Aware Decision Intelligence  
 
 ---
 
 ## 1. Executive Summary & Problem Alignment
 
-Weather information in India has traditionally been distributed through multiple portals, bulletins, satellite products, and forecast systems, making it difficult for common citizens, farmers, fishermen, disaster responders, and municipal planners to obtain instant, actionable guidance.
+Weather information in India has traditionally been distributed through disparate bulletins, static portals, numerical model outputs, and fragmented advisories. This creates high cognitive friction for varied societal actors: everyday citizens, farmers, fishermen, aviation dispatchers, scientific researchers, emergency disaster managers, and municipal urban planners.
 
-**WeatherGPT** addresses this challenge by providing a unified, conversational, AI-driven weather intelligence platform tailored specifically for Indian geography, diverse societal roles, and Indian regional languages.
+**WeatherGPT** resolves this challenge with an authoritative, conversational, multi-agent AI weather decision intelligence platform tailored specifically for Indian geography, critical economic sectors, and regional languages.
+
+### Core Architecture Axiom:
+> **"One Weather Dataset. One Geolocation. Different Decisions."**  
+> WeatherGPT transforms raw NWP forecasts (temperature, rain, winds, humidity, pressure, CAPE) into tailored, deterministic operational advice matching the user's operational reality.
 
 ### Core Capabilities:
-1. **Authoritative Meteorological Ingestion:** Direct client for India Meteorological Department (IMD) official alerts, observations, and diagnostics alongside global Numerical Weather Prediction (NWP) model feeds (ECMWF, GFS, Open-Meteo).
-2. **Deterministic Agentic Reasoning:** Multi-agent pipeline with strict grounding to eliminate LLM hallucinations (temperatures, rainfall, or warnings are never fabricated).
-3. **National Multilingual & Voice Stack:** Native integration with Government of India's **BHASHINI (National Language Translation Mission)** for ASR, NMT, and TTS in 11+ Indian languages.
-4. **Spatial & Route Intelligence:** Highway corridor weather risk engine, departure time comparator, and interactive Leaflet GIS Doppler radar layers.
-5. **Role-Tailored Decision Support:** Hyperlocal advisories tailored to everyday citizens, agricultural operations, marine/coastal safety, travel planning, and emergency disaster scenarios.
+1. **Authoritative Meteorological Ingestion:** Direct client for India Meteorological Department (IMD) official alerts, radar observations, and bulletins alongside global Numerical Weather Prediction (NWP) model feeds (ECMWF, GFS, ICON, Open-Meteo).
+2. **Deterministic Agentic Reasoning:** Grounded multi-agent pipeline enforcing zero LLM hallucination on physical values (temperatures, precipitation, runway bearings, wave heights, and flood risks).
+3. **National Multilingual & Voice Stack:** MeitY **BHASHINI (National Language Translation Mission)** integration for ASR (Speech-to-Text), NMT (Machine Translation), and TTS (Text-to-Speech) in 11+ Indian languages.
+4. **Role-Tailored Decision Engines:**
+   - **🌾 Farmer (My Farm):** Spraying wash-off/drift risk, $\text{ET}_0$ soil moisture balance, hourly farming windows, and pest infection risks.
+   - **🎣 Fisherman (My Sea):** Significant wave heights $H_s$, swell periods, safe sailing clearance, and return-time deterioration cutoff deadlines.
+   - **✈️ Aviation (My Operations):** Magnetic runway crosswind/headwind trigonometry across $360^\circ$, ICAO METAR/TAF tokenized decoding, and VFR/MVFR/IFR/LVP categories.
+   - **🔬 Researcher (WeatherLab):** Multi-model NWP intercomparison (GFS vs ECMWF vs IMD/WRF), 30-year climatological baseline anomalies (1991–2020), NetCDF/GRIB scientific datasets, and academic PDF/JSON report generation.
+   - **🚨 Disaster Manager (Situational Intelligence):** Severe hazard triage, rainfall intensity, urban flood vulnerability, lightning tracking, and evacuation zone coordination.
+   - **🌆 Urban Planner (Urban Weather Intelligence):** Microclimate heat islands, surface runoff/waterlogging propensity, drainage network load, and critical infrastructure exposure.
+   - **👤 Citizen:** Daily umbrella necessity, thermal/UV comfort, commute safety, and AQI health advisories.
+5. **Real-Time Live Event Telemetry:** WebSocket-powered bidirectional streaming (`/ws/weather`) for instantaneous storm, lightning, and marine warning broadcasts.
 
 ---
 
@@ -30,37 +41,54 @@ graph TD
     
     subgraph FastAPI Backend ["Backend Layer (FastAPI)"]
         Router["API Router (/api)"]
+        WSServer["WebSocket Telemetry Engine (/ws/weather)"]
         
         subgraph Multi-Agent Core ["Multi-Agent Pipeline"]
             Orchestrator["OrchestratorAgent"]
-            Intent["IntentAgent"]
-            Fusion["WeatherFusionAgent"]
-            RoleRouter["RoleRouter"]
-            CitizenAgent["CitizenAgent / CitizenAdvisoryAgent"]
-            LLM["WeatherChatAgent (Groq / OpenAI / Gemini / Fallback)"]
-            Validator["ResponseValidator"]
+            Intent["IntentAgent (Multi-Role Intent Classifier)"]
+            Fusion["WeatherFusionAgent (IMD + NWP Ensemble)"]
+            RoleRouter["RoleRouter (Dynamic Persona Dispatcher)"]
+            
+            subgraph Specialized Role Agents ["Specialized Intelligence Agents"]
+                CitizenAgent["CitizenAgent"]
+                FarmerAgent["FarmerAgent"]
+                FishermanAgent["FishermanAgent"]
+                AviationAgent["AviationAgent"]
+                ResearcherAgent["ResearcherAgent / WeatherLab"]
+                DisasterAgent["DisasterAgent"]
+                UrbanAgent["UrbanPlannerAgent"]
+            end
+            
+            LLM["WeatherChatAgent (Groq / Gemini / OpenAI / Fallback)"]
+            Validator["ResponseValidator (Grounding & Anti-Hallucination)"]
         end
         
         subgraph Domain Engines ["Domain & Intelligence Engines"]
-            AlertEngine["CitizenAlertEngine (Multi-Hazard Rules)"]
-            RouteEngine["RouteWeatherService & RouteRiskEngine"]
+            AgriEngine["AgriWeatherService (FAO-56 ET0, Spray Risk)"]
+            MarineEngine["MarineWeatherService (Hydrodynamics, Tides, Return Cutoff)"]
+            AviationEngine["AviationWeatherService (Runway Wind Resolver, METAR/TAF)"]
+            ResearcherEngine["ResearcherService (NWP Intercomparison, Climate Baseline)"]
+            DisasterEngine["DisasterService & Situational Risk Engine"]
+            UrbanEngine["UrbanPlannerService & Heat Island Engine"]
+            AlertEngine["CitizenAlertEngine (Multi-Hazard Deterministic Rules)"]
+            RouteEngine["RouteWeatherService & RouteRiskEngine (OSRM)"]
             AQEngine["AirQualityEngine & CAMS Service"]
-            RadarEngine["RadarService & GIS Tile Providers"]
-            BhashiniSvc["BhashiniService (ASR / NMT / TTS)"]
+            BhashiniSvc["BhashiniService (MeitY ULCA ASR/NMT/TTS)"]
         end
         
         subgraph Data Providers ["External Ingestion Providers"]
-            IMD["IMD Client (Official API Gateway + Caching)"]
-            OpenMeteo["Open-Meteo (NWP Ensemble Feeds)"]
-            Geo["Google Geocoding & Nominatim"]
+            IMD["IMD Official API Gateway (Obs / Radar / Bulletins)"]
+            OpenMeteo["Open-Meteo (ECMWF, GFS, ICON, Marine, CAMS)"]
+            Geo["Google Geocoding & Nominatim Spatial Index"]
         end
     end
     
     subgraph Persistence ["Persistence Layer"]
-        Supabase[("Supabase PostgreSQL + RLS")]
+        Supabase[("Supabase PostgreSQL + Row Level Security (RLS)")]
     end
 
     Client <-->|REST / JSON| Router
+    Client <-->|WebSocket Stream| WSServer
     Router --> Orchestrator
     Router --> DomainEngines
     Orchestrator --> Intent
@@ -68,8 +96,8 @@ graph TD
     Fusion --> IMD
     Fusion --> OpenMeteo
     Orchestrator --> RoleRouter
-    RoleRouter --> CitizenAgent
-    RoleRouter --> LLM
+    RoleRouter --> SpecializedRoleAgents
+    SpecializedRoleAgents --> LLM
     LLM --> Validator
     DomainEngines --> Supabase
     Orchestrator --> Supabase
@@ -78,93 +106,82 @@ graph TD
 
 ---
 
-## 3. Features Implemented Till Now
+## 3. Implemented Role Intelligence Engines & Pages
 
-### 3.1. Conversational AI & Multi-Agent Pipeline
-- **`OrchestratorAgent`:** Coordinates the full pipeline: language discovery, session memory retrieval, location resolution, intent classification, weather intelligence fusion, role routing, and response validation.
-- **`IntentAgent`:** Rule-based and semantic classifier supporting multiple intents:
-  - `CURRENT_WEATHER`, `FORECAST`, `RAIN_INQUIRY`, `TEMPERATURE`, `AIR_QUALITY`
-  - `ROUTE_WEATHER_ANALYSIS`, `DEPARTURE_TIME_COMPARISON`
-  - `SEVERE_WEATHER_ALERT`, `GENERAL_WEATHER_ADVISORY`, `CLIMATE_ANALYSIS`
-  - Relative location parsing ("near me", "here") and conversation context carry-over.
-- **Strict Location Resolution (5-Tier Priority):**
-  1. Explicit query override (e.g., *"weather in Shimla"*)
-  2. GPS / Client-selected location
-  3. Prior follow-up conversation entity
-  4. User Profile saved coordinates in Supabase
-  5. Interactive user prompt (Strictly forbids hardcoded Mumbai fallbacks).
-- **Anti-Hallucination & Response Validation:**
-  - LLM prompts are strictly constrained to pre-computed meteorological telemetry.
-  - `ResponseValidator` checks temperatures and precipitation claims against raw model values.
-  - Graceful degradation: Deterministic template generation if LLM APIs are unreachable.
+### 3.1. 👤 Everyday Citizen
+- **Purpose:** Daily living, commute, outdoor exercise, thermal comfort, umbrella necessity.
+- **Frontend Pages:** `DashboardPage.tsx`, `AlertsPage.tsx`, `AirQualityPage.tsx`, `TravelPage.tsx`, `MapPage.tsx`.
+- **Key Features:** Hyperlocal weather card, Dark/Light mode AQI split cards, multi-hazard alerts banner, OSRM route weather corridor, and interactive Doppler radar.
 
-### 3.2. Official IMD Integration & NWP Data Fusion
-- **`IMDClient` & `IMDWeatherService`:** Production HTTP client with header authentication, rate-limiting, error categorization (`available`, `auth_error`, `rate_limited`, `timeout`), and caching.
-- **`IMDLocationMapper`:** Maps coordinates to official IMD station IDs, sub-divisions, and districts.
-- **`WeatherFusionAgent`:** Merges official IMD bulletin warnings with high-resolution NWP models (Open-Meteo ensemble: GFS/ECMWF), calculating an explainable **Confidence Score** and **Data Freshness** timestamp.
+### 3.2. 🌾 Farmer (My Farm)
+- **Purpose:** Agronomic decision support, chemical spraying windows, crop disease prevention.
+- **Frontend Pages:** `FarmerDashboardPage.tsx`, `FarmerWeatherPage.tsx`, `FarmRoutePage.tsx`.
+- **Key Components:**
+  - `CropStageSelector.tsx`: Crop type (Soybean, Cotton, Wheat, Rice, Sugarcane, Groundnut) and phenological stage.
+  - `FarmingWindowsTimeline.tsx`: Hourly suitability for Spraying, Irrigation, and Harvesting.
+  - `SprayingRiskCard.tsx`: Wash-off vs. wind drift evaluation with Go / Caution / No-Go indicators.
+  - `SoilMoistureGauge.tsx`: Root zone vs. surface moisture balance with FAO-56 $\text{ET}_0$ evapotranspiration.
+  - `PestDiseaseRiskCard.tsx`: Fungal blight, rust, and pest infection risk models with IPM remedies.
+  - `VernacularVoiceButton.tsx`: 1-tap Marathi / Hindi / English audio playback.
 
-### 3.3. Multi-Hazard Early Warning & Alert Engine
-- **`CitizenAlertEngine`:** Evaluates deterministic meteorological thresholds for 7+ hazards:
-  - IMD Red / Orange / Yellow official alerts
-  - Extreme rainfall (>15mm/h) & cloudburst indicators
-  - Thunderstorm, lightning, and squalls
-  - Heatwave & extreme heat indexes
-  - Gale-force winds & high crosswinds
-  - Dense fog & low visibility (<800m)
-  - Flood risk & waterlogging propensity
-- **Deduplication & Persistence:** Deterministic fingerprinting (`hashlib.sha256`) prevents notification fatigue. Stores alerts in Supabase `weather_alerts` table.
-- **Emergency Mode:** High-contrast, streamlined emergency disaster response UI with direct helpline access and immediate safety guidelines.
+### 3.3. 🎣 Fisherman (My Sea)
+- **Purpose:** Coastal and marine safety, hydrodynamic sea state, departure and return-time intelligence.
+- **Frontend Pages:** `FisherDashboardPage.tsx`, `FishermanWeatherPage.tsx`, `FishFinderPage.tsx`.
+- **Key Components:**
+  - `SailingDecisionGauge.tsx`: Safe-to-Sail hero gauge (🟢 Favorable / 🟡 Caution / 🔴 No Departure).
+  - `ReturnTimeTimeline.tsx`: Deterioration curve calculating exact return cutoff hour before dangerous sea conditions develop.
+  - `SeaStateCard.tsx`: Significant Wave Height ($H_s$), Swell Period, Beaufort scale, and ocean currents.
+  - `TideScheduleCard.tsx`: Semi-diurnal high/low tide predictions for Indian ports.
+  - `ZoneRiskCard.tsx`: Near-shore ($0-5\text{ nm}$), Coastal ($5-20\text{ nm}$), Deep-Sea ($>20\text{ nm}$).
+  - `MarineEmergencyCard.tsx`: Indian Coast Guard (1554), Marine Police (1093), VHF Ch 16.
 
-### 3.4. Multilingual Support & BHASHINI Voice Layer
-- **MeitY BHASHINI Integration:** Full pipeline configuration supporting ASR (speech-to-text), NMT (neural translation), and TTS (text-to-speech).
-- **11 Supported Indian Languages:** English (`en`), Hindi (`hi`), Marathi (`mr`), Tamil (`ta`), Telugu (`te`), Kannada (`kn`), Malayalam (`ml`), Bengali (`bn`), Gujarati (`gu`), Punjabi (`pa`), Odia (`or`).
-- **Dynamic Translation Layer:** Translates system responses, dashboard widgets, and alert advisories while preserving meteorological figures, units, and timestamps.
-- **Voice Modal UI:** Voice recording, waveform animation, language toggle, and synthesized audio playback.
+### 3.4. ✈️ Aviation (My Operations)
+- **Purpose:** Flight briefing, aerodrome conditions, crosswind limits, and ICAO METAR/TAF translation.
+- **Frontend Pages:** `AviationDashboardPage.tsx`, `AviationWeatherPage.tsx`, `SkyRoutePage.tsx`.
+- **Key Components:**
+  - `AirportSelector.tsx`: Catalog of Indian international airports (VABB, VIDP, VOBL, VOMM, VAPO, VOHS, VECC, VOCI, VAAH, VOGO) with magnetic runway bearings.
+  - `FlightCategoryBadge.tsx`: VFR, MVFR, IFR, and LVP classifications with ceiling and visibility.
+  - `RunwayCrosswindDial.tsx`: Exact crosswind and headwind vector calculation:
+    $$\text{Crosswind} = V_{\text{wind}} \cdot |\sin(\theta_{\text{wind}} - \theta_{\text{runway}})|$$
+  - `ConversationalBriefingCard.tsx`: 3-hour structured briefing with "Period Requiring Attention".
+  - `MetarTafDecoder.tsx`: Interactive tokenized ICAO string decoder with plain-English toggle.
+  - `AirportComparisonModal.tsx`: Side-by-side landing comparison and enroute corridor analysis.
 
-### 3.5. Weather-Aware Route Intelligence & Travel Planning
-- **`RouteWeatherService` & `RouteRiskEngine`:**
-  - Integrates OSRM highway routing geometry with spatial weather sampling.
-  - Evaluates corridor hazard risk (severe, high, moderate, low).
-  - **Departure Time Comparison:** Compares trip risks at different departure windows (e.g., 6:00 AM vs 9:00 AM vs 12:00 PM) to recommend the safest travel slot.
-  - Travel alert preference subscriptions stored in Supabase.
+### 3.5. 🔬 Researcher (WeatherLab)
+- **Purpose:** Multi-model NWP intercomparison, climatological anomaly tracking, open scientific datasets, and automated research reporting.
+- **Frontend Pages:** `WeatherLabPage.tsx`.
+- **Key Components:**
+  - `NWPModelComparisonPanel.tsx`: Consensus analysis across GFS, ECMWF, IMD/WRF, and ICON.
+  - `ForecastComparisonChart.tsx`: Hourly inter-model variance curves for temperature, precipitation, and wind.
+  - `ClimateAnalyticsCard.tsx`: 30-year climatological baseline (1991–2020) temperature and rainfall anomalies.
+  - `AvailableDatasetsCard.tsx`: Direct downloads for ERA5 Reanalysis, IMD Gridded Rainfall (0.25°), INSAT-3DR Satellite Imagery, and CAMS Air Quality NetCDF/GRIB datasets.
+  - `ResearchReportModal.tsx` & `CreateReportCard.tsx`: Automated synthesis of structured academic reports with statistical confidence, methodology, and citations.
+  - `ResearchAssistantModal.tsx`: Natural language meteorological query assistant strictly grounded in raw physical telemetry.
 
-### 3.6. Air Quality & Environmental Health Intelligence
-- **`AirQualityEngine`:** Ingestion of CAMS / ECMWF atmospheric models via Open-Meteo.
-- **Metrics Tracked:** European AQI, PM2.5, PM10, Nitrogen Dioxide ($\text{NO}_2$), Ozone ($\text{O}_3$), Sulphur Dioxide ($\text{SO}_2$), Carbon Monoxide ($\text{CO}$), and Dust.
-- **Health Advisories:** Differentiated recommendations for general citizens, outdoor exercisers, and sensitive groups (asthma, elderly, children).
+### 3.6. 🚨 Disaster Manager (Situational Weather Intelligence) - *In Implementation*
+- **Visual Identity:** DARK BLUE (`#0A192F` / `#0F243E`) with AMBER/RED Warning Accents.
+- **Core Focus:** Situational awareness, active alerts, extreme rainfall intensity, flood risks, lightning tracking, and vulnerable infrastructure zones.
 
-### 3.7. Interactive GIS Radar & Maps
-- **Leaflet & React-Leaflet Map Suite:**
-  - Precipitation radar layer with time-scrubbing animation controls.
-  - Wind velocity vectors and atmospheric pressure overlays.
-  - Temperature heatmaps and cloud cover density layers.
-  - Active IMD Doppler radar station indicators.
-
-### 3.8. Persona-Based User Management & Onboarding
-- **Multi-Step Onboarding:** Welcome $\rightarrow$ Phone Auth $\rightarrow$ OTP verification $\rightarrow$ Username $\rightarrow$ Persona Role Selection $\rightarrow$ GPS Location Setup.
-- **Role Framework (`RoleRouter`):**
-  - **Citizen:** Live everyday advisories (umbrella necessity, commute safety, clothing, UV/thermal comfort).
-  - **Farmer (Stub & UI):** Agronomic advice, sowing/harvesting conditions, irrigation scheduling.
-  - **Fisherman (Stub & UI):** Marine sea-state, wave heights, coastal wind alerts.
-  - **Disaster Manager / Urban Planner / Aviation (Stubs):** Severe hazard triage and infrastructure resilience.
-- **Supabase Backend:** Complete PostgreSQL schema with Row-Level Security (RLS) for profiles, conversations, messages, alerts, and travel plans.
+### 3.7. 🌆 Urban Planner (Urban Weather Intelligence) - *In Implementation*
+- **Visual Identity:** BLUE / SLATE (`#1E293B` / `#334155` / `#0F172A`).
+- **Core Focus:** City infrastructure resilience, waterlogging/drainage bottleneck hotspots, microclimate urban heat island (UHI) indices, and precipitation peak timing.
 
 ---
 
 ## 4. Problem Statement Compliance Matrix (PS 26068)
 
-| Key Feature / PS Requirement | Implementation Status | Implementation Details & Codebase References |
+| Key Feature / PS Requirement | Status | Implementation Details & Code References |
 | :--- | :---: | :--- |
-| **1. Real-time weather information retrieval** | ✅ **Complete** | Ingests real-time temperature, humidity, wind, pressure, UV index, precipitation from fused IMD & NWP APIs. |
-| **2. Natural language querying for weather forecasts** | ✅ **Complete** | `OrchestratorAgent` + `IntentAgent` + `WeatherChatAgent` support conversational forecasts, follow-ups, and relative queries. |
-| **3. Integration with NWP models (GFS/WRF)** | ✅ **Complete** | Open-Meteo ensemble (GFS, ECMWF, ICON) integrated via `OpenMeteoProvider`; IMD model diagnostics via `IMDClient`. |
-| **4. Extreme weather alerts & early warning** | ✅ **Complete** | `CitizenAlertEngine` with 7+ hazard categories, deterministic severity mapping, and dedicated `EmergencyModeScreen`. |
-| **5. Location-based forecasting & advisories** | ✅ **Complete** | Hyperlocal GPS resolution, geocoding, IMD district mapping, and role-based advisory generators (`CitizenAgent`). |
-| **6. Multilingual support for Indian languages** | ✅ **Complete** | National BHASHINI API integration supporting 11 major Indian languages across chat, alerts, and UI widgets. |
-| **7. Climate trend & historical weather analysis** | 🟡 **Substantial** | `ClimatePage` & `ClimateAnalytics` components with historical trends, anomaly visualization, and `WhatIfSimulator`. |
-| **8. Voice-enabled interaction for rural accessibility** | ✅ **Complete** | BHASHINI ASR/TTS voice layer + browser Web Speech API fallback + full voice modal interface. |
-| **9. Mobile-based conversational AI platform** | ✅ **Complete** | Progressive Web App (PWA) shell with responsive layout, install prompts, service worker, and mobile app-like UI. |
-| **10. Route Weather Intelligence & Decision Support** | ✅ **Complete** | Highway corridor analysis, multi-departure comparison, and travel risk alerts. |
+| **1. Real-time weather information retrieval** | ✅ **Complete** | Fused IMD observations + Open-Meteo NWP ensemble (ECMWF, GFS, ICON) in `open_meteo.py` & `fusion_agent.py`. |
+| **2. Natural language conversational forecasts** | ✅ **Complete** | `OrchestratorAgent` + `IntentAgent` + `WeatherChatAgent` + `role_router.py`. |
+| **3. Multi-Model NWP Integration** | ✅ **Complete** | GFS, ECMWF, IMD WRF/NCUM intercomparison and consensus rating in `researcher_service.py` & `WeatherLabPage.tsx`. |
+| **4. Extreme weather alerts & early warning** | ✅ **Complete** | `CitizenAlertEngine.py` (7+ hazards), `EmergencyModeScreen.tsx`, and real-time WebSocket warning push. |
+| **5. Location-based hyper-local advisories** | ✅ **Complete** | 5-tier coordinate resolver, district mapping, airport runaway azimuths, coastal harbor polygons. |
+| **6. Multilingual support for Indian languages** | ✅ **Complete** | MeitY BHASHINI integration across 11 major Indian languages (`bhashini_service.py`). |
+| **7. Climate trend & historical anomaly analysis** | ✅ **Complete** | 30-year climatological baseline (1991–2020) anomalies in `researcher_service.py` and `ClimatePage.tsx`. |
+| **8. Vernacular Voice interaction** | ✅ **Complete** | BHASHINI ASR/TTS voice layer + browser Web Speech fallback in `useVoice.ts` and `VernacularVoiceButton.tsx`. |
+| **9. Multi-Role Decision Intelligence** | ✅ **Complete** | Dedicated workflows for Citizen, Farmer, Fisherman, Aviation, Researcher, Disaster Manager, Urban Planner. |
+| **10. Route Weather Intelligence** | ✅ **Complete** | Highway corridor analysis, Farm Route, Sky Route, Fish Finder, and departure time optimizer in `route_weather_service.py`. |
 
 ---
 
@@ -174,18 +191,19 @@ graph TD
 Frontend:
   ├── Framework: React 19 (TypeScript) + Vite 8
   ├── Styling: Tailwind CSS v4 + Lucide React Icons
-  ├── Mapping / GIS: Leaflet + React-Leaflet
+  ├── Mapping / GIS: Leaflet + React-Leaflet + Doppler radar tile layers
   ├── Charts & Analytics: Recharts
+  ├── Realtime: WebSocket client (useRealtimeWeather hook)
   └── PWA: Service Worker + Web App Manifest
 
 Backend:
-  ├── Framework: FastAPI (Python 3.11+) + Uvicorn
-  ├── Architecture: Multi-Agent Orchestration Pattern
-  ├── LLM Engine: Groq (LLaMA 3.3 70B Versatile), OpenAI, Gemini, Deterministic Mock
-  ├── Meteorological Ingestion: IMD API Gateway + Open-Meteo Ensemble (ECMWF/GFS/CAMS)
+  ├── Framework: FastAPI (Python 3.11+) + Uvicorn + WebSockets
+  ├── Multi-Agent Architecture: Orchestrator + Intent + Fusion + Role Router + Specialized Agents
+  ├── LLM Grounding: Groq (LLaMA 3.3 70B), Gemini, OpenAI, Deterministic Fallbacks
+  ├── Meteorological Ingestion: IMD API Gateway + Open-Meteo Ensemble (ECMWF / GFS / ICON / CAMS)
   ├── Multilingual & Voice: MeitY BHASHINI (ASR / NMT / TTS) + ISO-639-1 Engine
-  ├── Routing & GIS: OSRM Road Engine + Spatial Coordinate Interpolator
-  └── Database: Supabase PostgreSQL with Row Level Security (RLS)
+  ├── Routing & GIS: OSRM Road Engine + Harbors Geocoding + Aerodrome Runway Bearing Database
+  └── Persistence: Supabase PostgreSQL with Row Level Security (RLS)
 ```
 
 ---
@@ -195,46 +213,59 @@ Backend:
 ```
 newWeatherGPT/
 ├── .agents/
-│   └── PROJECT_OVERVIEW.md         # Full project & problem statement context documentation
+│   ├── PROJECT_OVERVIEW.md             # Full architecture & problem statement documentation
+│   ├── PROGRESS.md                     # Roadmap tracking & milestone progress logs
+│   └── ROLE_BASED_INTELLIGENCE_PLAN.md # Deep decision models & role design specs
 ├── backend/
 │   ├── app/
-│   │   ├── agents/                 # Multi-agent architecture
+│   │   ├── agents/                     # Multi-agent architecture
 │   │   │   ├── orchestrator_agent.py   # Primary orchestrator
-│   │   │   ├── intent_agent.py         # Intent classification & entity extraction
+│   │   │   ├── intent_agent.py         # Multi-role intent classification
 │   │   │   ├── fusion_agent.py         # Meteorological fusion & confidence calculation
+│   │   │   ├── role_router.py          # Dynamic role-based router
 │   │   │   ├── citizen_agent.py        # Everyday citizen advisory generator
-│   │   │   ├── citizen_advisory_agent.py # Rule-based advisory synthesis
-│   │   │   ├── weather_chat_agent.py   # LLM grounding & prompt construction
-│   │   │   └── role_router.py          # Dynamic role-based routing
-│   │   ├── api/routes/             # FastAPI REST endpoints (chat, weather, alerts, radar, etc.)
-│   │   ├── core/                   # Configuration, alert thresholds, errors, logging
-│   │   ├── llm/                    # LLM providers (Groq, OpenAI, Gemini, Mock)
-│   │   ├── providers/              # External weather, air quality, and geocoding providers
-│   │   ├── schemas/                # Pydantic data contracts
-│   │   └── services/               # Business logic (IMD, BHASHINI, route, air quality, radar)
-│   ├── main.py                     # Entrypoint
-│   └── requirements.txt            # Dependencies
+│   │   │   ├── farmer_agent.py         # Agricultural field-to-action agent
+│   │   │   ├── fisherman_agent.py      # Marine hydrodynamics & safe-to-sail agent
+│   │   │   ├── aviation_agent.py       # Aerodrome runway & METAR/TAF flight briefing agent
+│   │   │   ├── research_agent.py       # WeatherLab scientific & NWP consensus agent
+│   │   │   ├── disaster_agent.py       # Disaster management & situational risk agent
+│   │   │   └── weather_chat_agent.py   # LLM grounding & prompt construction
+│   │   ├── api/routes/                 # FastAPI REST & WebSocket endpoints
+│   │   │   ├── roles.py                # Role intelligence APIs (farmer, fisher, aviation)
+│   │   │   ├── researcher.py           # WeatherLab NWP, climate anomalies & reports
+│   │   │   ├── websocket.py            # Real-time WebSocket streaming (/ws/weather)
+│   │   │   ├── chat.py                 # Conversational chat endpoints
+│   │   │   ├── alerts.py               # Multi-hazard alerts endpoints
+│   │   │   └── bhashini.py             # MeitY translation & TTS
+│   │   ├── services/                   # Domain decision engines
+│   │   │   ├── agri_weather_service.py     # FAO-56 ET0, spray risk, farming windows
+│   │   │   ├── marine_weather_service.py   # Wave physics, tides, return cutoff
+│   │   │   ├── aviation_weather_service.py # Runway wind resolver, METAR decoder
+│   │   │   ├── researcher_service.py       # NWP intercomparison, climate baseline
+│   │   │   └── bhashini_service.py         # Vernacular speech & translation
+│   │   └── schemas/                    # Strict Pydantic contracts
+│   │       ├── role_intelligence.py    # Farmer, Fisher, Aviation schemas
+│   │       └── researcher.py           # WeatherLab, NWP, and Report schemas
+│   ├── main.py                         # Application entrypoint
+│   └── requirements.txt                # Python dependencies
 ├── frontend/
 │   ├── src/
-│   │   ├── components/             # UI widgets (chat, dashboard, map, radar, route, alerts, voice)
-│   │   ├── pages/                  # Top-level views (Dashboard, Chat, Alerts, Map, Travel, AirQuality)
-│   │   ├── services/               # API clients (chatService, weatherService, bhashiniService, etc.)
-│   │   ├── context/                # React state providers (Auth, Weather, Location, Language, UI)
-│   │   ├── types/                  # TypeScript interface definitions
-│   │   └── App.tsx                 # Root router & shell
-│   └── package.json                # Frontend dependencies
-├── supabase_schema.sql             # Complete database schema & RLS definitions
-└── .env.example                    # Environment configuration template
+│   │   ├── components/
+│   │   │   ├── roles/                  # Role-specific UI widgets
+│   │   │   │   ├── farmer/             # Farm timelines, spray meters, soil moisture
+│   │   │   │   ├── fisher/             # Sailing gauges, return timelines, sea state
+│   │   │   │   ├── aviation/           # Crosswind dials, METAR decoders, airport selectors
+│   │   │   │   └── researcher/         # NWP comparison panels, dataset catalogs, report modals
+│   │   │   ├── realtime/               # LiveEventPanel, RealtimeStatusIndicator
+│   │   │   └── layout/                 # MobileAppShell, navigation
+│   │   ├── pages/                      # Role master dashboards & specialized views
+│   │   │   ├── DashboardPage.tsx       # Citizen home
+│   │   │   ├── FarmerDashboardPage.tsx # Farmer decision center
+│   │   │   ├── FisherDashboardPage.tsx # Fisherman decision center
+│   │   │   ├── AviationDashboardPage.tsx # Aviation flight ops center
+│   │   │   └── WeatherLabPage.tsx      # Researcher WeatherLab workspace
+│   │   ├── services/                   # Frontend API clients
+│   │   └── types/                      # TypeScript data contracts
+│   └── package.json                    # Frontend dependencies
+└── supabase_schema.sql                 # PostgreSQL database schema & RLS policies
 ```
-
----
-
-## 7. Recommended Next Steps for Complete Production Readiness
-
-1. **Deepen Agronomic & Marine Logic for Stubs:**
-   - Expand `farmer_agent.py` with crop growth stages (Kharif/Rabi), soil moisture deficit calculations, and pesticide spray advisories.
-   - Expand `fisherman_agent.py` with INCOIS (Indian National Centre for Ocean Information Services) high wave alerts and potential fishing zone (PFZ) data.
-2. **Direct WIS 2.0 / MQTT Streaming:**
-   - Integrate World Meteorological Organization (WMO) WIS 2.0 / MQTT broker for instantaneous sub-second warning pushes.
-3. **Advanced Offline & Low-Bandwidth Caching:**
-   - Enable IndexedDB caching on the PWA frontend for offline viewing of last-synced forecasts in remote rural regions.

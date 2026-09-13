@@ -17,6 +17,8 @@ import {
   Navigation,
   FlaskConical,
   Layers,
+  ShieldAlert,
+  Building2,
 } from 'lucide-react';
 import { useUI, ActiveTab } from '../../context/UIContext';
 import { useWeather } from '../../context/WeatherContext';
@@ -48,6 +50,8 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
   const isFisher = roleKey === 'fisher' || roleKey === 'fisherman';
   const isAviation = roleKey.includes('aviation') || roleKey === 'pilot' || roleKey === 'dispatcher';
   const isResearcher = roleKey === 'researcher';
+  const isDisaster = roleKey.includes('disaster');
+  const isUrban = roleKey.includes('urban') || roleKey.includes('planner');
 
   // Real-time WebSocket hook
   const { status: realtimeStatus, latestEvent } = useRealtimeWeather({
@@ -90,7 +94,11 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
     { id: 'home', label: translatePhrase('weather', language), icon: CloudSun },
     {
       id: 'advisories',
-      label: isResearcher
+      label: isDisaster
+        ? 'Disaster Ops'
+        : isUrban
+        ? 'Urban Planning'
+        : isResearcher
         ? 'WeatherLab'
         : isAviation
         ? (language === 'mr' ? 'उड्डाण सल्लागार' : language === 'hi' ? 'उड़ान सलाहकार' : 'Flight Advisory')
@@ -99,7 +107,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
         : isFarmer
         ? translatePhrase('myFarm', language)
         : translatePhrase('airQuality', language),
-      icon: isResearcher ? FlaskConical : isAviation ? Plane : isFisher ? Anchor : isFarmer ? Sprout : Activity,
+      icon: isDisaster ? ShieldAlert : isUrban ? Building2 : isResearcher ? FlaskConical : isAviation ? Plane : isFisher ? Anchor : isFarmer ? Sprout : Activity,
     },
     { id: 'ask', label: 'WeatherGPT', icon: MessageSquare },
     { id: 'alerts', label: translatePhrase('alerts', language), icon: AlertTriangle },
@@ -152,7 +160,11 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
                     </span>
                   </div>
                   <span className="text-[9px] font-bold text-[#5B6770] truncate">
-                    {isResearcher
+                    {isUrban
+                      ? 'National Urban Climatology & Infrastructure Service'
+                      : isDisaster
+                      ? 'National Disaster Management Authority (NDMA)'
+                      : isResearcher
                       ? 'National Atmospheric Research & Climatology Center'
                       : isAviation
                       ? 'IMD / DGCA Aviation Meteorological Service'
