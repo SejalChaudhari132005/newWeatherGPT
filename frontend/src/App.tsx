@@ -312,7 +312,7 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'disaster':
-      case 'disaster_manager':
+      case 'disaster_manager' as any:
         return (
           <DisasterDashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}
@@ -320,7 +320,7 @@ const MainAppContent: React.FC = () => {
           />
         );
       case 'urban':
-      case 'urban_planner':
+      case 'urban_planner' as any:
         return (
           <UrbanPlannerDashboardPage
             onOpenChatWithPrompt={handleOpenChatWithPrompt}

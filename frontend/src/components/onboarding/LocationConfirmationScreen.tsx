@@ -3,6 +3,7 @@ import { MapPin, Navigation, Check, Edit2, Sparkles } from 'lucide-react';
 import { useLocation } from '../../hooks/useLocation';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
+import { OnboardingHeader } from '../common/OnboardingHeader';
 
 export const LocationConfirmationScreen: React.FC = () => {
   const { location, openSelector } = useLocation();
@@ -25,31 +26,36 @@ export const LocationConfirmationScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative font-['Arimo']">
       <div className="w-full max-w-md bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between min-h-[85vh] sm:min-h-[520px] text-center transition-all">
-        <div className="pt-4 space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-            <span>Location Confirmed</span>
-          </div>
+        {/* Top Header with WeatherGPT Logo */}
+        <div>
+          <OnboardingHeader onBack={() => goToStep('LOCATION')} badge="Location Confirmation" />
 
-          <div className="my-4 inline-flex p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-md text-sky-600 animate-float">
-            <MapPin className="w-14 h-14" />
-          </div>
+          <div className="pt-2 space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+              <span>Location Confirmed</span>
+            </div>
 
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-            📍 {primaryTitle}
-          </h2>
+            <div className="my-4 inline-flex p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-md text-sky-600 animate-float">
+              <MapPin className="w-14 h-14" />
+            </div>
 
-          <p className="text-sm font-bold text-slate-500">
-            {subtitle}
-          </p>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              📍 {primaryTitle}
+            </h2>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600">
-            <Navigation className="w-3.5 h-3.5 text-sky-600" />
-            <span>{isGps ? 'Detected from current GPS / network location' : 'Selected manually'}</span>
-          </div>
+            <p className="text-sm font-bold text-slate-500">
+              {subtitle}
+            </p>
 
-          <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100/80 text-xs font-semibold text-sky-900 max-w-xs mx-auto my-3">
-            WeatherGPT will personalize weather intelligence for this exact location.
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600">
+              <Navigation className="w-3.5 h-3.5 text-sky-600" />
+              <span>{isGps ? 'Detected from current GPS / network location' : 'Selected manually'}</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100/80 text-xs font-semibold text-sky-900 max-w-xs mx-auto my-3">
+              WeatherGPT will personalize weather intelligence for this exact location.
+            </div>
           </div>
         </div>
 

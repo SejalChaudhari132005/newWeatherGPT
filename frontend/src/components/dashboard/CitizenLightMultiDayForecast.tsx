@@ -23,40 +23,45 @@ export const CitizenLightMultiDayForecast: React.FC<Props> = ({
 }) => {
   const { language } = useLanguage();
 
-  const getLocalizedDay = (idx: number, weekdayEn: string): string => {
+  const getLocalizedDay = (idx: number, dateObj: Date): string => {
     if (idx === 0) {
-      return language === 'mr' ? 'आज' : language === 'hi' ? 'आज' : 'Today';
+      return language === 'mr' ? 'आज' : language === 'hi' ? 'आज' : 'TODAY';
     }
     if (idx === 1) {
-      return language === 'mr' ? 'उद्या' : language === 'hi' ? 'कल' : 'Tomorrow';
+      return language === 'mr' ? 'उद्या' : language === 'hi' ? 'कल' : 'TOMORROW';
     }
-    const weekdayMap: Record<string, Record<string, string>> = {
-      Mon: { mr: 'सोम', hi: 'सोम', en: 'Mon' },
-      Tue: { mr: 'मंगळ', hi: 'मंगल', en: 'Tue' },
-      Wed: { mr: 'बुध', hi: 'बुध', en: 'Wed' },
-      Thu: { mr: 'गुरु', hi: 'गुरु', en: 'Thu' },
-      Fri: { mr: 'शुक्र', hi: 'शुक्र', en: 'Fri' },
-      Sat: { mr: 'शनि', hi: 'शनि', en: 'Sat' },
-      Sun: { mr: 'रवि', hi: 'रवि', en: 'Sun' },
-    };
-    return weekdayMap[weekdayEn]?.[language] || weekdayEn;
+
+    const dayIndex = dateObj.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const enDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const mrDays = ['रवि', 'सोम', 'मंगळ', 'बुध', 'गुरु', 'शुक्र', 'शनि'];
+    const hiDays = ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि'];
+
+    if (language === 'mr') return mrDays[dayIndex];
+    if (language === 'hi') return hiDays[dayIndex];
+    return enDays[dayIndex];
   };
 
   const formatDayLabel = (item?: WeatherDailyItem, idx: number = 0): { dateStr: string; dayTag: string } => {
-    const dateObj = new Date();
-    dateObj.setDate(dateObj.getDate() + idx);
+    // Current real-time local date
+    const targetDate = new Date();
+    targetDate.setHours(12, 0, 0, 0); // Midday prevents UTC boundary shift
 
-    if (item?.date) {
-      const parsed = new Date(item.date);
-      if (!isNaN(parsed.getTime())) {
-        dateObj.setTime(parsed.getTime());
-      }
+    if (item?.date && /^\d{4}-\d{2}-\d{2}/.test(item.date)) {
+      const parts = item.date.slice(0, 10).split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      targetDate.setFullYear(y, m, d);
+    } else {
+      targetDate.setDate(targetDate.getDate() + idx);
     }
 
-    const dayNum = dateObj.getDate();
-    const monthName = dateObj.toLocaleDateString(language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-US', { month: 'short' });
-    const weekdayEn = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayTag = getLocalizedDay(idx, weekdayEn);
+    const dayNum = targetDate.getDate();
+    const monthName = targetDate.toLocaleDateString(
+      language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-US',
+      { month: 'short' }
+    );
+    const dayTag = getLocalizedDay(idx, targetDate);
 
     return {
       dateStr: `${dayNum} ${monthName}`,
@@ -67,18 +72,18 @@ export const CitizenLightMultiDayForecast: React.FC<Props> = ({
   const renderWeatherIcon = (conditionStr: string = '') => {
     const c = conditionStr.toLowerCase();
     if (c.includes('thunder') || c.includes('lightning') || c.includes('storm')) {
-      return <CloudLightning className="w-4 h-4 text-purple-700" />;
+      return <CloudLightning className="w-4 h-4 text-purple-700 shrink-0" />;
     }
     if (c.includes('rain') || c.includes('drizzle') || c.includes('shower')) {
-      return <CloudRain className="w-4 h-4 text-[#1D5F91]" />;
+      return <CloudRain className="w-4 h-4 text-[#1D5F91] shrink-0" />;
     }
     if (c.includes('partly') || c.includes('scattered')) {
-      return <CloudSun className="w-4 h-4 text-[#B7791F]" />;
+      return <CloudSun className="w-4 h-4 text-[#B7791F] shrink-0" />;
     }
     if (c.includes('cloud') || c.includes('overcast')) {
-      return <Cloud className="w-4 h-4 text-[#5B6770]" />;
+      return <Cloud className="w-4 h-4 text-[#5B6770] shrink-0" />;
     }
-    return <Sun className="w-4 h-4 text-[#B7791F]" />;
+    return <Sun className="w-4 h-4 text-[#B7791F] shrink-0" />;
   };
 
   const displayList = daily && daily.length > 0 ? daily.slice(0, 7) : [];
@@ -116,12 +121,16 @@ export const CitizenLightMultiDayForecast: React.FC<Props> = ({
               return (
                 <tr key={idx} className={idx === 0 ? 'bg-[#F0FDF4]/50' : ''}>
                   {/* Day Label */}
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2 whitespace-nowrap">
-                    <div className="flex items-center gap-1 sm:gap-1.5">
+                  <td className="px-2 py-2 sm:px-3 sm:py-2.5 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <span className="font-bold text-[#1F2933]">{dateStr}</span>
                       <span
-                        className={`gov-badge text-[9px] sm:text-[10px] px-1 py-0.5 ${
-                          idx === 0 ? 'gov-badge-success' : 'gov-badge-neutral'
+                        className={`text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-xs tracking-wider uppercase shadow-2xs ${
+                          idx === 0
+                            ? 'bg-[#006B3C] text-white'
+                            : idx === 1
+                            ? 'bg-[#1E293B] text-white'
+                            : 'bg-[#334155] text-white'
                         }`}
                       >
                         {dayTag}
@@ -130,20 +139,20 @@ export const CitizenLightMultiDayForecast: React.FC<Props> = ({
                   </td>
 
                   {/* Condition with Icon */}
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                    <div className="flex items-center gap-1 sm:gap-1.5">
+                  <td className="px-2 py-2 sm:px-3 sm:py-2.5">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       {renderWeatherIcon(item.condition)}
-                      <span className="text-[11px] sm:text-xs text-[#1F2933] font-medium capitalize truncate max-w-[110px] sm:max-w-none">
+                      <span className="text-[11px] sm:text-xs text-[#1F2933] font-medium capitalize truncate max-w-[120px] sm:max-w-none">
                         {translateCondition(item.condition || 'Partly Cloudy', language)}
                       </span>
                     </div>
                   </td>
 
                   {/* Rain Probability */}
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-center whitespace-nowrap">
-                    {rainChance > 20 ? (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-bold text-[#1D5F91]">
-                        <Droplets className="w-3 h-3 text-[#1D5F91] shrink-0" />
+                  <td className="px-2 py-2 sm:px-3 sm:py-2.5 text-center whitespace-nowrap">
+                    {rainChance > 0 ? (
+                      <span className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-black text-[#1D5F91]">
+                        <Droplets className="w-3.5 h-3.5 text-[#1D5F91] shrink-0" />
                         {Math.round(rainChance)}%
                       </span>
                     ) : (
@@ -152,8 +161,8 @@ export const CitizenLightMultiDayForecast: React.FC<Props> = ({
                   </td>
 
                   {/* Temperature */}
-                  <td className="px-2 py-1.5 sm:px-3 sm:py-2 text-right font-bold text-[#1F2933] whitespace-nowrap">
-                    <span className="text-[#5B6770] font-normal">{lowTemp}°</span> / {highTemp}°C
+                  <td className="px-2 py-2 sm:px-3 sm:py-2.5 text-right font-bold text-[#1F2933] whitespace-nowrap">
+                    <span className="text-[#5B6770] font-medium">{lowTemp}°</span> / <span className="font-black text-[#1F2933]">{highTemp}°C</span>
                   </td>
                 </tr>
               );

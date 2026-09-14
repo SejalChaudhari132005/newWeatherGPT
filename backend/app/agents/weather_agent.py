@@ -170,7 +170,8 @@ class WeatherAgent:
 
             daily_norm.append({
                 "day": day_label,
-                "date": date_label,
+                "date": d_str,
+                "formatted_date": date_label,
                 "high": high,
                 "low": low,
                 "condition": cond["condition"],

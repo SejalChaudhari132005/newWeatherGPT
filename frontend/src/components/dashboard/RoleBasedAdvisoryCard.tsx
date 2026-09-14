@@ -27,6 +27,7 @@ export const RoleBasedAdvisoryCard: React.FC = () => {
         </div>
 
         <button
+          onClick={() => {
             if (activeRole.toLowerCase() === 'farmer') {
               setActiveTab('farmer');
             } else if (activeRole.toLowerCase() === 'fisher') {

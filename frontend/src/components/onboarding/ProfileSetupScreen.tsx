@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, ArrowRight, Sparkles } from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
+import { OnboardingHeader } from '../common/OnboardingHeader';
 
 export const ProfileSetupScreen: React.FC = () => {
   const { profile, saveUsername, isSubmitting } = useProfile();
@@ -13,13 +14,15 @@ export const ProfileSetupScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative">
+    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative font-['Arimo']">
       <div className="w-full max-w-md bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between min-h-[85vh] sm:min-h-[520px] transition-all">
-        {/* Top Header */}
+        {/* Top Header with WeatherGPT Logo */}
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-4 shadow-2xs">
+          <OnboardingHeader badge="Profile Setup" />
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-            <span>Step 1 of 3 • Profile Setup</span>
+            <span>Step 1 of 3 • Personalization</span>
           </div>
 
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Tell us about yourself</h2>

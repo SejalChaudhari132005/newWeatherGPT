@@ -17,7 +17,7 @@ export const NWPModelComparisonPanel: React.FC<NWPModelComparisonPanelProps> = (
 
   const resolvedData = data || comparisonData;
 
-  const models = resolvedData?.models || {};
+  const models: any = resolvedData?.models || {};
   const consensus_level = resolvedData?.consensus_level || 'High';
   const consensus_summary =
     resolvedData?.consensus_summary || 'All 3 models indicate high probability of rainfall.';

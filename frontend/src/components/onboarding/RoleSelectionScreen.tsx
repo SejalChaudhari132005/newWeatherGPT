@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, ArrowRight, Check, User, Sprout, Anchor, ShieldAlert, Building2, Search, Plane, FlaskConical } from 'lucide-react';
 import { useAuthContext } from '../../context/AuthContext';
 import { UserRole } from '../../types/user';
+import { OnboardingHeader } from '../common/OnboardingHeader';
 
 interface RoleCard {
   id: UserRole;
@@ -56,7 +57,7 @@ export const ROLE_CARDS: RoleCard[] = [
 ];
 
 export const RoleSelectionScreen: React.FC = () => {
-  const { handleSaveRole, userProfile } = useAuthContext();
+  const { handleSaveRole, userProfile, setOnboardingStep } = useAuthContext();
   const [selectedRole, setSelectedRole] = useState<UserRole>(userProfile?.role || 'citizen');
 
   const handleContinue = () => {
@@ -64,10 +65,12 @@ export const RoleSelectionScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative">
+    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative font-['Arimo']">
       <div className="w-full max-w-md bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between min-h-[85vh] sm:min-h-[580px] transition-all">
-        {/* Top Header */}
+        {/* Top Header with WeatherGPT Logo */}
         <div>
+          <OnboardingHeader onBack={() => setOnboardingStep('USERNAME')} badge="Step 2 of 3" />
+
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-sky-600" />
             <span>Select Your Role</span>

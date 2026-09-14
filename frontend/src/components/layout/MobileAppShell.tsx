@@ -149,9 +149,11 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({ children, onOpen
               )}
 
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xs bg-[#006B3C] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
-                  IN
-                </div>
+                <img
+                  src="/assets/logo-icon.png"
+                  alt="WeatherGPT Logo"
+                  className="w-8 h-8 object-contain shrink-0 drop-shadow-xs"
+                />
                 <div className="flex flex-col leading-tight min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-black text-[#17365D] tracking-tight">WeatherGPT</span>

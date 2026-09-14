@@ -26,10 +26,6 @@ export const WelcomeScreen: React.FC = () => {
             <p className="text-base sm:text-lg font-bold text-slate-800 leading-snug">"Your weather. Your language.</p>
             <p className="text-base sm:text-lg font-bold text-slate-800 leading-snug">Your decision."</p>
           </div>
-
-          <p className="text-xs text-slate-500 max-w-xs mx-auto pt-1 font-medium">
-            Hyperlocal weather advisories tailored for fisherfolk, farmers, emergency responders & local communities.
-          </p>
         </div>
 
         {/* Bottom CTA Buttons with Primary Color Palette (#38b6ff & #004aad) */}

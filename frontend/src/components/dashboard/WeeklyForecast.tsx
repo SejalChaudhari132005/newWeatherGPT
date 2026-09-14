@@ -7,6 +7,28 @@ interface Props {
 }
 
 export const WeeklyForecast: React.FC<Props> = ({ weekly }) => {
+  const getDayAndDate = (item: any, idx: number) => {
+    const targetDate = new Date();
+    targetDate.setHours(12, 0, 0, 0);
+
+    if (item?.date && /^\d{4}-\d{2}-\d{2}/.test(item.date)) {
+      const parts = item.date.slice(0, 10).split('-');
+      targetDate.setFullYear(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      targetDate.setDate(targetDate.getDate() + idx);
+    }
+
+    const dayNum = targetDate.getDate();
+    const monthName = targetDate.toLocaleDateString('en-US', { month: 'short' });
+    const enDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const dayLabel = idx === 0 ? 'TODAY' : idx === 1 ? 'TOMORROW' : enDays[targetDate.getDay()];
+
+    return {
+      dateText: `${dayNum} ${monthName}`,
+      dayBadge: dayLabel,
+    };
+  };
+
   return (
     <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/90 shadow-md space-y-3 font-['Arimo']">
       <div className="flex items-center justify-between border-b border-slate-200 pb-2 gap-2">
@@ -19,6 +41,7 @@ export const WeeklyForecast: React.FC<Props> = ({ weekly }) => {
 
       <div className="space-y-1.5 sm:space-y-2">
         {weekly.map((item, idx) => {
+          const { dateText, dayBadge } = getDayAndDate(item, idx);
           const iconInfo = getWeatherIconInfo(item.weather_code, item.condition);
           const displayIcon = item.icon && item.icon.length <= 4 ? item.icon : iconInfo.emoji;
 
@@ -27,7 +50,20 @@ export const WeeklyForecast: React.FC<Props> = ({ weekly }) => {
               key={idx}
               className="flex items-center justify-between p-2.5 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 text-xs font-bold text-slate-800 gap-2"
             >
-              <div className="w-16 sm:w-20 font-black text-slate-900 shrink-0 text-xs">{item.day}</div>
+              <div className="flex items-center gap-1.5 w-24 sm:w-28 shrink-0">
+                <span className="font-extrabold text-slate-900 text-xs">{dateText}</span>
+                <span
+                  className={`text-[9px] font-black px-1.5 py-0.5 rounded-xs uppercase ${
+                    idx === 0
+                      ? 'bg-[#006B3C] text-white'
+                      : idx === 1
+                      ? 'bg-[#1E293B] text-white'
+                      : 'bg-[#475569] text-white'
+                  }`}
+                >
+                  {dayBadge}
+                </span>
+              </div>
               
               <div className="flex items-center gap-1.5 flex-1 justify-start min-w-0">
                 <span className="text-sm sm:text-base shrink-0">{displayIcon}</span>

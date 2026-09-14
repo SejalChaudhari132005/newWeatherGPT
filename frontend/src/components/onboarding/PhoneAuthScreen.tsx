@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Phone, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Phone, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { OnboardingHeader } from '../common/OnboardingHeader';
 
 export const PhoneAuthScreen: React.FC = () => {
   const { sendOtp, isSubmitting, errorMessage, goToStep } = useAuth();
@@ -13,16 +14,11 @@ export const PhoneAuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative">
+    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative font-['Arimo']">
       <div className="w-full max-w-md bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between min-h-[85vh] sm:min-h-[520px] transition-all">
-        {/* Top Header */}
+        {/* Top Header with WeatherGPT Logo */}
         <div>
-          <button
-            onClick={() => goToStep('WELCOME')}
-            className="p-2 rounded-2xl bg-slate-50 text-slate-600 border border-slate-200/80 shadow-2xs hover:bg-slate-100 transition-colors mb-6 cursor-pointer"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          <OnboardingHeader onBack={() => goToStep('WELCOME')} badge="Authentication" />
 
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Let's get started</h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">Enter your mobile number to sign in or create an account</p>

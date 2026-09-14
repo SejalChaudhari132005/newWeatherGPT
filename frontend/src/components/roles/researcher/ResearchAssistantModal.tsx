@@ -58,7 +58,7 @@ export const ResearchAssistantModal: React.FC<ResearchAssistantModalProps> = ({
           role: 'assistant',
           content: response.answer,
           sources: response.sources,
-          metrics: response.relevant_metrics,
+          metrics: (response as any).relevant_metrics,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);

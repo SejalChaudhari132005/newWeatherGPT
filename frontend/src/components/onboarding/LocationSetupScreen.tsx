@@ -3,9 +3,10 @@ import { Search, Navigation, Sparkles, AlertTriangle, X, Loader2, MapPin } from 
 import { useAuthContext } from '../../context/AuthContext';
 import { locationService } from '../../services/locationService';
 import { UserLocation } from '../../types/location';
+import { OnboardingHeader } from '../common/OnboardingHeader';
 
 export const LocationSetupScreen: React.FC = () => {
-  const { handleSaveLocationGps, handleSaveLocationManual } = useAuthContext();
+  const { handleSaveLocationGps, handleSaveLocationManual, setOnboardingStep } = useAuthContext();
 
   const [showManualSearch, setShowManualSearch] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -59,10 +60,12 @@ export const LocationSetupScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative">
+    <div className="min-h-screen bg-[#F4F7FC] flex items-center justify-center p-4 sm:p-6 md:p-8 relative font-['Arimo']">
       <div className="w-full max-w-md bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-slate-200/80 p-6 sm:p-8 flex flex-col justify-between min-h-[85vh] sm:min-h-[520px] transition-all">
-        {/* Header */}
+        {/* Top Header with WeatherGPT Logo */}
         <div>
+          <OnboardingHeader onBack={() => setOnboardingStep('ROLE_CONFIRM')} badge="Step 3 of 3" />
+
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-sky-600" />
             <span>Set Your Location</span>
